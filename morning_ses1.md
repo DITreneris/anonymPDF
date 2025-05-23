@@ -62,9 +62,9 @@
 - [x] Update the DB and API to return the download URL as before. (Handled, API returns structured report now)
 
 #### 4. Testing & Validation
-- [ ] Test with sample PDFs containing known sensitive data. (User tested and identified missed PII, leading to further enhancements)
-- [ ] Confirm that redacted areas are truly removed (not just hidden). (Needs ongoing manual verification)
-- [ ] Validate that the download link works and the file is different from the original. (Download link functionality addressed)
+- [x] Test with sample PDFs containing known sensitive data. (User confirmed anonymization of sensitive data; iterative improvements made for Address and Phone patterns based on feedback.)
+- [x] Confirm that redacted areas are truly removed (not just hidden). (User confirmed via manual verification.)
+- [x] Validate that the download link works and the file is different from the original. (User confirmed download link works and redacted PDF is downloadable.)
 
 #### 5. Documentation & Code Quality
 - [x] Add docstrings and comments to new functions. (`redact_pdf` updated)
