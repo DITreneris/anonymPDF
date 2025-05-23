@@ -1,0 +1,3 @@
+"""
+AnonymPDF - PDF Anonymization Tool
+""" 
