@@ -76,9 +76,8 @@ A web-based tool for automatically anonymizing PDF documents by removing persona
 ### Frontend
 
 1. **Navigate to the frontend directory:**
-   (Assuming it's in a `frontend/` or `frontend/temp/` directory from the project root)
    ```bash
-   cd frontend/temp  # Adjust if your frontend directory is named differently
+   cd frontend # Corrected path
    ```
 
 2. **Install frontend dependencies:**
@@ -109,7 +108,7 @@ The project follows a modular structure:
   - `services/`: Business logic and core processing classes.
     - `pdf_processor.py`: Contains the `PDFProcessor` class orchestrating text extraction, PII detection (spaCy, regex), and invoking redaction.
   - `main.py`: FastAPI application entry point.
-- `frontend/temp/`: Frontend application code (React, TypeScript, Material-UI)
+- `frontend/`: Frontend application code (React, TypeScript, Material-UI) # Corrected path
   - `src/`: Source files
     - `components/`: Reusable React components
     - `App.tsx`: Main application component
@@ -127,4 +126,4 @@ Once the backend server is running, API documentation is available at:
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for details.
-(Note: Create a `LICENSE.md` file with the MIT License text if it doesn't exist) 
+(Note: Create a `LICENSE.md` file with the MIT License text if it doesn't exist)
