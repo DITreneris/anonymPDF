@@ -1,0 +1,16 @@
+language_detection:
+  enabled: true
+  sample_size: 1000
+logging:
+  backup_count: 5
+  level: INFO
+  max_file_size_mb: 10
+patterns:
+  case_sensitive: false
+  validate_on_load: true
+  word_boundaries: true
+processing:
+  max_file_size_mb: 50
+  temp_cleanup: true
+  timeout_seconds: 300
+version: 1.0.0

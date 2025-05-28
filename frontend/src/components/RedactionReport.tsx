@@ -2,20 +2,16 @@ import React from 'react';
 import {
   Paper,
   Typography,
-  CircularProgress,
   Box,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Chip,
   Button,
-  Grid,
   Alert,
   AlertTitle,
   Skeleton,
 } from '@mui/material';
-import type { Theme } from '@mui/material';
-import type { SxProps } from '@mui/system';
 import {
   ExpandMore as ExpandMoreIcon,
   Download as DownloadIcon,

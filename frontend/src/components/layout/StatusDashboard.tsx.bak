@@ -1,0 +1,360 @@
+import React from 'react';
+import {
+  Box,
+  Typography,
+  LinearProgress,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
+  Card,
+  CardContent,
+  Chip,
+  Stack,
+  useTheme,
+  alpha,
+  Fade,
+  CircularProgress,
+  Button,
+} from '@mui/material';
+import {
+  CloudUpload,
+  Search,
+  Edit,
+  Download,
+  CheckCircle,
+  Error as ErrorIcon,
+  Cancel,
+  AccessTime,
+} from '@mui/icons-material';
+
+export type ProcessingStage = 'idle' | 'uploading' | 'analyzing' | 'redacting' | 'generating' | 'completed' | 'error';
+
+interface ProcessingStep {
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  estimatedTime: number; // in seconds
+}
+
+interface StatusDashboardProps {
+  currentStage: ProcessingStage;
+  progress?: number; // 0-100 for current stage
+  fileName?: string | null;
+  errorMessage?: string | null;
+  onCancel?: () => void;
+  onRetry?: () => void;
+  canCancel?: boolean;
+  processingStartTime?: Date | null;
+  estimatedTimeRemaining?: number; // in seconds
+}
+
+const StatusDashboard: React.FC<StatusDashboardProps> = ({
+  currentStage,
+  progress = 0,
+  fileName,
+  errorMessage,
+  onCancel,
+  onRetry,
+  canCancel = false,
+  processingStartTime,
+  estimatedTimeRemaining,
+}) => {
+  const theme = useTheme();
+
+  const processingSteps: ProcessingStep[] = [
+    {
+      label: 'Upload',
+      description: 'Uploading your PDF file',
+      icon: <CloudUpload />,
+      estimatedTime: 2,
+    },
+    {
+      label: 'Analyze',
+      description: 'Scanning for personal information',
+      icon: <Search />,
+      estimatedTime: 5,
+    },
+    {
+      label: 'Redact',
+      description: 'Anonymizing detected content',
+      icon: <Edit />,
+      estimatedTime: 3,
+    },
+    {
+      label: 'Generate',
+      description: 'Creating anonymized PDF',
+      icon: <Download />,
+      estimatedTime: 2,
+    },
+  ];
+
+  const getActiveStep = (): number => {
+    switch (currentStage) {
+      case 'idle': return -1;
+      case 'uploading': return 0;
+      case 'analyzing': return 1;
+      case 'redacting': return 2;
+      case 'generating': return 3;
+      case 'completed': return 4;
+      case 'error': return -1;
+      default: return -1;
+    }
+  };
+
+  const getStageColor = (stage: ProcessingStage) => {
+    switch (stage) {
+      case 'completed': return theme.palette.success.main;
+      case 'error': return theme.palette.error.main;
+      case 'idle': return theme.palette.text.secondary;
+      default: return theme.palette.primary.main;
+    }
+  };
+
+  const formatTime = (seconds: number): string => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
+
+  const getElapsedTime = (): string => {
+    if (!processingStartTime) return '';
+    const elapsed = Math.floor((Date.now() - processingStartTime.getTime()) / 1000);
+    return formatTime(elapsed);
+  };
+
+  const activeStep = getActiveStep();
+
+  if (currentStage === 'idle') {
+    return (
+      <Fade in timeout={300}>
+        <Card 
+          sx={{ 
+            bgcolor: alpha(theme.palette.primary.main, 0.02),
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+          }}
+        >
+          <CardContent>
+            <Typography variant="h6" gutterBottom color="primary">
+              Ready to Process
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Upload a PDF file to begin anonymization
+            </Typography>
+          </CardContent>
+        </Card>
+      </Fade>
+    );
+  }
+
+  if (currentStage === 'error') {
+    return (
+      <Fade in timeout={300}>
+        <Card 
+          sx={{ 
+            bgcolor: alpha(theme.palette.error.main, 0.02),
+            border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+          }}
+        >
+          <CardContent>
+            <Stack spacing={2}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <ErrorIcon color="error" />
+                <Typography variant="h6" color="error">
+                  Processing Error
+                </Typography>
+              </Box>
+              
+              {errorMessage && (
+                <Typography variant="body2" color="text.secondary">
+                  {errorMessage}
+                </Typography>
+              )}
+
+              {onRetry && (
+                <Button 
+                  variant="contained" 
+                  color="error" 
+                  onClick={onRetry}
+                  size="small"
+                >
+                  Try Again
+                </Button>
+              )}
+            </Stack>
+          </CardContent>
+        </Card>
+      </Fade>
+    );
+  }
+
+  if (currentStage === 'completed') {
+    return (
+      <Fade in timeout={300}>
+        <Card 
+          sx={{ 
+            bgcolor: alpha(theme.palette.success.main, 0.02),
+            border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
+          }}
+        >
+          <CardContent>
+            <Stack spacing={2}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <CheckCircle color="success" />
+                <Typography variant="h6" color="success">
+                  Processing Complete
+                </Typography>
+              </Box>
+              
+              <Typography variant="body2" color="text.secondary">
+                Your PDF has been successfully anonymized and is ready for download.
+              </Typography>
+
+              {processingStartTime && (
+                <Chip 
+                  icon={<AccessTime />}
+                  label={`Completed in ${getElapsedTime()}`}
+                  size="small"
+                  variant="outlined"
+                  color="success"
+                />
+              )}
+            </Stack>
+          </CardContent>
+        </Card>
+      </Fade>
+    );
+  }
+
+  return (
+    <Fade in timeout={300}>
+      <Card>
+        <CardContent>
+          <Stack spacing={3}>
+            {/* Header */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Processing Document
+              </Typography>
+              {fileName && (
+                <Typography variant="body2" color="text.secondary">
+                  {fileName}
+                </Typography>
+              )}
+            </Box>
+
+            {/* Progress Overview */}
+            <Box>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="body2" color="text.secondary">
+                  Overall Progress
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {Math.round((activeStep / processingSteps.length) * 100)}%
+                </Typography>
+              </Box>
+              <LinearProgress 
+                variant="determinate" 
+                value={(activeStep / processingSteps.length) * 100}
+                sx={{ 
+                  height: 8, 
+                  borderRadius: 4,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                }}
+              />
+            </Box>
+
+            {/* Time Information */}
+            <Stack direction="row" spacing={2}>
+              {processingStartTime && (
+                <Chip 
+                  icon={<AccessTime />}
+                  label={`Elapsed: ${getElapsedTime()}`}
+                  size="small"
+                  variant="outlined"
+                />
+              )}
+              {estimatedTimeRemaining && estimatedTimeRemaining > 0 && (
+                <Chip 
+                  icon={<AccessTime />}
+                  label={`Est. remaining: ${formatTime(estimatedTimeRemaining)}`}
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                />
+              )}
+            </Stack>
+
+            {/* Detailed Steps */}
+            <Stepper activeStep={activeStep} orientation="vertical">
+              {processingSteps.map((step, index) => (
+                <Step key={step.label}>
+                  <StepLabel
+                    icon={
+                      index === activeStep ? (
+                        <CircularProgress size={24} thickness={4} />
+                      ) : (
+                        step.icon
+                      )
+                    }
+                    sx={{
+                      '& .MuiStepLabel-iconContainer': {
+                        color: index <= activeStep ? getStageColor(currentStage) : theme.palette.action.disabled,
+                      },
+                    }}
+                  >
+                    <Typography 
+                      variant="subtitle2" 
+                      color={index <= activeStep ? 'text.primary' : 'text.secondary'}
+                    >
+                      {step.label}
+                    </Typography>
+                  </StepLabel>
+                  <StepContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {step.description}
+                    </Typography>
+                    
+                    {index === activeStep && progress > 0 && (
+                      <Box sx={{ mt: 1 }}>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={progress}
+                          sx={{ 
+                            height: 4, 
+                            borderRadius: 2,
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          }}
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                          {Math.round(progress)}% complete
+                        </Typography>
+                      </Box>
+                    )}
+                  </StepContent>
+                </Step>
+              ))}
+            </Stepper>
+
+            {/* Cancel Button */}
+            {canCancel && onCancel && currentStage !== 'completed' && currentStage !== 'error' && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<Cancel />}
+                onClick={onCancel}
+                size="small"
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                Cancel Processing
+              </Button>
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
+    </Fade>
+  );
+};
+
+export default StatusDashboard; 

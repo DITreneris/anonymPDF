@@ -1,0 +1,101 @@
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = [
+    "E203",  # whitespace before ':'
+    "E501",  # line too long (handled by black)
+    "W503",  # line break before binary operator
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "build",
+    "dist",
+    ".eggs",
+    "*.egg-info",
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anonympdf"
+version = "1.0.0"
+description = "PDF anonymization tool for Lithuanian documents"
+authors = [
+    {name = "AnonymPDF Team", email = "info@anonympdf.com"},
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Office/Business :: Office Suites",
+    "Topic :: Security",
+]
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn==0.24.0",
+    "python-multipart==0.0.6",
+    "PyPDF2==3.0.1",
+    "pdfminer.six==20221105",
+    "spacy==3.7.2",
+    "sqlalchemy==2.0.23",
+    "python-jose==3.3.0",
+    "pydantic==2.5.2",
+    "python-dotenv==1.0.0",
+    "langdetect==1.0.9",
+    "pymupdf",
+    "PyYAML==6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.3",
+    "pytest-asyncio==0.21.1",
+    "httpx==0.25.0",
+    "black==23.12.1",
+    "flake8==7.0.0",
+    "isort==5.13.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/anonympdf/anonympdf"
+Repository = "https://github.com/anonympdf/anonympdf"
+Documentation = "https://anonympdf.readthedocs.io" 
