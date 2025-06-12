@@ -1,0 +1,269 @@
+metadata:
+  description: Brand names and product names that should be preserved in documents
+  last_updated: '2025-06-02T10:30:00.000000'
+  version: 1.0.0
+  purpose: Prevent over-redaction of legitimate brand names and product identifiers
+
+automotive_brands:
+  manufacturers:
+    - Nissan
+    - Toyota
+    - BMW
+    - Mercedes
+    - Mercedes-Benz
+    - Audi
+    - Volkswagen
+    - VW
+    - Ford
+    - Opel
+    - Peugeot
+    - Renault
+    - Citroen
+    - Skoda
+    - SEAT
+    - Hyundai
+    - Kia
+    - Mazda
+    - Subaru
+    - Mitsubishi
+    - Lexus
+    - Infiniti
+    - Acura
+    - Honda
+    - Suzuki
+    - Volvo
+    - MINI
+    - Jaguar
+    - Land Rover
+    - Porsche
+    - Tesla
+    - Ferrari
+    - Lamborghini
+    - Bentley
+    - Rolls-Royce
+    
+  models:
+    - QASHQAI
+    - Qashqai
+    - X-Trail
+    - Micra
+    - Juke
+    - Leaf
+    - Navara
+    - Note
+    - Pathfinder
+    - Murano
+    - Altima
+    - Sentra
+    - Corolla
+    - Camry
+    - Prius
+    - RAV4
+    - Highlander
+    - Sienna
+    - Tacoma
+    - Tundra
+    - Golf
+    - Passat
+    - Tiguan
+    - Touareg
+    - Arteon
+    - Polo
+    - Jetta
+    - Atlas
+    - Focus
+    - Fiesta
+    - Mustang
+    - Explorer
+    - F-150
+    - Escape
+    - Fusion
+    - Civic
+    - Accord
+    - CR-V
+    - Pilot
+    - Odyssey
+    - Fit
+    - Ridgeline
+
+technology_brands:
+  companies:
+    - Microsoft
+    - Google
+    - Apple
+    - Samsung
+    - Intel
+    - AMD
+    - NVIDIA
+    - Oracle
+    - IBM
+    - Cisco
+    - Dell
+    - HP
+    - Lenovo
+    - ASUS
+    - Sony
+    - LG
+    - Panasonic
+    - Philips
+    - Siemens
+    - Huawei
+    - Xiaomi
+    - OnePlus
+    - Nokia
+    - Motorola
+    - BlackBerry
+    
+  products:
+    - Windows
+    - Office
+    - Excel
+    - Word
+    - PowerPoint
+    - Outlook
+    - Teams
+    - SharePoint
+    - OneDrive
+    - Azure
+    - iPhone
+    - iPad
+    - MacBook
+    - iMac
+    - iOS
+    - Android
+    - Galaxy
+    - Chrome
+    - Firefox
+    - Safari
+    - Edge
+
+financial_institutions:
+  lithuanian_banks:
+    - Swedbank
+    - SEB
+    - Luminor
+    - Šiaulių
+    - Medicinos
+    - Revolut
+    - Paysera
+    - Citadele
+    - DNB
+    - Nordea
+    
+  international_banks:
+    - SWIFT
+    - Visa
+    - Mastercard
+    - PayPal
+    - American Express
+    - Discover
+    - UnionPay
+    - Maestro
+    - Diners Club
+
+insurance_companies:
+  lithuanian_insurers:
+    - IF
+    - "Gjensidige"
+    - BTA
+    - Compensa
+    - ERGO
+    - Lietuvos
+    - Seesam
+    - ADB
+    - PZU
+    - Euroins
+    
+  international_insurers:
+    - Allianz
+    - AXA
+    - Zurich
+    - Generali
+    - Aviva
+    - Munich Re
+    - Swiss Re
+    - MetLife
+    - Prudential
+    - Aflac
+
+business_terms:
+  general_business:
+    - Microsoft
+    - Google
+    - Facebook
+    - Meta
+    - LinkedIn
+    - Twitter
+    - Instagram
+    - YouTube
+    - Amazon
+    - eBay
+    - Alibaba
+    - PayPal
+    - Stripe
+    - Shopify
+    - WordPress
+    - Salesforce
+    - HubSpot
+    - Slack
+    - Zoom
+    - Skype
+    - WhatsApp
+    - Telegram
+    - Viber
+    
+  lithuanian_business:
+    - Maxima
+    - Rimi
+    - IKI
+    - Lidl
+    - Norfa
+    - Akropolis
+    - Ozas
+    - Panorama
+    - Mega
+    - Vikonda
+    - Tele2
+    - Bitė
+    - Omnitel
+    - TEO
+    - Cgates
+    - Alna
+    - Apranga
+    - Palink
+
+product_categories:
+  automotive_services:
+    - Autocentras
+    - Autoservisas
+    - Automobilių
+    - Dalių
+    - Remontas
+    - Techninė
+    - Apžiūra
+    - Draudimas
+    - Lizingas
+    - Nuoma
+    
+  common_products:
+    - Internet
+    - WiFi
+    - Bluetooth
+    - GPS
+    - USB
+    - HDMI
+    - LED
+    - LCD
+    - OLED
+    - 4K
+    - HD
+    - Full HD
+    - Bluetooth
+    - NFC
+
+validation_rules:
+  word_boundaries: true
+  case_sensitive: false
+  minimum_length: 2
+  exclude_if_part_of_name: true
+  context_validation: true 

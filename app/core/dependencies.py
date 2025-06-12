@@ -68,27 +68,27 @@ class DependencyValidator:
     def validate_python_packages(self) -> Dict[str, bool]:
         """Validate that required Python packages are available."""
         required_packages = [
-            "fastapi",
-            "sqlalchemy",
-            "PyMuPDF",
-            "spacy",
-            "langdetect",
-            "pdfminer.six",
+            ("fastapi", "fastapi"),
+            ("sqlalchemy", "sqlalchemy"),
+            ("PyMuPDF", "fitz"),           # pip name, import name
+            ("spacy", "spacy"),
+            ("langdetect", "langdetect"),
+            ("pdfminer.six", "pdfminer"),  # pip name, import name
         ]
 
         results = {}
 
-        for package in required_packages:
+        for pip_name, import_name in required_packages:
             try:
-                __import__(package.replace("-", "_").replace(".", "_"))
-                results[package] = True
+                __import__(import_name)
+                results[pip_name] = True
                 dependency_logger.log_dependency_check(
-                    dependency=f"package_{package}", status="available"
+                    dependency=f"package_{pip_name}", status="available"
                 )
             except ImportError as e:
-                results[package] = False
+                results[pip_name] = False
                 dependency_logger.log_dependency_check(
-                    dependency=f"package_{package}",
+                    dependency=f"package_{pip_name}",
                     status="missing",
                     details=f"Import failed: {str(e)}",
                 )
@@ -206,11 +206,35 @@ class DependencyValidator:
                 )
                 return False
 
-        # Validate at least English spaCy model is available
+        # Validate at least English spaCy model is available - PYINSTALLER COMPATIBLE
+        model_available = False
         try:
+            # Method 1: Try standard loading
             spacy.load("en_core_web_sm")
+            model_available = True
             dependency_logger.log_dependency_check(dependency="en_core_web_sm", status="available")
         except OSError:
+            # Method 2: Try direct module import (same method that works in PDF processor)
+            try:
+                import importlib
+                model_module = importlib.import_module('en_core_web_sm')
+                nlp = model_module.load()
+                if nlp and hasattr(nlp, 'pipe_names') and len(nlp.pipe_names) > 0:
+                    model_available = True
+                    dependency_logger.log_dependency_check(
+                        dependency="en_core_web_sm", 
+                        status="available",
+                        details=f"Loaded via direct import with {len(nlp.pipe_names)} components"
+                    )
+                        
+            except Exception as e:
+                dependency_logger.log_dependency_check(
+                    dependency="en_core_web_sm",
+                    status="missing",
+                    details=f"Direct import method failed: {str(e)}"
+                )
+
+        if not model_available:
             dependency_logger.log_dependency_check(
                 dependency="en_core_web_sm",
                 status="missing",

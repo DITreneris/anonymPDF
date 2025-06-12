@@ -1,0 +1,36 @@
+cross_language_validation:
+  enabled: true
+  similarity_threshold: 0.7
+language_detection:
+  confidence_threshold: 0.8
+  fallback_language: en
+  mixed_language_handling: true
+supported_languages:
+  de:
+    model: de_core_news_sm
+    name: German
+    priority: 6
+  en:
+    model: en_core_web_sm
+    name: English
+    priority: 2
+  et:
+    model: xx_core_web_sm
+    name: Estonian
+    priority: 4
+  fr:
+    model: fr_core_news_sm
+    name: French
+    priority: 7
+  lt:
+    model: lt_core_news_sm
+    name: Lithuanian
+    priority: 1
+  lv:
+    model: xx_core_web_sm
+    name: Latvian
+    priority: 3
+  pl:
+    model: pl_core_news_sm
+    name: Polish
+    priority: 5

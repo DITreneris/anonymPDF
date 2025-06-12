@@ -1,0 +1,15 @@
+caching:
+  cache_compression: true
+  model_cache_enabled: true
+  pattern_cache_size: 1000
+  result_cache_ttl: 3600
+memory_optimization:
+  gc_frequency: 100
+  large_document_streaming: true
+  memory_monitoring: true
+  spacy_optimize: true
+parallel_processing:
+  batch_size: 10
+  chunk_size: adaptive
+  max_workers: auto
+  memory_limit_mb: 1024

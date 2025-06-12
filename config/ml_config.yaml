@@ -1,0 +1,31 @@
+feature_engineering:
+  context_features:
+    document_structure: true
+    position_features: true
+    window_size: 50
+  nlp_features:
+    dependency_parse: false
+    named_entities: true
+    pos_tags: true
+  text_features:
+    character_diversity: true
+    length_features: true
+    linguistic_features: true
+    pattern_features: true
+ml_engine:
+  confidence_calibration:
+    cv_folds: 3
+    method: isotonic
+  feature_selection:
+    feature_importance_threshold: 0.01
+    max_features: 50
+  model_params:
+    learning_rate: 0.1
+    max_depth: 6
+    n_estimators: 100
+    random_state: 42
+  model_type: xgboost
+  training:
+    cv_folds: 5
+    scoring: roc_auc
+    test_size: 0.2

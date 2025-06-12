@@ -1,0 +1,70 @@
+document_types:
+  - doc_type: invoice
+    # Keywords to identify the document type
+    keywords:
+      - "invoice"
+      - "bill"
+      - "receipt"
+      - "vat"
+      - "payment due"
+      - "invoice number"
+      - "total amount"
+      - "bank transfer"
+    # Rules to apply for this document type
+    rules:
+      - action: 'REDACT'
+        target_category: 'CREDIT_CARD'
+        confidence_threshold: 0.70
+      - action: 'REDACT'
+        target_category: 'BANK_ACCOUNT'
+        confidence_threshold: 0.80
+      - action: 'WARN'
+        target_category: 'ADDRESS'
+        confidence_threshold: 0.50
+
+  - doc_type: medical_record
+    keywords:
+      - "medical record"
+      - "patient"
+      - "diagnosis"
+      - "symptoms"
+      - "prescription"
+      - "hospital"
+      - "clinic"
+      - "doctor"
+    rules:
+      - action: 'REDACT'
+        target_category: 'PATIENT_NAME'
+        confidence_threshold: 0.90
+      - action: 'REDACT'
+        target_category: 'MEDICAL_CONDITION'
+      - action: 'REDACT'
+        target_category: 'DATE_OF_BIRTH'
+        confidence_threshold: 0.95
+
+  - doc_type: legal_document
+    keywords:
+      - "agreement"
+      - "contract"
+      - "court"
+      - "affidavit"
+      - "plaintiff"
+      - "defendant"
+      - "legal"
+      - "confidential"
+    rules:
+      - action: 'REDACT'
+        target_category: 'PERSON_NAME'
+        confidence_threshold: 0.85
+      - action: 'REDACT'
+        target_category: 'SIGNATURE'
+      - action: 'WARN'
+        target_category: 'ORGANIZATION'
+
+  - doc_type: general_text
+    # No specific keywords, this is the fallback
+    keywords: []
+    rules:
+      - action: 'WARN'
+        target_category: 'ANY'
+        confidence_threshold: 0.60 

@@ -1,0 +1,16 @@
+feedback_system:
+  auto_retrain_threshold: 100
+  collection_enabled: true
+  feedback_weight: 0.3
+monitoring:
+  alert_thresholds:
+    error_rate: 0.01
+    memory_usage_mb: 2048
+    processing_time_ms: 5000
+  metrics_retention_days: 30
+  real_time_enabled: true
+quality_metrics:
+  confidence_correlation_threshold: 0.85
+  f1_threshold: 0.92
+  precision_threshold: 0.95
+  recall_threshold: 0.9

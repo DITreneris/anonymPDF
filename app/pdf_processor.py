@@ -1,6 +1,8 @@
 import fitz  # PyMuPDF
+from app.core.memory_utils import memory_optimized
 
 
+@memory_optimized(processing_mode="normal")
 def redact_pdf(input_path: str, output_path: str, sensitive_words: list):
     """Redacts specified sensitive words from a PDF file using PyMuPDF.
 

@@ -180,6 +180,9 @@ class ConfigManager:
             "medical_record_number": r"\b\d{6,10}\b",
             # Automotive
             "lithuanian_car_plate": r"\b[A-Z]{3}[-\s]?\d{3}\b",
+            # Morning Session 5 Improvements - Enhanced car plate detection
+            "lithuanian_car_plate_contextual": r"(?i)[Vv]alst\.?\s*[Nn]r\.?\s*[:\-]?\s*([A-Z]{3}[-\s]?\d{3})\b",
+            "lithuanian_car_plate_enhanced": r"(?i)(?:valst\.?\s*nr\.?|automobilio\s+nr\.?|numeris)[\s:–-]*([A-Z]{3}[-\s]?\d{3})\b",
             # Financial
             "swift_bic": r"\b[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b",
             "iban_eu": r"\b[A-Z]{2}\d{2}[A-Z0-9]{1,30}\b",
@@ -196,6 +199,16 @@ class ConfigManager:
             "eleven_digit_numeric": r"\b\d{11}\b",
             "ssn": r"\b\d{3}[-]?\d{2}[-]?\d{4}\b",
             "credit_card": r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b",
+            # Morning Session 5 Improvements - Enhanced Lithuanian name detection
+            "lithuanian_name_all_caps": r"\b([A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))\s+([A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))|\b([A-ZČĘĖĮŠŲŪŽ]{2,})\s+([A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))\b",
+            "lithuanian_name_contextual": r"(?:Draudėjas|Vardas|Pavardė|Sutartį\s+sudarė)[\s:–-]*([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)*(?:ienė|aitė|ytė|utė|ūtė|as|is|ys|us|ius|ė|a))\b",
+            "lithuanian_name_contextual_caps": r"(?:Draudėjas|DRAUDĖJAS|Vardas|VARDAS)[\s:–-]*([A-ZČĘĖĮŠŲŪŽ]{3,}\s+[A-ZČĘĖĮŠŲŪŽ]{3,})\b",
+            # Morning Session 5 Improvements - Enhanced address detection
+            "lithuanian_address_flexible": r"\b([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]{3,}(?:io|ės)?)\s*(?:g\.|gatvė|pr\.|prospektas|al\.|alėja)?(?:\s*\d+(?:[A-Za-z]?(?:-\d+)?)?)?",
+            # Morning Session 5 Improvements - Enhanced personal code with context
+            "lithuanian_personal_code_contextual": r"(?:asmens\s+kodas|asmens/įmonės\s+kodas|A\.K\.)[\s:–-]*(\d{11})\b",
+            # A generic pattern to catch potential unknown IDs for the adaptive system
+            "UNKNOWN_ID": r"\b[A-Z]{2,5}(?:-|\s)?\d{4,}\b"
         }
 
     def get_default_cities(self) -> List[str]:
@@ -490,3 +503,71 @@ class ConfigManager:
             )
 
         return is_valid, errors
+
+    def get_user_config(self) -> Dict[str, Any]:
+        """Return the user-defined configuration."""
+        # ... existing code ...
+
+
+# Global config manager instance
+_config_manager = None
+
+def get_config_manager() -> ConfigManager:
+    """Get the global config manager instance."""
+    global _config_manager
+    if _config_manager is None:
+        _config_manager = ConfigManager()
+    return _config_manager
+
+def get_config() -> Dict[str, Any]:
+    """Get configuration dictionary for easy access."""
+    config_manager = get_config_manager()
+    return {
+        'patterns': config_manager.patterns,
+        'cities': config_manager.cities,
+        'settings': config_manager.settings,
+        
+        # Priority 3 specific configuration
+        'ml_engine': {
+            'model_type': 'xgboost',
+            'model_params': {
+                'n_estimators': 100,
+                'max_depth': 6,
+                'learning_rate': 0.1,
+                'random_state': 42
+            },
+            'confidence_calibration': {
+                'method': 'isotonic',
+                'cv_folds': 3
+            },
+            'training': {
+                'test_size': 0.2,
+                'cv_folds': 5
+            }
+        },
+        'feature_engineering': {
+            'context_features': {
+                'window_size': 50
+            },
+            'linguistic_features': {
+                'spacy_models': ['lt_core_news_sm', 'en_core_web_sm']
+            }
+        },
+        'training_data': {
+            'synthetic_generation': {
+                'default_count': 500,
+                'balance_ratio': 0.5
+            },
+            'data_sources': ['priority2', 'feedback', 'synthetic']
+        },
+        'performance': {
+            'parallel_processing': {
+                'max_workers': 4,
+                'chunk_size': 100
+            },
+            'caching': {
+                'max_size': 1000,
+                'ttl_seconds': 3600
+            }
+        }
+    }

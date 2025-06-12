@@ -32,6 +32,24 @@ yarn-error.log*
 uploads/
 processed/
 temp/
+01_Live_test/
+
+# Documentation and Maintenance
+docs/api/
+docs/development/
+docs/deployment/
+docs/user/
+logs/
+*.log
+logs/archive/
+
+# Test files
+tests/data/
+tests/unit/
+tests/integration/
+
+# Windows specific paths
+C:/Users/tomas/Desktop/0001 DUOMENU ANALITIKA/038_AnonymPDF/docs/development/
 
 # Other
 .env 

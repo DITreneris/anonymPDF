@@ -1,12 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.api.endpoints import pdf
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from app.api.endpoints import pdf, analytics
 from app.core.dependencies import validate_dependencies_on_startup
 from app.db.migrations import initialize_database_on_startup
 from app.core.logging import api_logger
 from app.version import __version__
 import sys
+import os
 
 # Validate dependencies and initialize database on startup
 try:
@@ -41,9 +44,26 @@ app.add_middleware(
 
 # Include routers
 app.include_router(pdf.router, prefix="/api/v1", tags=["pdf"])
+app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
 
+# Mount static files for frontend (PyInstaller and dev compatible)
+if hasattr(sys, "_MEIPASS"):
+    # Running as PyInstaller bundle
+    frontend_path = os.path.join(sys._MEIPASS, "frontend", "dist")
+    if not os.path.exists(frontend_path):
+        # fallback: sometimes just "dist" is present
+        frontend_path = os.path.join(sys._MEIPASS, "dist")
+else:
+    # Running from source
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
 
-@app.get("/")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+    api_logger.info(f"Mounted frontend static files from: {frontend_path}")
+else:
+    api_logger.warning(f"Frontend directory not found at: {frontend_path}")
+
+@app.get("/api")
 async def root():
     return {"message": "Welcome to AnonymPDF API"}
 
@@ -64,3 +84,41 @@ async def http_exception_handler(request, exc):
         status_code=exc.status_code,
         content={"detail": exc.detail},
     )
+
+
+# Add main entry point for PyInstaller executable
+if __name__ == "__main__":
+    import uvicorn
+    import webbrowser
+    import time
+    from threading import Timer
+    
+    api_logger.info("Starting AnonymPDF web server...")
+    
+    # Function to open browser after server starts
+    def open_browser():
+        time.sleep(2)  # Wait for server to start
+        try:
+            webbrowser.open("http://localhost:8000")
+            api_logger.info("Opening browser to http://localhost:8000")
+        except Exception as e:
+            api_logger.warning(f"Could not open browser: {e}")
+    
+    # Start browser opener in background
+    Timer(0.1, open_browser).start()
+    
+    # Start the server
+    try:
+        api_logger.info("Starting uvicorn server on http://localhost:8000")
+        uvicorn.run(
+            app,
+            host="127.0.0.1",
+            port=8000,
+            log_level="info",
+            access_log=True
+        )
+    except KeyboardInterrupt:
+        api_logger.info("Server stopped by user")
+    except Exception as e:
+        api_logger.error(f"Server error: {e}")
+        sys.exit(1)

@@ -4,6 +4,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
+import sys
+import io
 
 
 class StructuredLogger:
@@ -18,14 +20,15 @@ class StructuredLogger:
 
         # Configure file handler with rotation
         log_file = log_path / "anonympdf.log"
-        handler = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5)  # 10MB
+        handler = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding='utf-8')
 
         # Create formatter for structured logging
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
 
         # Add console handler for development
-        console_handler = logging.StreamHandler()
+        utf8_stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        console_handler = logging.StreamHandler(utf8_stderr)
         console_handler.setFormatter(formatter)
 
         # Configure logger
@@ -115,6 +118,9 @@ class StructuredLogger:
 
     def _safe_extra_data(self, **kwargs):
         """Create safe extra data dict avoiding LogRecord reserved fields."""
+        # Explicitly remove 'exc_info' to prevent conflicts with the logging parameter.
+        kwargs.pop('exc_info', None)
+
         reserved_fields = {
             "filename",
             "name",
@@ -175,3 +181,8 @@ pdf_logger = StructuredLogger("anonympdf.pdf")
 api_logger = StructuredLogger("anonympdf.api")
 db_logger = StructuredLogger("anonympdf.database")
 dependency_logger = StructuredLogger("anonympdf.dependencies")
+
+
+def get_logger(name: str) -> StructuredLogger:
+    """Get a structured logger instance for the given name."""
+    return StructuredLogger(f"anonympdf.{name}")

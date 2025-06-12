@@ -14,3 +14,50 @@ processing:
   temp_cleanup: true
   timeout_seconds: 300
 version: 1.0.0
+
+# Morning Session 5 Improvements - Anti-overredaction settings
+anti_overredaction:
+  # Technical terms that should never be redacted
+  technical_terms_whitelist:
+    - "kW"
+    - "Nm" 
+    - "g/km"
+    - "l/100 km"
+    - "mm"
+    - "kg"
+    - "cm³"
+    - "CO2 emisijos"
+    - "Maks. variklio galia"
+    - "Degalų sąnaudos"
+    - "SVORIS"
+    - "VAŽ."
+    - "Pareigos"
+    - "Kaina"
+    - "Netto atlyginimas"
+    - "Kitos pajamos"
+    - "Gyvenamoji vieta"
+    
+  # Field labels that are always PII and should be redacted
+  pii_field_labels:
+    - "Vardas"
+    - "Pavardė"
+    - "Vardas, pavardė"
+    - "Asmens kodas"
+    - "Paso Nr"
+    - "Adresas"
+    - "Telefono numeris"
+    - "El. paštas"
+    - "Banko sąskaita"
+    - "Asmens socialinio draudimo pažymėjimo Nr"
+    - "Draudėjas"
+    - "Valst. Nr"
+    - "VIN"
+    
+  # Section headers that indicate technical data (suppress redaction)
+  technical_sections:
+    - "SVORIS"
+    - "VAŽ."
+    - "Degalų sąnaudos"
+    - "Techniniai duomenys"
+    - "Automobilio duomenys"
+    - "Variklio duomenys"
