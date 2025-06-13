@@ -2,6 +2,7 @@ import pytest
 import tempfile
 from pathlib import Path
 from typing import Generator
+import yaml
 
 from app.core.config_manager import ConfigManager
 from app.services.pdf_processor import PDFProcessor
@@ -18,7 +19,16 @@ def test_config_dir() -> Generator[Path, None, None]:
 
 @pytest.fixture(scope="session")
 def test_config_manager(test_config_dir: Path) -> ConfigManager:
-    """Create a test configuration manager with isolated config."""
+    """Create a test configuration manager with a valid, complete config."""
+    # Create a settings file with all required sections to ensure validation passes
+    settings_content = {
+        "patterns": {}, "cities": {}, "settings": {}, "performance": {},
+        "ml_integration": {}, "feedback_system": {}, "adaptive_learning": {}, "analytics": {}
+    }
+    settings_file = test_config_dir / "settings.yaml"
+    with open(settings_file, 'w') as f:
+        yaml.dump(settings_content, f)
+        
     return ConfigManager(config_dir=test_config_dir)
 
 

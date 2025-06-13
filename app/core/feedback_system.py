@@ -452,34 +452,37 @@ class UserFeedbackProcessor:
 
 
 class UserFeedbackSystem:
-    """Main user feedback system coordinating all components."""
+    """High-level facade for the user feedback system."""
     
     def __init__(self, config: Optional[Dict] = None):
-        """Initializes the feedback system with all its components."""
-        from app.core.ml_training_pipeline import create_ml_training_pipeline
-        self.config = config or get_config().get('user_feedback', {})
+        """Initializes the feedback system."""
+        self.config = config or get_config().get('feedback_system', {})
+        self.processor_config = self.config.get('processor', {})
         
-        # Initialize components
-        self.processor = UserFeedbackProcessor(self.config.get('processor', {}))
-        self.analyzer = self.processor.feedback_analyzer
-        self.ml_training_pipeline: "MLTrainingPipeline" = create_ml_training_pipeline()
+        # Initialize components with proper config
+        self.processor = UserFeedbackProcessor(config=self.processor_config)
+        self.training_data_collector = self.processor.training_data_collector
         
-        # Storage
-        self.storage_path = Path(self.config.get('storage_path', 'data/user_feedback.db'))
-        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
+        # Initialize storage
         self._init_storage()
         
-        # Background processing
-        self.auto_process = self.config.get('auto_process', True)
-        self.processing_interval = self.config.get('processing_interval', 300)  # 5 minutes
-        self.processing_thread = None
-        self.is_processing = False
+        # Background processing thread
+        self.use_background_thread = self.config.get('use_background_thread', True)
+        self._stop_event = threading.Event()
+        self._processing_thread = None
         
+        if self.use_background_thread:
+            self._processing_thread = threading.Thread(
+                target=self._processing_loop,
+                daemon=True
+            )
+            self._processing_thread.start()
+            
         feedback_logger.info("UserFeedbackSystem initialized")
-    
+
     def _init_storage(self):
-        """Initialize database storage for feedback."""
-        with sqlite3.connect(self.storage_path) as conn:
+        """Initialize the SQLite storage for feedback."""
+        with sqlite3.connect(self.config['storage_path']) as conn:
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS user_feedback (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -511,9 +514,9 @@ class UserFeedbackSystem:
             # Process through processor
             success = self.processor.submit_feedback(feedback)
             
-            if success and self.auto_process:
+            if success and self.use_background_thread:
                 # Trigger background processing
-                self._trigger_processing()
+                self._stop_event.set()
             
             return success
             
@@ -523,7 +526,7 @@ class UserFeedbackSystem:
     
     def _store_feedback(self, feedback: UserFeedback):
         """Store feedback in database."""
-        with sqlite3.connect(self.storage_path) as conn:
+        with sqlite3.connect(self.config['storage_path']) as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO user_feedback 
                 (feedback_id, document_id, text_segment, detected_category, 
@@ -546,35 +549,27 @@ class UserFeedbackSystem:
                 feedback.processed
             ))
     
-    def _trigger_processing(self):
-        """Trigger background feedback processing."""
-        if not self.is_processing and self.auto_process:
-            self.is_processing = True
-            self.processing_thread = threading.Thread(
-                target=self._processing_loop,
-                daemon=True
-            )
-            self.processing_thread.start()
-    
     def _processing_loop(self):
         """Background processing loop."""
         try:
-            result = self.processor.process_pending_feedback()
-            
-            if result['should_retrain']:
-                feedback_logger.info("Feedback processing indicates model retraining should be triggered")
-                # Here you could trigger actual retraining
-                try:
-                    job_id = self.ml_training_pipeline.force_training(reason="feedback_triggered_retraining")
-                    feedback_logger.info(f"Successfully queued retraining job {job_id} due to feedback.")
-                    self.processor.last_retrain_time = datetime.now() # Update last retrain time after successful trigger
-                except Exception as e:
-                    feedback_logger.error(f"Failed to trigger retraining via MLTrainingPipeline: {e}", exc_info=True)
+            while not self._stop_event.is_set():
+                result = self.processor.process_pending_feedback()
                 
+                if result['should_retrain']:
+                    feedback_logger.info("Feedback processing indicates model retraining should be triggered")
+                    # Here you could trigger actual retraining
+                    try:
+                        job_id = self.ml_training_pipeline.force_training(reason="feedback_triggered_retraining")
+                        feedback_logger.info(f"Successfully queued retraining job {job_id} due to feedback.")
+                        self.processor.last_retrain_time = datetime.now() # Update last retrain time after successful trigger
+                    except Exception as e:
+                        feedback_logger.error(f"Failed to trigger retraining via MLTrainingPipeline: {e}", exc_info=True)
+                
+                self._stop_event.wait(self.config['processing_interval'] / 1000)
         except Exception as e:
             feedback_logger.error(f"Error in feedback processing loop: {e}")
         finally:
-            self.is_processing = False
+            self._stop_event.clear()
     
     def get_system_status(self) -> Dict[str, Any]:
         """Get comprehensive system status."""
@@ -594,8 +589,8 @@ class UserFeedbackSystem:
             },
             'improvement_suggestions': stats.improvement_suggestions,
             'system_config': {
-                'auto_process': self.auto_process,
-                'processing_interval': self.processing_interval,
+                'use_background_thread': self.use_background_thread,
+                'processing_interval': self.config['processing_interval'],
                 'auto_retrain_threshold': self.processor.auto_retrain_threshold
             }
         }

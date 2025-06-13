@@ -34,10 +34,16 @@ def online_learner(mock_dependencies):
 
 @pytest.fixture
 def sample_training_examples():
-    """Provides a list of sample TrainingExample objects."""
+    """Fixture for a list of sample TrainingExample objects."""
     return [
-        TrainingExample(id=f"ex_{i}", text_input=f"text {i}", expected_output={'feature': i}, source="test")
-        for i in range(10)
+        TrainingExample(
+            detection_text=f"text {i}",
+            category="CAT1",
+            context="some context",
+            features={'feature': i},
+            confidence_score=0.9,
+            is_true_positive=True
+        ) for i in range(5)
     ]
 
 def test_initialization(online_learner, mock_dependencies):
@@ -97,4 +103,35 @@ def test_retrain_model_handles_empty_input(online_learner, mock_dependencies):
     # Assert
     assert result is None
     mock_storage.save_training_examples.assert_not_called()
-    mock_pipeline.run_training_cycle.assert_not_called() 
+    mock_pipeline.run_training_cycle.assert_not_called()
+
+@pytest.fixture
+def mock_model(mocker):
+    mock_model_instance = MagicMock()
+    mock_model_instance.save.return_value = "/fake/path/model.pkl"
+    return mock_model_instance
+
+class TestOnlineLearner:
+    """Tests for the OnlineLearner class."""
+
+    def test_retrain_model_saves_examples_and_triggers_retraining(self, online_learner, mock_dependencies, mock_model, sample_training_examples):
+        """
+        Test that retrain_model saves examples and triggers the model's train method
+        when the number of new examples reaches the threshold.
+        """
+        online_learner.retraining_threshold = 5
+        online_learner.retrain_model(sample_training_examples)
+
+        mock_dependencies['storage_instance'].save_training_examples.assert_called_once_with(sample_training_examples)
+        mock_model.train.assert_called_once()
+
+    def test_retrain_model_saves_examples_but_skips_retraining(self, online_learner, mock_dependencies, mock_model, sample_training_examples):
+        """
+        Test that retrain_model saves examples but does NOT trigger training
+        when the number of new examples is below the threshold.
+        """
+        online_learner.retraining_threshold = 10  # Higher threshold
+        online_learner.retrain_model(sample_training_examples)
+
+        mock_dependencies['storage_instance'].save_training_examples.assert_called_once_with(sample_training_examples)
+        mock_model.train.assert_not_called() 

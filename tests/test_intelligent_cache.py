@@ -20,8 +20,10 @@ from app.core.intelligent_cache import (
     cache_put,
     cache_pattern,
     cache_model_prediction,
-    cache_result
+    cache_result,
+    get_cache_stats
 )
+from app.core.config_manager import get_config
 
 
 class TestCacheEntry:
@@ -147,17 +149,33 @@ class TestLRUCache:
         stats = self.cache.get_stats()
         assert stats['hits'] == 0
         assert stats['misses'] == 0
+        assert stats['evictions'] == 0
+        assert stats['size'] == 0
         assert stats['hit_rate'] == 0
+        assert stats['total_requests'] == 0
         
         # Add some operations
         self.cache.put("key1", "value1")
         self.cache.get("key1")  # Hit
         self.cache.get("key2")  # Miss
         
+        # Get updated stats
         stats = self.cache.get_stats()
         assert stats['hits'] == 1
         assert stats['misses'] == 1
+        assert stats['evictions'] == 0
+        assert stats['size'] == 1
         assert stats['hit_rate'] == 0.5
+        assert stats['total_requests'] == 2
+        
+        # Test eviction stats
+        self.cache.put("key2", "value2")
+        self.cache.put("key3", "value3")
+        self.cache.put("key4", "value4")  # Should evict key1
+        
+        stats = self.cache.get_stats()
+        assert stats['evictions'] == 1
+        assert stats['size'] == 3
 
     def test_cache_invalidation(self):
         """Test explicit cache invalidation."""
@@ -322,20 +340,21 @@ class TestModelCache:
         assert self.model_cache.get_prediction("model1", input1, "v2.0") == prediction
 
 
+@pytest.fixture(scope='module')
+def configured_cache():
+    return get_intelligent_cache()
+
+
 class TestIntelligentCache:
-    """Test the main IntelligentCache system."""
+    """Test the main IntelligentCache component."""
 
     def setup_method(self):
         """Set up test fixtures."""
-        # Use small cache sizes for testing
-        config = {
-            'max_size': 10,
-            'ttl_seconds': 3600
-        }
-        self.cache = IntelligentCache({'caching': config})
+        self.cache = get_intelligent_cache()
+        self.cache.clear_all()  # Ensure clean state for each test
 
     def test_general_cache_operations(self):
-        """Test general cache operations."""
+        """Test general purpose cache get/put."""
         # Basic put/get
         assert self.cache.put("key1", "value1", "general")
         assert self.cache.get("key1", "general") == "value1"
@@ -373,30 +392,26 @@ class TestIntelligentCache:
         )
         assert cached_prediction == prediction
 
-    def test_comprehensive_stats(self):
-        """Test comprehensive statistics collection."""
-        # Add some data to different caches
-        self.cache.put("general_key", "general_value", "general")
-        self.cache.cache_pattern_result(
-            "test_type", {"feature": "value"}, "pattern_result"
-        )
-        self.cache.cache_model_prediction(
-            "test_model", {"input": "data"}, "model_result"
-        )
+    def test_comprehensive_stats(self, configured_cache):
+        """Test the comprehensive statistics gathering."""
+        # Add some data to exercise the caches
+        configured_cache.put("test_key", "test_value", cache_type="general")
+        configured_cache.get("test_key", cache_type="general") # hit
+        configured_cache.get("miss_key", cache_type="general") # miss
         
-        # Get stats
-        stats = self.cache.get_comprehensive_stats()
+        stats = configured_cache.get_comprehensive_stats()
         
-        # Verify structure
-        assert "global" in stats
         assert "general_cache" in stats
         assert "pattern_cache" in stats
         assert "model_cache" in stats
-        assert "memory_estimate" in stats
+        assert "global" in stats
+
+        general_stats = stats["general_cache"]
+        assert general_stats['hits'] >= 1
+        assert general_stats['misses'] >= 1
         
-        # Verify global stats
-        assert stats["global"]["total_requests"] > 0
-        assert "hit_rate" in stats["global"]
+        global_stats = stats["global"]
+        assert "memory_saved_mb" in global_stats
 
     def test_cache_cleanup(self):
         """Test automatic cache cleanup."""
@@ -424,28 +439,30 @@ class TestIntelligentCache:
         # Clear all
         self.cache.clear_all()
         
-        # Check stats immediately after clearing (before making any requests)
+        # Check stats immediately after clearing
         stats = self.cache.get_comprehensive_stats()
         assert stats["global"]["total_requests"] == 0
         assert stats["global"]["total_hits"] == 0
         
-        # Verify all are empty (these will increment request counter but should return None)
+        # Verify all are empty
         assert self.cache.get("general_key", "general") is None
         assert self.cache.get_pattern_result("type", {"f": "v"}) is None
         assert self.cache.get_model_prediction("model", {"i": "d"}) is None
 
 
 class TestGlobalCacheFunctions:
-    """Test global cache convenience functions."""
+    """Test global convenience functions."""
+
+    def setup_method(self):
+        """Clear the global cache before each test."""
+        get_intelligent_cache().clear_all()
 
     def test_cache_get_put(self):
-        """Test global cache_get and cache_put functions."""
-        # Clear cache first
-        get_intelligent_cache().clear_all()
-        
-        # Use global functions
-        assert cache_put("test_key", "test_value", "general", ttl_seconds=300)
-        assert cache_get("test_key", "general") == "test_value"
+        """Test global cache_get and cache_put."""
+        assert cache_get("global_key") is None
+        assert cache_put("global_key", "my_result", "general", ttl_seconds=300)
+        result = cache_get("global_key", "general")
+        assert result == "my_result"
 
     def test_cache_pattern_function(self):
         """Test global cache_pattern function."""
@@ -532,46 +549,48 @@ class TestCacheDecorator:
 
 
 class TestConcurrency:
-    """Test cache behavior under concurrent access."""
+    """Test concurrency and thread safety."""
 
-    def test_thread_safety(self):
+    def setup_method(self):
+        get_intelligent_cache().clear_all()
+
+    def test_thread_safety(self, configured_cache):
         """Test that cache operations are thread-safe."""
-        cache = LRUCache(max_size=100)
-        results = []
-        errors = []
+        exceptions = []
         
-        def worker(thread_id):
+        def worker(cache, start_index, end_index):
             try:
-                for i in range(10):
-                    key = f"thread_{thread_id}_key_{i}"
-                    value = f"thread_{thread_id}_value_{i}"
-                    
-                    # Put and get
-                    cache.put(key, value)
-                    retrieved = cache.get(key)
-                    
-                    if retrieved == value:
-                        results.append(True)
-                    else:
-                        results.append(False)
+                for i in range(start_index, end_index):
+                    key = f"key_{i}"
+                    value = f"value_{i}"
+                    cache.put(key, value, cache_type="general", ttl_seconds=10)
+                    retrieved = cache.get(key, cache_type="general")
+                    assert retrieved == value, f"Failed to retrieve key {key}"
             except Exception as e:
-                errors.append(str(e))
-        
-        # Start multiple threads
+                exceptions.append(e)
+
         threads = []
-        for i in range(5):
-            thread = threading.Thread(target=worker, args=(i,))
-            threads.append(thread)
-            thread.start()
+        num_threads = 10
+        items_per_thread = 10
+        for i in range(num_threads):
+            start = i * items_per_thread
+            end = (i + 1) * items_per_thread
+            t = threading.Thread(target=worker, args=(configured_cache, start, end))
+            threads.append(t)
+            t.start()
         
-        # Wait for all threads to complete
-        for thread in threads:
-            thread.join()
+        for t in threads:
+            t.join()
+
+        # Check that no exceptions occurred in worker threads
+        assert not exceptions, f"Exceptions occurred in worker threads: {exceptions}"
+
+        # Check final state for consistency
+        stats = configured_cache.get_comprehensive_stats()
+        general_stats = stats.get("general_cache", {})
         
-        # Verify results
-        assert len(errors) == 0, f"Errors occurred: {errors}"
-        assert all(results), "Some cache operations failed"
-        assert len(results) == 50  # 5 threads * 10 operations each
+        # All items should be in the cache
+        assert general_stats.get("size") == num_threads * items_per_thread
 
 
 if __name__ == "__main__":

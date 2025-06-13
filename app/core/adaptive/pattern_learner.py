@@ -11,6 +11,7 @@ import re
 from datetime import datetime
 
 from app.core.logging import get_logger
+from app.core.config_manager import get_config_manager
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -45,18 +46,36 @@ class PatternLearner:
     This class is responsible for taking raw text and feedback, generating
     """
 
-    def __init__(self, pattern_db: "AdaptivePatternDB"):
+    def __init__(
+        self, 
+        pattern_db: "AdaptivePatternDB",
+        min_confidence: float = 0.95,
+        min_samples: int = 10
+    ):
         """
         Initializes the PatternLearner.
 
         Args:
             pattern_db: An instance of AdaptivePatternDB to store validated patterns.
+            min_confidence: Minimum confidence threshold for pattern validation.
+            min_samples: Minimum number of samples required for learning.
         """
         self.pattern_db = pattern_db
-        # More sophisticated configuration could be loaded here
-        self.min_confidence_to_validate = 0.85  # Precision must be >= 85%
-        self.min_recall_to_validate = 0.85     # Recall must be >= 85%
-        logger.info("PatternLearner initialized.")
+        
+        # Load configuration
+        config = get_config_manager().settings.get("adaptive_learning", {})
+        thresholds = config.get("thresholds", {})
+        
+        # Use provided values or fall back to configuration
+        self.min_confidence_to_validate = min_confidence or thresholds.get("min_confidence_to_validate", 0.95)
+        self.min_samples_for_learning = min_samples or thresholds.get("min_samples_for_learning", 10)
+        self.min_recall_to_validate = 0.85  # Keep this as a fixed value for now
+        
+        logger.info(
+            "PatternLearner initialized",
+            min_confidence=self.min_confidence_to_validate,
+            min_samples=self.min_samples_for_learning
+        )
 
     def discover_and_validate_patterns(self, text_corpus: List[str], pii_to_discover: Dict[str, str], ground_truth_pii: Dict[str, str]) -> List[ValidatedPattern]:
         """
@@ -73,6 +92,13 @@ class PatternLearner:
         validated_patterns = []
         logger.debug(f"Starting pattern discovery for {len(pii_to_discover)} confirmed PII samples.")
 
+        # Check if we have enough samples
+        if len(pii_to_discover) < self.min_samples_for_learning:
+            logger.warning(
+                f"Insufficient samples for pattern discovery. Need {self.min_samples_for_learning}, got {len(pii_to_discover)}"
+            )
+            return validated_patterns
+
         for pii, category in pii_to_discover.items():
             try:
                 # 1. Discover a potential pattern (simplified)
@@ -82,20 +108,33 @@ class PatternLearner:
                 # 2. Validate the pattern against the full ground truth
                 validation_results = self._validate_regex(pattern_regex, text_corpus, ground_truth_pii)
                 precision = validation_results['precision']
+                recall = validation_results['recall']
 
-                if precision >= self.min_confidence_to_validate:
+                if precision >= self.min_confidence_to_validate and recall >= self.min_recall_to_validate:
                     new_pattern = ValidatedPattern(
                         pattern_id=f"p_{hash(pattern_regex)}",
                         regex=pattern_regex,
                         pii_category=category,
                         confidence=precision,
                         precision=precision,
-                        recall=validation_results['recall'],
+                        recall=recall,
                         positive_matches=validation_results['true_positives'],
                         negative_matches=validation_results['false_positives']
                     )
                     validated_patterns.append(new_pattern)
-                    logger.info(f"Discovered and validated new pattern: {pattern_regex} with precision {precision:.2f}")
+                    logger.info(
+                        f"Discovered and validated new pattern: {pattern_regex}",
+                        precision=f"{precision:.2f}",
+                        recall=f"{recall:.2f}"
+                    )
+                else:
+                    logger.debug(
+                        f"Pattern {pattern_regex} did not meet validation thresholds",
+                        precision=f"{precision:.2f}",
+                        recall=f"{recall:.2f}",
+                        min_confidence=self.min_confidence_to_validate,
+                        min_recall=self.min_recall_to_validate
+                    )
 
             except re.error as e:
                 logger.error(f"Could not process PII sample '{pii}': {e}")

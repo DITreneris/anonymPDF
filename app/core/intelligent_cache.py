@@ -344,8 +344,24 @@ class IntelligentCache:
     """Main intelligent caching system that combines different cache types."""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = config or get_config()['performance']['caching']
+        """
+        Initializes the IntelligentCache system.
         
+        Args:
+            config (Optional[Dict[str, Any]]): A configuration dictionary. 
+                                              If not provided, falls back to global config.
+        """
+        if config is None:
+            # Fallback to global config gracefully
+            full_config = get_config()
+            performance_config = full_config.get('performance', {})
+            self.config = performance_config.get('caching', {})
+        else:
+            self.config = config
+            
+        self.policy = CachePolicy(self.config.get("policy", "lru"))
+        self.last_cleanup = time.time()
+
         # Initialize different cache types
         max_size = self.config.get('max_size', 1000)
         self.general_cache = LRUCache(max_size)
@@ -354,7 +370,6 @@ class IntelligentCache:
         
         # Cache management
         self._cleanup_interval = 300  # 5 minutes
-        self._last_cleanup = time.time()
         self._monitor = PerformanceMonitor()
         
         # Global statistics
@@ -509,9 +524,9 @@ class IntelligentCache:
     def _maybe_cleanup(self):
         """Perform cleanup if needed."""
         current_time = time.time()
-        if current_time - self._last_cleanup > self._cleanup_interval:
+        if current_time - self.last_cleanup > self._cleanup_interval:
             self._cleanup_expired()
-            self._last_cleanup = current_time
+            self.last_cleanup = current_time
     
     def _cleanup_expired(self):
         """Clean up expired entries from all caches."""
@@ -560,19 +575,28 @@ class IntelligentCache:
         }
 
 
-# Global cache instance
-_intelligent_cache = None
+_global_cache_instance: Optional[weakref.ref[IntelligentCache]] = None
+_global_cache_lock = threading.Lock()
+
 
 def get_intelligent_cache() -> IntelligentCache:
-    """Get the global intelligent cache instance."""
-    global _intelligent_cache
-    if _intelligent_cache is None:
-        _intelligent_cache = IntelligentCache()
-    return _intelligent_cache
+    """
+    Factory function to get a singleton instance of the IntelligentCache.
+    This ensures that the same cache instance is used throughout the application.
+    """
+    global _global_cache_instance
+    with _global_cache_lock:
+        instance = _global_cache_instance() if _global_cache_instance else None
+        if instance is None:
+            config = get_config().get('intelligent_cache', {})
+            instance = IntelligentCache(config=config)
+            _global_cache_instance = weakref.ref(instance)
+            cache_logger.info("IntelligentCache singleton instance created.")
+        return instance
 
 
 def get_cache_stats() -> Dict[str, Any]:
-    """Get intelligent cache statistics."""
+    """Convenience function to get stats from the global cache."""
     return get_intelligent_cache().get_comprehensive_stats()
 
 

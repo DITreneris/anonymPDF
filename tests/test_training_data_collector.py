@@ -12,6 +12,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import json
 from typing import List, Dict, Any
+import gc
 
 # Assuming TrainingExample might be defined elsewhere or has a simple structure for testing
 # If it's complex, we might need its actual definition or a mock.
@@ -52,8 +53,14 @@ def temp_db_dir():
 
 @pytest.fixture
 def training_data_storage(temp_db_dir):
-    """Fixture for TrainingDataStorage using a temporary database."""
-    return TrainingDataStorage(data_dir=str(temp_db_dir))
+    """Fixture for TrainingDataStorage that ensures the database is closed after tests."""
+    storage = TrainingDataStorage(data_dir=str(temp_db_dir))
+    try:
+        yield storage
+    finally:
+        storage.close()
+        # Force garbage collection to release file handles on Windows
+        gc.collect()
 
 @pytest.fixture
 def training_data_collector(training_data_storage):
@@ -82,8 +89,8 @@ class TestTrainingDataStorage:
         """Test saving and loading TrainingExample objects."""
         examples_to_save = [
             create_dummy_example("John Doe", "NAME", True, "doc1"),
-            create_dummy_example("123 Main St", "ADDRESS", True, "doc1", source="test_source_1"),
-            create_dummy_example("Not PII", "OTHER", False, "doc2", source="test_source_2"),
+            create_dummy_example("123 Main St", "ADDRESS", True, "doc1", metadata={"source": "test_source_1"}),
+            create_dummy_example("Not PII", "OTHER", False, "doc2", metadata={"source": "test_source_2"}),
         ]
         
         training_data_storage.save_training_examples(examples_to_save[:2], source="test_source_1")
@@ -100,7 +107,10 @@ class TestTrainingDataStorage:
         # Load by source
         loaded_source1 = training_data_storage.load_training_examples(source="test_source_1")
         assert len(loaded_source1) == 2
-        assert all(ex.metadata.get('source_id') != 'dummy_source' or ex.detection_text in ["John Doe", "123 Main St"] for ex in loaded_source1)
+        # A more robust check on what was loaded
+        loaded_source1_texts = {ex.detection_text for ex in loaded_source1}
+        assert "John Doe" in loaded_source1_texts
+        assert "123 Main St" in loaded_source1_texts
 
 
         loaded_source2 = training_data_storage.load_training_examples(source="test_source_2")
@@ -193,37 +203,19 @@ class TestTrainingDataCollector:
         training_data_collector.storage.save_training_examples(examples_data, source="balancing_test")
 
         # Request a balanced set
-        balanced_examples, stats = training_data_collector.get_balanced_training_set(max_samples=10, balance_ratio=0.5)
+        balanced_examples, stats = training_data_collector.get_balanced_training_set(max_samples=6, balance_ratio=0.5)
         
-        assert len(balanced_examples) <= 10 # Should be at most max_samples
-        # Check balance (might not be perfect if few samples of one class)
-        # For this test, we expect 3 negative (all available) and 3 positive (to match negatives for 0.5 goal if total is 6, or more if max_samples allows)
-        # Actual number will depend on the sampling logic.
-        # Here, we'll get all 3 negatives and min(5, 3) = 3 positives = 6 examples.
+        # With max_samples=6 and ratio=0.5, it should aim for 3 positive and 3 negative.
+        # It has 10 pos and 3 neg available.
+        # It should take all 3 negatives, and 3 positives.
         
         num_pos = sum(1 for ex in balanced_examples if ex.is_true_positive)
         num_neg = sum(1 for ex in balanced_examples if not ex.is_true_positive)
 
-        assert num_neg == 3 # All negative samples should be included
-        assert num_pos >= 0 # Some positive samples
-        
-        # More precise check if we know the sampling: if target_pos = 5, target_neg = 5
-        # We have 10 pos, 3 neg. Will take min(5,10)=5 pos, min(5,3)=3 neg. So 8 examples, 5 pos, 3 neg.
-        # If max_samples = 6, balance_ratio = 0.5 -> target_pos=3, target_neg=3
-        # Will take min(3,10)=3 pos, min(3,3)=3 neg. So 6 examples.
-        if max_samples == 10 and balance_ratio == 0.5: # Original params for test logic
-             # Default sampling strategy might take all of the smaller class, and then try to match from larger class
-             # Given 3 negative, it might aim for 3 positive for a 50/50 split from the available data.
-             # Or it might try to get 5 positive and 3 negative to reach closer to max_samples.
-             # The implementation takes min(target_positive, len(positive_examples)) and min(target_negative, len(negative_examples))
-             # target_positive = 10 * 0.5 = 5. target_negative = 10 - 5 = 5
-             # sampled_positive = min(5, 10) = 5
-             # sampled_negative = min(5, 3) = 3
-             # Total = 8. 5 positive, 3 negative.
-            assert num_pos == 5
-            assert num_neg == 3
-            assert len(balanced_examples) == 8
+        assert len(balanced_examples) == 6
+        assert num_pos == 3
+        assert num_neg == 3
 
-        assert stats.total_samples == 13 # From storage before balancing
+        assert stats.total_samples == 13
         assert stats.positive_samples == 10
         assert stats.negative_samples == 3 

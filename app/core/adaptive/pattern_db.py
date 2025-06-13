@@ -13,7 +13,7 @@ import json
 
 from app.core.logging import get_logger
 from app.core.adaptive.pattern_learner import ValidatedPattern
-from app.core.config_manager import get_config
+from app.core.config_manager import get_config_manager
 
 db_logger = get_logger("adaptive_pattern_db")
 
@@ -22,7 +22,7 @@ class AdaptivePatternDB:
     Manages a database of adaptively learned PII patterns.
     """
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: Optional[Path] = None):
         """
         Initializes the database connection.
 
@@ -30,11 +30,12 @@ class AdaptivePatternDB:
             db_path: Optional path to the database file. If None, uses default from config.
         """
         if db_path:
-            self.db_path = Path(db_path)
+            self.db_path = db_path
         else:
             # Fallback to config if no path is provided
-            config = get_config().get('adaptive_learning', {})
-            self.db_path = Path(config.get('pattern_db_path', 'data/anonymized_pii.db'))
+            config = get_config_manager().settings.get('adaptive_learning', {})
+            db_config = config.get('databases', {})
+            self.db_path = Path(db_config.get('patterns_db', 'data/adaptive/patterns.db'))
 
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(self.db_path)
@@ -191,7 +192,7 @@ class AdaptivePatternDB:
             db_logger.info(f"Database connection to {self.db_path} closed.")
 
 # Factory function for easy integration
-def create_pattern_db(db_path: Optional[str] = None) -> AdaptivePatternDB:
+def create_pattern_db(db_path: Optional[Path] = None) -> AdaptivePatternDB:
     """Creates and returns an AdaptivePatternDB instance."""
     if db_path:
         return AdaptivePatternDB(db_path=db_path)

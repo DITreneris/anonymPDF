@@ -17,7 +17,7 @@ from collections import defaultdict
 from scipy.stats import ttest_ind
 
 from app.core.logging import get_logger
-from app.core.config_manager import get_config
+from app.core.config_manager import get_config_manager
 
 ab_test_logger = get_logger("ab_testing")
 
@@ -77,7 +77,7 @@ class ABTestManager:
     Manages the lifecycle of A/B tests.
     """
     
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: Optional[Path] = None):
         """
         Initializes the A/B Test Manager.
 
@@ -85,13 +85,14 @@ class ABTestManager:
             db_path: Optional path to the database. Uses config if not provided.
         """
         if db_path:
-            self.db_path = Path(db_path)
+            self.db_path = Path(db_path)  # Ensure db_path is a Path object
         else:
-            config = get_config().get('ab_testing', {})
-            self.db_path = Path(config.get('db_path', 'data/ab_tests.db'))
+            config = get_config_manager().settings.get('adaptive_learning', {})
+            db_config = config.get('databases', {})
+            self.db_path = Path(db_config.get('ab_tests_db', 'data/adaptive/ab_tests.db'))
 
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(self.db_path)
+        self.conn = sqlite3.connect(str(self.db_path))  # Convert Path to string for sqlite3
         self.conn.row_factory = sqlite3.Row
         self.tests: Dict[str, ABTest] = {}
         self._create_schema()
@@ -252,73 +253,70 @@ class ABTestManager:
         if test_id not in self.tests:
             raise ValueError(f"Test with ID {test_id} not found.")
 
-        ab_test_logger.info(f"Evaluating test '{self.tests[test_id].name}' with alpha={alpha}.")
-        
-        # 1. Fetch all metrics for this test
+        # Load configuration for confidence level
+        config = get_config_manager().settings.get('adaptive_learning', {})
+        thresholds = config.get('thresholds', {})
+        confidence_level = thresholds.get('ab_test_confidence_level', 0.95)
+        alpha = 1 - confidence_level
+
         cursor = self.conn.cursor()
-        cursor.execute("SELECT metric_name, group_name, metric_value FROM ab_test_metrics WHERE test_id = ?", (test_id,))
-        rows = cursor.fetchall()
-
-        if not rows:
-            return ABTestResult(test_id, 'inconclusive', 0.0, "No metrics recorded for this test.", {})
-
-        # 2. Group metrics by name
-        metrics_by_name = defaultdict(lambda: {'control': [], 'variant': []})
-        for metric_name, group_name, value in rows:
-            metrics_by_name[metric_name][group_name].append(value)
-
-        # 3. Perform t-test for each metric and summarize results
-        metrics_comparison = {}
-        variant_wins = 0
-        control_wins = 0
-
-        for name, groups in metrics_by_name.items():
-            control_data = groups['control']
-            variant_data = groups['variant']
-
-            if not control_data or not variant_data:
-                # Cannot compare if one group has no data
-                continue
-
-            # Perform t-test
-            stat, p_value = ttest_ind(control_data, variant_data, equal_var=False) # Welch's t-test
-
-            # Determine winner for this metric
-            is_significant = p_value < alpha
-            winner = "inconclusive"
-            if is_significant:
-                # Assuming higher metric value is better. This could be customized.
-                if sum(variant_data) / len(variant_data) > sum(control_data) / len(control_data):
-                    winner = "variant"
-                    variant_wins += 1
-                else:
-                    winner = "control"
-                    control_wins += 1
-
-            metrics_comparison[name] = {
-                "winner": winner,
-                "p_value": p_value,
-                "control_mean": sum(control_data) / len(control_data),
-                "variant_mean": sum(variant_data) / len(variant_data),
-            }
+        cursor.execute("""
+            SELECT group_name, metric_name, metric_value
+            FROM ab_test_metrics
+            WHERE test_id = ?
+        """, (test_id,))
         
-        # 4. Determine overall winner
-        overall_winner = "inconclusive"
-        if variant_wins > control_wins:
-            overall_winner = "variant"
-        elif control_wins > variant_wins:
-            overall_winner = "control"
+        # Group metrics by group and metric name
+        metrics_by_group = defaultdict(lambda: defaultdict(list))
+        for row in cursor.fetchall():
+            metrics_by_group[row['group_name']][row['metric_name']].append(row['metric_value'])
+        
+        # Compare metrics between groups
+        metrics_comparison = {}
+        winner = 'inconclusive'
+        max_confidence = 0.0
+        
+        for metric_name in metrics_by_group['control'].keys():
+            control_values = metrics_by_group['control'][metric_name]
+            variant_values = metrics_by_group['variant'][metric_name]
             
-        summary = (
-            f"Evaluation complete. Variant won {variant_wins} metric(s), "
-            f"Control won {control_wins} metric(s). "
-            f"Overall winner: {overall_winner}."
-        )
-
+            if not control_values or not variant_values:
+                continue
+                
+            # Perform t-test
+            t_stat, p_value = ttest_ind(control_values, variant_values)
+            
+            # Calculate effect size (mean difference)
+            control_mean = sum(control_values) / len(control_values)
+            variant_mean = sum(variant_values) / len(variant_values)
+            effect_size = variant_mean - control_mean
+            
+            # Store comparison results
+            metrics_comparison[metric_name] = {
+                'control_mean': control_mean,
+                'variant_mean': variant_mean,
+                'effect_size': effect_size,
+                'p_value': p_value,
+                'significant': p_value < alpha
+            }
+            
+            # Update winner if this metric is significant
+            if p_value < alpha:
+                confidence = 1 - p_value
+                if confidence > max_confidence:
+                    max_confidence = confidence
+                    winner = 'variant' if effect_size > 0 else 'control'
+        
+        # Generate summary
+        if winner == 'inconclusive':
+            summary = "No statistically significant difference found between control and variant."
+        else:
+            summary = f"Winner: {winner} with {max_confidence:.1%} confidence."
+            
         return ABTestResult(
             test_id=test_id,
-            winner=overall_winner,
-            confidence=1 - alpha, # This is the confidence level of the test
+            winner=winner,
+            confidence=max_confidence,
             summary=summary,
             metrics_comparison=metrics_comparison
         )
@@ -327,11 +325,11 @@ class ABTestManager:
         """Closes the database connection."""
         if self.conn:
             self.conn.close()
+            self.conn = None
             ab_test_logger.info(f"Database connection to {self.db_path} closed.")
 
-# Factory function for easy integration
-def create_ab_test_manager(db_path: Optional[str] = None) -> ABTestManager:
+def create_ab_test_manager(db_path: Optional[Path] = None) -> ABTestManager:
     """Creates and returns an ABTestManager instance."""
     if db_path:
         return ABTestManager(db_path=db_path)
-    return ABTestManager() 
+    return ABTestManager()

@@ -221,11 +221,10 @@ class MLConfidenceScorer:
                 if re.search(pattern['regex'], detection):
                     ml_logger.info(f"Detection matched high-confidence adaptive pattern ID: {pattern.get('pattern_id')}")
                     return MLPrediction(
+                        pii_category=pattern['pii_category'],
                         confidence=pattern.get('confidence', 0.98), # Assign high confidence
-                        probability=pattern.get('confidence', 0.98),
                         features_used=[f"adaptive_pattern:{pattern.get('pattern_id')}"],
-                        model_version="adaptive_pattern_override",
-                        prediction_time=datetime.now()
+                        model_version="adaptive_pattern_override"
                     )
             except re.error as e:
                 ml_logger.warning(f"Invalid regex in adaptive pattern {pattern.get('pattern_id')}: {e}")

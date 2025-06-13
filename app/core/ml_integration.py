@@ -24,7 +24,7 @@ from app.core.training_data import TrainingDataCollector, create_training_data_c
 from app.core.context_analyzer import ContextualValidator, DetectionContext, ConfidenceLevel
 from app.core.config_manager import get_config
 from app.core.logging import get_logger
-from app.core.feedback_system import UserFeedbackSystem, UserFeedback, FeedbackType, FeedbackSeverity, create_feedback_system
+from app.core.feedback_system import UserFeedback, FeedbackType, FeedbackSeverity, create_feedback_system
 # Avoid circular import - import QualityAnalyzer lazily when needed
 
 integration_logger = get_logger("ml_integration")
@@ -87,7 +87,7 @@ class MLIntegrationLayer:
         self.feature_extractor = create_feature_extractor()
         self.training_collector = create_training_data_collector()
         self.contextual_validator = ContextualValidator()  # Priority 2 fallback
-        self.user_feedback_system = UserFeedbackSystem()
+        self.user_feedback_system = create_feedback_system()
         self.quality_analyzer = None  # Lazy import to avoid circular dependencies
         
         # Performance tracking
@@ -349,66 +349,45 @@ class MLIntegrationLayer:
     def add_user_feedback(self, result: DetectionResult, user_confirmed: bool,
                          correct_category: Optional[str] = None, confidence_rating: Optional[float] = None,
                          user_comment: Optional[str] = None):
-        """
-        Add user feedback for continuous learning using UserFeedbackSystem.
+        """Adds user feedback to the feedback system."""
         
-        Args:
-            result: Original detection result
-            user_confirmed: Whether user confirmed the detection
-            correct_category: Correct category if different
-            confidence_rating: User's confidence rating
-            user_comment: Optional textual comment from the user
-        """
-        try:
-            feedback_type: FeedbackType
-            if not user_confirmed:
-                feedback_type = FeedbackType.FALSE_POSITIVE
-            elif correct_category and correct_category != result.category:
-                feedback_type = FeedbackType.CATEGORY_CORRECTION
-            else:
-                feedback_type = FeedbackType.CORRECT_DETECTION
+        feedback_type = FeedbackType.CORRECT_DETECTION
+        if not user_confirmed:
+            feedback_type = FeedbackType.FALSE_POSITIVE
+        elif correct_category and correct_category.upper() != result.category.upper():
+            feedback_type = FeedbackType.CATEGORY_CORRECTION
 
-            # Prepare context for UserFeedback
-            feedback_context = {
-                'surrounding_text': result.context,
-                'position': result.position,
-                'original_document_type': result.document_type,
-                'language': result.language,
-                'priority2_confidence': result.priority2_confidence,
-                'ml_prediction_details': result.ml_prediction.to_dict() if result.ml_prediction else None,
-                'original_timestamp': result.timestamp.isoformat() if result.timestamp else None
-            }
+        # Populate context for deeper analysis
+        context_details = {
+            'surrounding_text': result.context,
+            'position': result.position,
+            'original_document_type': result.document_type,
+            'language': result.language,
+            'priority2_confidence': result.priority2_confidence,
+            'ml_prediction_details': result.ml_prediction.to_dict() if result.ml_prediction else None,
+            'original_timestamp': result.timestamp.isoformat()
+        }
 
-            feedback_obj = UserFeedback(
-                feedback_id=str(uuid.uuid4()),
-                document_id=result.document_type or "unknown_document_id", # Placeholder if no doc id
-                text_segment=result.text,
-                detected_category=result.category,
-                user_corrected_category=correct_category,
-                detected_confidence=result.ml_confidence,
-                user_confidence_rating=confidence_rating,
-                feedback_type=feedback_type,
-                severity=FeedbackSeverity.MEDIUM, # Default severity
-                user_comment=user_comment,
-                context=feedback_context
-            )
-            
-            success = self.user_feedback_system.submit_feedback(feedback_obj)
-            
-            if success:
-                integration_logger.info(
-                    f"User feedback submitted via UserFeedbackSystem: {result.text} -> {feedback_type.value}",
-                    feedback_id=feedback_obj.feedback_id
-                )
-            else:
-                integration_logger.warning(
-                    f"Failed to submit user feedback via UserFeedbackSystem for: {result.text}",
-                    feedback_id=feedback_obj.feedback_id
-                )
+        feedback = UserFeedback(
+            feedback_id=str(uuid.uuid4()),
+            document_id=result.document_type or "unknown_doc",
+            text_segment=result.text,
+            detected_category=result.category,
+            user_corrected_category=correct_category,
+            detected_confidence=result.ml_confidence,
+            user_confidence_rating=confidence_rating,
+            feedback_type=feedback_type,
+            severity=FeedbackSeverity.MEDIUM, # Default severity
+            user_comment=user_comment,
+            context=context_details,
+        )
+        
+        # Use the feedback system instance to submit
+        success = self.user_feedback_system.submit_feedback(feedback)
+        
+        if not success:
+            integration_logger.error(f"Failed to submit feedback: {feedback.feedback_id}")
 
-        except Exception as e:
-            integration_logger.error(f"Error during add_user_feedback: {e}", exc_info=True)
-    
     def retrain_model_if_needed(self) -> bool:
         """
         Check if model retraining is needed and trigger if necessary.
@@ -484,10 +463,10 @@ class MLIntegrationLayer:
     def shutdown(self):
         """Clean shutdown of integration layer."""
         self.executor.shutdown(wait=True)
-        integration_logger.info("ML Integration Layer shutdown complete")
+        integration_logger.info("ML Integration Layer shut down.")
 
 
 # Factory function for easy integration
 def create_ml_integration_layer(config: Optional[Dict] = None) -> MLIntegrationLayer:
-    """Create and return ML integration layer instance."""
-    return MLIntegrationLayer(config) 
+    """Factory function to create an MLIntegrationLayer instance."""
+    return MLIntegrationLayer(config=config) 

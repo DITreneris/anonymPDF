@@ -18,11 +18,11 @@ from app.core.context_analyzer import ContextualValidator, DetectionContext
 from app.core.feature_engineering import FeatureExtractor
 from app.core.config_manager import ConfigManager
 
-# Define temporary database paths
-TEMP_DB_DIR = "data/temp_test_dbs"
-ADAPTIVE_DB_PATH = os.path.join(TEMP_DB_DIR, f"adaptive_patterns_{uuid.uuid4().hex}.db")
-AB_TEST_DB_PATH = os.path.join(TEMP_DB_DIR, f"ab_tests_{uuid.uuid4().hex}.db")
-ANALYTICS_DB_PATH = os.path.join(TEMP_DB_DIR, f"analytics_{uuid.uuid4().hex}.db")
+# Define temporary database paths using Path objects
+TEMP_DB_DIR = Path("data/temp_test_dbs")
+ADAPTIVE_DB_PATH = TEMP_DB_DIR / f"adaptive_patterns_{uuid.uuid4().hex}.db"
+AB_TEST_DB_PATH = TEMP_DB_DIR / f"ab_tests_{uuid.uuid4().hex}.db"
+ANALYTICS_DB_PATH = TEMP_DB_DIR / f"analytics_{uuid.uuid4().hex}.db"
 
 class AdaptiveTestValidator(ContextualValidator):
     """A wrapper around the real validator to inject adaptive logic for tests."""
@@ -72,7 +72,7 @@ def adaptive_system_fixture():
     system for every single test function. Tests should be written to be independent.
     """
     # 1. Ensure the temporary directory exists
-    os.makedirs(TEMP_DB_DIR, exist_ok=True)
+    TEMP_DB_DIR.mkdir(parents=True, exist_ok=True)
 
     # 2. Instantiate all components with paths to temporary databases
     from app.core.analytics_engine import QualityAnalyzer
@@ -80,10 +80,8 @@ def adaptive_system_fixture():
     from app.core.adaptive.pattern_db import AdaptivePatternDB
     
     # Instantiate dependencies with direct paths to temp DBs
-    quality_analyzer = QualityAnalyzer(storage_path=ANALYTICS_DB_PATH)
-    # The coordinator now needs these objects passed to its constructor.
-    # We need to update its constructor to accept them.
-    ab_manager = ABTestManager(db_path=AB_TEST_DB_PATH)
+    quality_analyzer = QualityAnalyzer(db_path=ANALYTICS_DB_PATH)
+    ab_manager = ABTestManager(db_path=AB_TEST_DB_PATH)  # Already a Path object
     pattern_db = AdaptivePatternDB(db_path=ADAPTIVE_DB_PATH)
 
     coordinator = AdaptiveLearningCoordinator(
@@ -93,7 +91,7 @@ def adaptive_system_fixture():
     )
 
     # We also need a way to process text, so we instantiate the PDFProcessor
-    pdf_processor = PDFProcessor() # Corrected: __init__ takes no arguments
+    pdf_processor = PDFProcessor()
 
     # Inject a test-specific validator that uses our coordinator
     adaptive_validator = AdaptiveTestValidator(coordinator)
@@ -107,11 +105,11 @@ def adaptive_system_fixture():
     # First, explicitly close any open database connections
     coordinator.pattern_db.close()
     coordinator.ab_test_manager.close()
-    coordinator.quality_analyzer.close() # Assuming it has a close method
+    coordinator.quality_analyzer.close()
 
     for path in [ADAPTIVE_DB_PATH, AB_TEST_DB_PATH, ANALYTICS_DB_PATH]:
-        if os.path.exists(path):
-            os.remove(path)
+        if path.exists():
+            path.unlink()
 
 def test_fixture_creation(adaptive_system_fixture):
     """Tests that the fixture sets up all components correctly."""
@@ -124,7 +122,7 @@ def test_fixture_creation(adaptive_system_fixture):
     # Check that the DB paths were correctly set (or would be in a real DI scenario)
     assert os.path.normpath(str(coordinator.pattern_db.db_path)) == os.path.normpath(ADAPTIVE_DB_PATH)
     assert os.path.normpath(str(coordinator.ab_test_manager.db_path)) == os.path.normpath(AB_TEST_DB_PATH)
-    assert os.path.normpath(str(coordinator.quality_analyzer.storage_path)) == os.path.normpath(ANALYTICS_DB_PATH)
+    assert os.path.normpath(str(coordinator.quality_analyzer.db_path)) == os.path.normpath(ANALYTICS_DB_PATH)
 
 def test_feedback_creates_pattern_and_overrides_prediction(adaptive_system_fixture):
     """

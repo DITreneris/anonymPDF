@@ -633,18 +633,22 @@ class BatchEngine:
 _parallel_processor = None
 _batch_engine = None
 
-def get_parallel_processor() -> ParallelProcessor:
+def get_parallel_processor() -> 'ParallelProcessor':
     """Get the global parallel processor instance."""
     global _parallel_processor
     if _parallel_processor is None:
-        _parallel_processor = ParallelProcessor()
+        # Pass the performance config to the constructor
+        config = get_config().get('performance', {})
+        _parallel_processor = ParallelProcessor(config=config.get('parallel_processing', {}))
     return _parallel_processor
 
-def get_batch_engine() -> BatchEngine:
+def get_batch_engine() -> 'BatchEngine':
     """Get the global batch engine instance."""
     global _batch_engine
     if _batch_engine is None:
-        _batch_engine = BatchEngine()
+        # Pass the performance config to the constructor
+        config = get_config().get('performance', {})
+        _batch_engine = BatchEngine(config=config)
     return _batch_engine
 
 # Global performance optimizer instance
@@ -878,11 +882,13 @@ class PerformanceOptimizer:
             optimizer_logger.error("Failed to get memory usage", error=str(e))
             return {}
 
-def get_performance_optimizer() -> PerformanceOptimizer:
+def get_performance_optimizer() -> 'PerformanceOptimizer':
     """Get the global performance optimizer instance."""
     global _performance_optimizer
     if _performance_optimizer is None:
-        _performance_optimizer = PerformanceOptimizer()
+        # Pass the performance config to the constructor
+        config = get_config().get('performance', {})
+        _performance_optimizer = PerformanceOptimizer(config=config)
     return _performance_optimizer
 
 

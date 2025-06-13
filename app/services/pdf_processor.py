@@ -9,6 +9,7 @@ import fitz  # PyMuPDF
 import time
 from datetime import datetime
 from langdetect import detect, LangDetectException
+from collections import defaultdict
 
 from app.pdf_processor import redact_pdf
 from app.core.logging import pdf_logger
@@ -158,6 +159,17 @@ class PDFProcessor:
             )
             return None
 
+    def _add_detection(self, personal_info: Dict, category: str, text: str, context: str, confidence: float):
+        """Helper to standardize adding detections."""
+        if category in personal_info:
+            validated_text = text.strip()
+            # Basic validation to avoid adding empty or junk strings
+            if validated_text:
+                personal_info[category].append((
+                    validated_text,
+                    f"{context}_{confidence:.2f}"
+                ))
+
     def detect_language(self, text: str) -> str:
         """Detect the language of the text."""
         try:
@@ -236,191 +248,81 @@ class PDFProcessor:
             )
             
             # Apply confidence boost from enhanced pattern
-            detection_context.confidence += detection['confidence_boost']
+            detection_context.confidence += detection.get('confidence_boost', 0.0)
             
-            # Add to appropriate category
-            category = detection['category']
-            if category in personal_info:
-                personal_info[category].append((
-                    detection['text'], 
-                    f"ENHANCED_CONF_{detection_context.confidence:.2f}"
-                ))
-                context_aware_detections.append(detection_context)
+            # Add to appropriate category using the helper
+            self._add_detection(
+                personal_info,
+                detection['category'],
+                detection['text'],
+                "ENHANCED_PATTERN",
+                detection_context.confidence
+            )
+            context_aware_detections.append(detection_context)
 
         # Priority 2: Apply Lithuanian enhanced patterns if Lithuanian language
         if language == "lt":
-            lithuanian_detections = self.lithuanian_enhancer.find_enhanced_lithuanian_patterns(text)
-            for detection in lithuanian_detections:
-                # Check for brand names in Lithuanian patterns (especially organizations)
-                if detection['category'] == 'organizations' and is_brand_name(detection['text']):
-                    pdf_logger.info(
-                        "Lithuanian organization pattern identified as brand name - preserving",
-                        text=detection['text'],
-                        pattern=detection.get('pattern_name', 'unknown'),
-                        reason="brand_name_preservation"
-                    )
-                    continue  # Skip redaction for brand names
-                
-                # Create context-aware detection for Lithuanian patterns
+            lt_detections = self.lithuanian_enhancer.find_enhanced_lithuanian_patterns(text)
+            for detection in lt_detections:
                 detection_context = create_context_aware_detection(
-                    detection['text'], detection['category'], 
+                    detection['text'], detection['category'],
                     detection['start'], detection['end'], text, self.contextual_validator
                 )
+                detection_context.confidence += detection.get('confidence_boost', 0.0)
                 
-                # Apply Lithuanian confidence modifier
-                lithuanian_confidence = self.lithuanian_analyzer.calculate_lithuanian_confidence(
-                    detection['text'], detection['category'],
-                    detection_context.context_before + detection_context.context_after,
-                    self.lithuanian_analyzer.identify_lithuanian_section(text, detection['start'])
-                )
-                detection_context.confidence += lithuanian_confidence + detection['confidence_modifier']
-                
-                # Add to appropriate category
-                category = detection['category']
-                if category in personal_info:
-                    personal_info[category].append((
-                        detection['text'], 
-                        f"LT_ENHANCED_CONF_{detection_context.confidence:.2f}"
-                    ))
-                    context_aware_detections.append(detection_context)
-
-            # Priority 2: Apply Lithuanian salutation detection for Lithuanian documents
-            salutation_detections = detect_lithuanian_salutations(text)
-            if salutation_detections:
-                pdf_logger.info(
-                    "Lithuanian salutation detection completed",
-                    total_salutations=len(salutation_detections),
-                    unique_names=len(set(s.base_name for s in salutation_detections))
-                )
-                
-                for salutation in salutation_detections:
-                    # Create context-aware detection for salutation names
-                    detection_context = create_context_aware_detection(
-                        salutation.base_name, 'SALUTATION_NAME',
-                        salutation.start_pos, salutation.end_pos, text, self.contextual_validator
-                    )
-                    
-                    # Use salutation confidence
-                    detection_context.confidence = salutation.confidence
-                    
-                    # Add both the detected form and base form to names
-                    personal_info["names"].append((
-                        salutation.extracted_name, 
-                        f"SALUTATION_DETECTED_CONF_{salutation.confidence:.2f}"
-                    ))
-                    
-                    if salutation.base_name != salutation.extracted_name:
-                        personal_info["names"].append((
-                            salutation.base_name, 
-                            f"SALUTATION_BASE_CONF_{salutation.confidence:.2f}"
-                        ))
-                    
-                    context_aware_detections.append(detection_context)
-                    
-                    pdf_logger.info(
-                        "Salutation name added to PII detection",
-                        salutation_type=salutation.salutation_type,
-                        extracted_name=salutation.extracted_name,
-                        base_name=salutation.base_name,
-                        confidence=salutation.confidence
-                    )
-
-        # Extract sensitive information using regex patterns from configuration
-        for pattern_type, pattern_from_config in self.config_manager.patterns.items():
-            
-            current_regex_text = pattern_from_config
-            is_lithuanian_address_flexible_special = False
-
-            if pattern_type == "lithuanian_address_flexible":
-                is_lithuanian_address_flexible_special = True
-                # Override with the corrected regex that enforces prefix and captures groups
-                current_regex_text = r'(G\\.|g\\.|Gatvė|gatvė|Al\\.|al\\.|Alėja|alėja|Pr\\.|pr\\.|Prospektas|prospektas|Pl\\.|pl\\.|Plentas|plentas|Tak\\.|tak\\.|Takas|takas|Sk\\.|sk\\.|Sodų bendrija|Skersgatvis|skersgatvis|Kelias|kelias|Akademija|aikštė|Skveras|skveras)\\s*([A-Ža-zĄ-žĀ-žČ-čĒ-ēĘ-ęĖ-ėĮ-įŠ-šŪ-ūŲ-ųŽ-ž0-9\\s\\.\\-\\(\\)]+?)(?:,\\s*(?:N\\.?\\s*\\d+|Butas Nr\\.\\s*\\d+|Butas\\s*\\d+|B\\.\\s*\\d+|K\\.\\s*\\d+|P\\.O\\.\\s*Box\\s*\\d+|Pašto dėžutė\\s*\\d+))?'
-            
-            matches = re.finditer(current_regex_text, text)
-
-            for match in matches:
-                # For context creation, always use the full text matched by the pattern.
-                full_match_text = match.group()
-
-                # This context is for the raw match before specific PII content extraction for some patterns
-                detection_context = create_context_aware_detection(
-                    full_match_text, pattern_type, 
-                    match.start(), match.end(), text, self.contextual_validator
-                )
-
-                if detection_context.confidence < 0.4: # Regex patterns use 0.4 threshold
-                    continue
-
-                # Determine the actual PII text to consider for preservation and addition.
-                pii_content = full_match_text # Default to the full match
-
-                # After validation, use the category from the detection_context, which may have been overridden by adaptive logic
-                final_category = detection_context.category
-
-                if pattern_type == "lithuanian_address_flexible": # Special handling for this pattern
-                    # is_lithuanian_address_flexible_special is defined earlier in the loop
-                    if is_lithuanian_address_flexible_special: # Check the flag
-                        if match.groups() and len(match.groups()) >= 2:
-                            pii_content = match.group(2).strip() 
-                        else:
-                            continue 
-                
-                if not pii_content: 
-                    continue
-
-                # Ensure the category exists in the results dictionary
-                if final_category not in personal_info:
-                    personal_info[final_category] = []
-                    
-                surrounding_context_for_preservation = detection_context.context_before + pii_content + detection_context.context_after
-                if self.should_preserve_detection(pii_content, pattern_type, surrounding_context_for_preservation):
-                    continue
-                
-                personal_info[final_category].append(
-                    (pii_content, f"{final_category}_CONF_{detection_context.confidence:.2f}")
+                # Use the helper to ensure consistent format
+                self._add_detection(
+                    personal_info,
+                    detection['category'],
+                    detection['text'],
+                    "LT_ENHANCED",
+                    detection_context.confidence
                 )
                 context_aware_detections.append(detection_context)
 
-        city_detections = self.detect_lithuanian_cities_enhanced(text, language)
-        personal_info["locations"].extend(city_detections)
+        # Apply regex patterns for various information types
+        for pattern_type, regex_list in self.config_manager.patterns.items():
+            # Ensure regex_list is actually a list of regex patterns
+            if not isinstance(regex_list, list):
+                regex_list = [regex_list]
 
-        # --- Final Processing Loop ---
-        # This new loop becomes the single point of truth for adding detections to the final result.
-        # It iterates over all gathered contexts, applies final validation, and populates `personal_info`.
-        
-        temp_personal_info = {}
+            for regex in regex_list:
+                try:
+                    # Find all matches for the current regex
+                    for match in re.finditer(regex, text):
+                        matched_text = match.group(0)
+                        
+                        # Use helper to add detection
+                        self._add_detection(
+                            personal_info,
+                            pattern_type,
+                            matched_text,
+                            "REGEX",
+                            0.5 # Base confidence for regex, can be improved
+                        )
+                except re.error as e:
+                    pdf_logger.warning(
+                        "Regex error in pattern",
+                        pattern_type=pattern_type,
+                        regex=regex,
+                        error=str(e)
+                    )
 
-        for context in context_aware_detections:
-            final_category = context.category
-            pii_content = context.text
-            confidence = context.confidence
-            
-            # Apply a general confidence threshold
-            if confidence < 0.3:
-                continue
-
-            # Apply post-validation logic similar to the original structure, but unified.
-            # This is to prevent false positives from spaCy that the validator didn't catch.
-            is_valid = True
-            # Here you could re-add specific logic like `validate_person_name` if needed,
-            # but for now we rely on the validator's output and confidence.
-
-            if is_valid:
-                if final_category not in temp_personal_info:
-                    temp_personal_info[final_category] = []
-                temp_personal_info[final_category].append(
-                    (pii_content, f"{final_category}_CONF_{confidence:.2f}")
+        # Process context-aware detections for final validation
+        for detection in context_aware_detections:
+            # Final validation before adding to the list
+            if detection.confidence >= 0.4:  # Confidence threshold
+                # Use helper to add validated detection
+                self._add_detection(
+                    personal_info,
+                    detection.category,
+                    detection.text,
+                    "CONTEXT_VALIDATED",
+                    detection.confidence
                 )
-        
-        # Merge results into the main personal_info dictionary, then deduplicate
-        for category, items in temp_personal_info.items():
-            if category not in personal_info:
-                personal_info[category] = []
-            personal_info[category].extend(items)
 
-        personal_info = self.deduplicate_with_confidence(personal_info, context_aware_detections)
-        
-        return personal_info
+        # Deduplicate and refine results
+        return self.deduplicate_with_confidence(personal_info, context_aware_detections)
 
     def detect_lithuanian_cities_enhanced(self, text: str, language: str) -> List[Tuple[str, str]]:
         """Enhanced Lithuanian city detection with confidence scoring."""
@@ -455,53 +357,59 @@ class PDFProcessor:
                                   personal_info: Dict[str, List[Tuple[str, str]]],
                                   context_detections: List[DetectionContext]) -> Dict[str, List[Tuple[str, str]]]:
         """
-        Deduplicates detections based on confidence scores, ensuring that for any
-        given text segment, only the detection with the highest confidence across
-        all categories is retained.
+        Deduplicates detections within each category, keeping the one with the highest confidence.
+        This version is more robust and handles malformed data gracefully.
         """
-        # Invert the context_detections for quick lookup: text -> best_context
-        # This ensures we always use the highest-confidence context for any given text string.
-        best_contexts: Dict[str, DetectionContext] = {}
+        final_detections = defaultdict(list)
+        
+        # Use a dictionary to track the best detection for each unique text
+        best_detections = {}
 
-        all_detections_flat = []
-        for category, detections_in_category in personal_info.items():
-            for text, _ in detections_in_category:
-                all_detections_flat.append(text)
+        all_detections = []
+        # First, gather all context-aware detections
+        for detection in context_detections:
+            all_detections.append({
+                "text": detection.text,
+                "category": detection.category,
+                "confidence": detection.confidence
+            })
 
-        # Find the best context for each unique detected string
-        for text in set(all_detections_flat):
-            # Find all contexts related to this specific text
-            related_contexts = [ctx for ctx in context_detections if ctx.text == text]
-            if not related_contexts:
+        # Then, gather all regex/other detections from the main dict
+        for category, items in personal_info.items():
+            if not isinstance(items, list):
+                continue # Skip malformed entries
+            for item in items:
+                if isinstance(item, (list, tuple)) and len(item) == 2:
+                    text, _ = item
+                    # Assign a baseline confidence if not available
+                    all_detections.append({
+                        "text": text, "category": category, "confidence": 0.5
+                    })
+
+        # Now, iterate and find the best detection for each text
+        for detection in all_detections:
+            text = detection.get("text", "").strip()
+            category = detection.get("category")
+            confidence = detection.get("confidence", 0.0)
+
+            if not text or not category:
                 continue
 
-            # Find the one with the highest confidence
-            best_context = max(related_contexts, key=lambda ctx: ctx.confidence)
-            best_contexts[text] = best_context
-            pdf_logger.debug(
-                f"Deduplicating text '{text}'. Best context found in category "
-                f"'{best_context.category}' with confidence {best_context.confidence:.2f}"
-            )
-        
-        # Initialize a new dict to hold the final, confidence-based results.
-        final_results: Dict[str, List[Tuple[str, str]]] = {
-            category: [] for category in personal_info.keys()
-        }
+            key = (text, category)
+            if key not in best_detections or confidence > best_detections[key]["confidence"]:
+                best_detections[key] = {
+                    "text": text,
+                    "category": category,
+                    "confidence": confidence
+                }
 
-        # Now, rebuild the final_results using the best context for each unique detection
-        for detection_text, best_context in best_contexts.items():
-            final_category = best_context.category
-            
-            # Ensure the final category key exists in the final_results dict, as it might be a new adaptive one.
-            if final_category not in final_results:
-                final_results[final_category] = []
-                
-            final_results[final_category].append(
-                (detection_text, f"{final_category}_CONF_{best_context.confidence:.2f}")
+        # Finally, build the output dictionary from the best detections
+        for key, detection in best_detections.items():
+            final_detections[detection["category"]].append(
+                (detection["text"], f"CONF_{detection['confidence']:.2f}")
             )
             
-        # Clean up empty categories from the final dictionary
-        return {k: v for k, v in final_results.items() if v}
+        return dict(final_detections)
 
     def should_preserve_detection(self, text: str, pattern_type: str, surrounding_text: str) -> bool:
         """
@@ -601,14 +509,20 @@ class PDFProcessor:
 
             # Collect all sensitive words
             sensitive_words = []
-            for category_items in personal_info.values():
-                for item_text, _ in category_items:
-                    sensitive_words.append(item_text)
+            for category, items in personal_info.items():
+                sensitive_words.extend([item[0] for item in items])
 
-            pdf_logger.info(
-                "Sensitive words collected for redaction",
-                sensitive_words_count=len(sensitive_words),
-            )
+            # A simple log to ensure we have words to redact, especially for PERSON category
+            if personal_info.get("PERSON"):
+                pdf_logger.info(f"Found {len(personal_info.get('PERSON', []))} person names to redact.")
+
+            # Check if sensitive words were found
+            if not sensitive_words:
+                pdf_logger.warning("No sensitive words found for redaction")
+                return False, {
+                    "error": "No sensitive words found for redaction",
+                    "details": "No sensitive words found for redaction",
+                }
 
             # Redact the PDF using PyMuPDF
             redaction_successful = redact_pdf(str(input_path), str(output_path), sensitive_words)

@@ -1,0 +1,525 @@
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF> pytest
+================================================= test session starts =================================================
+platform win32 -- Python 3.11.9, pytest-7.4.3, pluggy-1.6.0
+benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-3.7.1, hypothesis-6.92.1, asyncio-0.21.1, benchmark-4.0.0, cov-4.1.0, mock-3.12.0
+asyncio: mode=Mode.STRICT
+collected 323 items
+
+tests\test_analytics_api.py .......................                                                              [  7%]
+tests\test_analytics_engine.py .....E                                                                            [  8%]
+tests\test_config_manager.py .FF                                                                                 [  9%]
+tests\test_feedback_system.py FFFF                                                                               [ 11%]
+tests\test_intelligent_cache.py .............................                                                    [ 20%]
+tests\test_memory_optimizer.py ...............................                                                   [ 29%]
+tests\test_ml_integration_layer.py .........                                                                     [ 32%]
+tests\test_morning_ses5_improvements.py FFFF.F.F.F                                                               [ 35%]
+tests\test_pdf_processor.py F.FFFF                                                                               [ 37%]
+tests\test_performance.py ..............                                                                         [ 41%]
+tests\test_performance_enhanced.py ............FEEE......F.                                                      [ 49%]
+tests\test_performance_optimizer.py ...................FF                                                        [ 55%]
+tests\test_pii_patterns.py .............                                                                         [ 59%]
+tests\test_priority2_enhancements.py .............................                                               [ 68%]
+tests\test_real_time_monitor.py .........F........F....F.......                                                  [ 78%]
+tests\test_training_data_collector.py ..F.....F                                                                  [ 81%]
+tests\test_validation_utils.py ........................                                                          [ 88%]
+tests\adaptive\test_ab_testing.py ......F.                                                                       [ 91%]
+tests\adaptive\test_doc_classifier.py ........                                                                   [ 93%]
+tests\adaptive\test_online_learner.py ....FF                                                                     [ 95%]
+tests\adaptive\test_pattern_db.py ......                                                                         [ 97%]
+tests\adaptive\test_pattern_learner.py .F                                                                        [ 97%]
+tests\adaptive\test_processing_rules.py ....                                                                     [ 99%]
+tests\system\test_adaptive_workflow.py .FF                                                                       [100%]
+
+======================================================= ERRORS ========================================================
+__________________ ERROR at setup of TestQualityInsightsGenerator.test_generate_report_with_insights __________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_analytics_engine.py, line 126
+      def test_generate_report_with_insights(self, insights_generator, mock_analyzer):
+E       fixture 'insights_generator' not found
+>       available fixtures: analyzer, anyio_backend, anyio_backend_name, anyio_backend_options, benchmark, benchmark_weave, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, class_mocker, cleanup_logs, cov, doctest_namespace, event_loop, mock_spacy_models, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, session_mocker, temp_db, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_analytics_engine.py:126
+_______________________ ERROR at setup of TestPerformanceOptimizedProcessor.test_initialization _______________________
+tests\test_performance_enhanced.py:329: in mock_dependencies
+    with patch('app.core.performance.FileProcessingMetrics') as mock_metrics, \
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1446: in __enter__
+    original, local = self.get_original()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1419: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'app.core.performance' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\performance.py'> does not have the attribute 'MemoryOptimizer'
+___________________ ERROR at setup of TestPerformanceOptimizedProcessor.test_process_files_parallel ___________________
+tests\test_performance_enhanced.py:329: in mock_dependencies
+    with patch('app.core.performance.FileProcessingMetrics') as mock_metrics, \
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1446: in __enter__
+    original, local = self.get_original()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1419: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'app.core.performance' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\performance.py'> does not have the attribute 'MemoryOptimizer'
+________________ ERROR at setup of TestPerformanceOptimizedProcessor.test_optimized_session_management ________________
+tests\test_performance_enhanced.py:329: in mock_dependencies
+    with patch('app.core.performance.FileProcessingMetrics') as mock_metrics, \
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1446: in __enter__
+    original, local = self.get_original()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1419: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'app.core.performance' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\performance.py'> does not have the attribute 'MemoryOptimizer'
+====================================================== FAILURES =======================================================
+_____________________________________ TestConfigManager.test_fallback_to_defaults _____________________________________
+tests\test_config_manager.py:39: in test_fallback_to_defaults
+    with patch.object(ConfigManager, '_create_default_config_files') as mock_create:
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1446: in __enter__
+    original, local = self.get_original()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1419: in get_original
+    raise AttributeError(
+E   AttributeError: <class 'app.core.config_manager.ConfigManager'> does not have the attribute '_create_default_config_files'
+______________________________________ TestConfigManager.test_singleton_behavior ______________________________________
+tests\test_config_manager.py:47: in test_singleton_behavior
+    with patch('app.core.config_manager.CONFIG_DIR', temp_config_dir):
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1446: in __enter__
+    original, local = self.get_original()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1419: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'app.core.config_manager' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\config_manager.py'> does not have the attribute 'CONFIG_DIR'
+_________________________________________ test_feedback_system_initialization _________________________________________
+tests\test_feedback_system.py:35: in test_feedback_system_initialization
+    system = create_feedback_system(config={'use_background_thread': False})
+app\core\feedback_system.py:600: in create_feedback_system
+    return UserFeedbackSystem(config=config)
+app\core\feedback_system.py:467: in __init__
+    self._init_storage()
+app\core\feedback_system.py:485: in _init_storage
+    with sqlite3.connect(self.config['storage_path']) as conn:
+E   KeyError: 'storage_path'
+_______________________________________ test_feedback_submission_and_processing _______________________________________
+tests\test_feedback_system.py:46: in test_feedback_submission_and_processing
+    system = create_feedback_system(config={'use_background_thread': False})
+app\core\feedback_system.py:600: in create_feedback_system
+    return UserFeedbackSystem(config=config)
+app\core\feedback_system.py:467: in __init__
+    self._init_storage()
+app\core\feedback_system.py:485: in _init_storage
+    with sqlite3.connect(self.config['storage_path']) as conn:
+E   KeyError: 'storage_path'
+_____________________________ TestUserFeedbackProcessor.test_submit_and_process_feedback ______________________________
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:950: in assert_called_once_with
+    raise AssertionError(msg)
+E   AssertionError: Expected 'add_training_data' to be called once. Called 0 times.
+
+During handling of the above exception, another exception occurred:
+tests\test_feedback_system.py:108: in test_submit_and_process_feedback
+    mock_training_data_collector.add_training_data.assert_called_once_with([dummy_example])
+E   AssertionError: Expected 'add_training_data' to be called once. Called 0 times.
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\spacy\util.py:910: UserWarning: [W095] Model 'lt_core_news_sm' (3.8.0) was trained with spaCy v3.8.0 and may not be 100% compatible with the current version (3.7.2). If you see errors or degraded performance, download a newer compatible model or retrain your custom model with the current spaCy version. For more details and available updates, run: python -m spacy validate
+  warnings.warn(warn_msg)
+2025-06-13 07:41:54,076 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-13 07:41:54,077 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:41:54,078 - anonympdf.anonympdf.feedback_system - INFO - Feedback submitted: correct_detection for NAME - {"feedback_id": "6cc12b98-d054-4f1e-9e1a-4456a3e038e9", "document_id": "doc_123"}
+2025-06-13 07:41:54,079 - anonympdf.anonympdf.feedback_system - INFO - Processed 1 feedback items, created 1 training examples - {"should_retrain": false}
+____________________ TestFeedbackSystemIntegration.test_feedback_submission_flow_is_deterministic _____________________
+tests\test_feedback_system.py:122: in test_feedback_submission_flow_is_deterministic
+    feedback_system = create_feedback_system(config=test_config)
+app\core\feedback_system.py:600: in create_feedback_system
+    return UserFeedbackSystem(config=config)
+app\core\feedback_system.py:467: in __init__
+    self._init_storage()
+app\core\feedback_system.py:485: in _init_storage
+    with sqlite3.connect(self.config['storage_path']) as conn:
+E   KeyError: 'storage_path'
+------------------------------------------------ Captured stderr call -------------------------------------------------
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\spacy\util.py:910: UserWarning: [W095] Model 'lt_core_news_sm' (3.8.0) was trained with spaCy v3.8.0 and may not be 100% compatible with the current version (3.7.2). If you see errors or degraded performance, download a newer compatible model or retrain your custom model with the current spaCy version. For more details and available updates, run: python -m spacy validate
+  warnings.warn(warn_msg)
+2025-06-13 07:41:57,627 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-13 07:41:57,627 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+____________________________ TestMorningSes5Patterns.test_lithuanian_name_all_caps_pattern ____________________________
+tests\test_morning_ses5_improvements.py:52: in test_lithuanian_name_all_caps_pattern
+    pattern = config_manager.patterns["lithuanian_name_all_caps"]['regex']
+E   TypeError: string indices must be integers, not 'str'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:03,431 - config_manager - INFO - Patterns loaded from file - {"file": "config\\patterns.yaml", "patterns_count": 37}
+2025-06-13 07:42:03,438 - config_manager - INFO - Cities loaded from file - {"file": "config\\cities.yaml", "cities_count": 79}
+2025-06-13 07:42:03,448 - config_manager - INFO - Settings loaded from file - {"file": "config\\settings.yaml"}
+2025-06-13 07:42:03,449 - config_manager - INFO - Configuration manager initialized - {"config_dir": "config", "patterns_count": 37, "cities_count": 79}
+___________________________ TestMorningSes5Patterns.test_lithuanian_name_contextual_pattern ___________________________
+tests\test_morning_ses5_improvements.py:57: in test_lithuanian_name_contextual_pattern
+    pattern = config_manager.patterns["lithuanian_name_contextual"]['regex']
+E   TypeError: string indices must be integers, not 'str'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:03,468 - config_manager - INFO - Patterns loaded from file - {"file": "config\\patterns.yaml", "patterns_count": 37}
+2025-06-13 07:42:03,474 - config_manager - INFO - Cities loaded from file - {"file": "config\\cities.yaml", "cities_count": 79}
+2025-06-13 07:42:03,484 - config_manager - INFO - Settings loaded from file - {"file": "config\\settings.yaml"}
+2025-06-13 07:42:03,485 - config_manager - INFO - Configuration manager initialized - {"config_dir": "config", "patterns_count": 37, "cities_count": 79}
+__________________________ TestMorningSes5Patterns.test_lithuanian_address_flexible_pattern ___________________________
+tests\test_morning_ses5_improvements.py:62: in test_lithuanian_address_flexible_pattern
+    pattern = config_manager.patterns["lithuanian_address_flexible"]['regex']
+E   TypeError: string indices must be integers, not 'str'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:03,504 - config_manager - INFO - Patterns loaded from file - {"file": "config\\patterns.yaml", "patterns_count": 37}
+2025-06-13 07:42:03,510 - config_manager - INFO - Cities loaded from file - {"file": "config\\cities.yaml", "cities_count": 79}
+2025-06-13 07:42:03,519 - config_manager - INFO - Settings loaded from file - {"file": "config\\settings.yaml"}
+2025-06-13 07:42:03,519 - config_manager - INFO - Configuration manager initialized - {"config_dir": "config", "patterns_count": 37, "cities_count": 79}
+______________________ TestMorningSes5Patterns.test_lithuanian_personal_code_contextual_pattern _______________________
+tests\test_morning_ses5_improvements.py:67: in test_lithuanian_personal_code_contextual_pattern
+    pattern = config_manager.patterns["lithuanian_personal_code_contextual"]['regex']
+E   TypeError: string indices must be integers, not 'str'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:03,533 - config_manager - INFO - Patterns loaded from file - {"file": "config\\patterns.yaml", "patterns_count": 37}
+2025-06-13 07:42:03,538 - config_manager - INFO - Cities loaded from file - {"file": "config\\cities.yaml", "cities_count": 79}
+2025-06-13 07:42:03,544 - config_manager - INFO - Settings loaded from file - {"file": "config\\settings.yaml"}
+2025-06-13 07:42:03,544 - config_manager - INFO - Configuration manager initialized - {"config_dir": "config", "patterns_count": 37, "cities_count": 79}
+____________________ TestMorningSes5Integration.test_comprehensive_lithuanian_document_processing _____________________
+tests\test_morning_ses5_improvements.py:104: in test_comprehensive_lithuanian_document_processing
+    personal_info = pdf_processor.find_personal_info(lithuanian_invoice_text, language="lt")
+app\core\performance.py:576: in wrapper
+    result = func(*args, **kwargs)
+app\services\pdf_processor.py:265: in find_personal_info
+    lt_detections = self.lithuanian_enhancer.find_lithuanian_patterns(text)
+E   AttributeError: 'LithuanianLanguageEnhancer' object has no attribute 'find_lithuanian_patterns'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:04,742 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-13 07:42:04,749 - config_manager - INFO - Patterns loaded from file - {"file": "config\\patterns.yaml", "patterns_count": 37}
+2025-06-13 07:42:04,754 - config_manager - INFO - Cities loaded from file - {"file": "config\\cities.yaml", "cities_count": 79}
+2025-06-13 07:42:04,760 - config_manager - INFO - Settings loaded from file - {"file": "config\\settings.yaml"}
+2025-06-13 07:42:04,760 - config_manager - INFO - Configuration manager initialized - {"config_dir": "config", "patterns_count": 37, "cities_count": 79}
+2025-06-13 07:42:04,761 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-13 07:42:04,761 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-13 07:42:05,384 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-13 07:42:05,876 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:05,878 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-13 07:42:05,892 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.013599634170532227, "memory_delta": 1.16796875, "function": "find_personal_info"}
+_______________________ TestMorningSes5Integration.test_anti_overredaction_in_technical_context _______________________
+tests\test_morning_ses5_improvements.py:124: in test_anti_overredaction_in_technical_context
+    personal_info = pdf_processor.find_personal_info(lithuanian_technical_text, language="lt")
+app\core\performance.py:576: in wrapper
+    result = func(*args, **kwargs)
+app\services\pdf_processor.py:265: in find_personal_info
+    lt_detections = self.lithuanian_enhancer.find_lithuanian_patterns(text)
+E   AttributeError: 'LithuanianLanguageEnhancer' object has no attribute 'find_lithuanian_patterns'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:07,370 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-13 07:42:07,376 - config_manager - INFO - Patterns loaded from file - {"file": "config\\patterns.yaml", "patterns_count": 37}
+2025-06-13 07:42:07,383 - config_manager - INFO - Cities loaded from file - {"file": "config\\cities.yaml", "cities_count": 79}
+2025-06-13 07:42:07,389 - config_manager - INFO - Settings loaded from file - {"file": "config\\settings.yaml"}
+2025-06-13 07:42:07,390 - config_manager - INFO - Configuration manager initialized - {"config_dir": "config", "patterns_count": 37, "cities_count": 79}
+2025-06-13 07:42:07,390 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-13 07:42:07,390 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-13 07:42:08,004 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-13 07:42:08,465 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:08,466 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-13 07:42:08,476 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.009973764419555664, "memory_delta": 0.05078125, "function": "find_personal_info"}
+_____________________________ TestMorningSes5Integration.test_redaction_report_generation _____________________________
+tests\test_morning_ses5_improvements.py:154: in test_redaction_report_generation
+    personal_info = pdf_processor.find_personal_info(text, language="lt")
+app\core\performance.py:576: in wrapper
+    result = func(*args, **kwargs)
+app\services\pdf_processor.py:265: in find_personal_info
+    lt_detections = self.lithuanian_enhancer.find_lithuanian_patterns(text)
+E   AttributeError: 'LithuanianLanguageEnhancer' object has no attribute 'find_lithuanian_patterns'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:09,625 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-13 07:42:09,632 - config_manager - INFO - Patterns loaded from file - {"file": "config\\patterns.yaml", "patterns_count": 37}
+2025-06-13 07:42:09,637 - config_manager - INFO - Cities loaded from file - {"file": "config\\cities.yaml", "cities_count": 79}
+2025-06-13 07:42:09,643 - config_manager - INFO - Settings loaded from file - {"file": "config\\settings.yaml"}
+2025-06-13 07:42:09,644 - config_manager - INFO - Configuration manager initialized - {"config_dir": "config", "patterns_count": 37, "cities_count": 79}
+2025-06-13 07:42:09,644 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-13 07:42:09,645 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-13 07:42:10,238 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-13 07:42:10,969 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:10,970 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-13 07:42:10,978 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.0074977874755859375, "memory_delta": 0.05078125, "function": "find_personal_info"}
+____________________________________ TestPDFProcessorUnit.test_find_personal_info _____________________________________
+tests\test_pdf_processor.py:46: in test_find_personal_info
+    assert "names" in personal_info
+E   AssertionError: assert 'names' in {'CARDINAL': [('8-800-555-3535', 'CONF_0.70')], 'DATE': [('38801011234', 'CONF_0.70')], 'GPE': [('Johnathan', 'CONF_0....CONF_0.70'), ('Lithuania', 'CONF_0.70'), ('asmens', 'CONF_0.70')], 'NORP': [('Vardenis Pavardenis', 'CONF_0.70')], ...}
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:11,005 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-13 07:42:11,011 - config_manager - INFO - Patterns loaded from file - {"file": "config\\patterns.yaml", "patterns_count": 37}
+2025-06-13 07:42:11,016 - config_manager - INFO - Cities loaded from file - {"file": "config\\cities.yaml", "cities_count": 79}
+2025-06-13 07:42:11,022 - config_manager - INFO - Settings loaded from file - {"file": "config\\settings.yaml"}
+2025-06-13 07:42:11,022 - config_manager - INFO - Configuration manager initialized - {"config_dir": "config", "patterns_count": 37, "cities_count": 79}
+2025-06-13 07:42:11,023 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-13 07:42:11,023 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-13 07:42:11,623 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\spacy\util.py:910: UserWarning: [W095] Model 'lt_core_news_sm' (3.8.0) was trained with spaCy v3.8.0 and may not be 100% compatible with the current version (3.7.2). If you see errors or degraded performance, download a newer compatible model or retrain your custom model with the current spaCy version. For more details and available updates, run: python -m spacy validate
+  warnings.warn(warn_msg)
+2025-06-13 07:42:12,108 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:12,109 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-13 07:42:12,126 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.016774654388427734, "memory_delta": 0.05078125, "function": "find_personal_info"}
+_________________________________ TestPDFProcessorIntegration.test_anonymize_pdf_flow _________________________________
+tests\test_pdf_processor.py:88: in test_anonymize_pdf_flow
+    assert "names" in report
+E   AssertionError: assert 'names' in {'categories': {'ORG': 1, 'PERSON': 1}, 'details': {'ORG': [('PDF', 'CONF_0.70')], 'PERSON': [('Vardenis Pavardenis', 'CONF_0.70')]}, 'detectedLanguage': 'en', 'title': 'Redaction Report - 2025-06-13 07:42:12', ...}
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:12,164 - anonympdf.pdf - INFO - Starting PDF anonymization - {"input_path": "C:\\Users\\tomas\\AppData\\Local\\Temp\\pytest-of-tomas\\pytest-40\\test_anonymize_pdf_flow0\\input.pdf", "output_path": "C:\\Users\\tomas\\AppData\\Local\\Temp\\pytest-of-tomas\\pytest-40\\test_anonymize_pdf_flow0\\anonymized.pdf"}
+2025-06-13 07:42:12,190 - anonympdf.performance - INFO - Performance tracking: text_extraction - {"duration": 0.025364160537719727, "memory_delta": 0.71484375, "function": "extract_text_from_pdf"}
+2025-06-13 07:42:12,191 - anonympdf.pdf - INFO - Text extracted from PDF - {"text_length": 54, "input_path": "C:\\Users\\tomas\\AppData\\Local\\Temp\\pytest-of-tomas\\pytest-40\\test_anonymize_pdf_flow0\\input.pdf"}
+2025-06-13 07:42:12,499 - anonympdf.pdf - INFO - Language detected - {"language": "en", "sample_length": 54}
+2025-06-13 07:42:12,499 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-13 07:42:12,507 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.007968664169311523, "memory_delta": 0.0078125, "function": "find_personal_info"}
+2025-06-13 07:42:12,507 - anonympdf.pdf - INFO - PII detection completed - {"language": "en", "total_pii_items": 2, "categories_found": 2}
+2025-06-13 07:42:12,508 - anonympdf.pdf - INFO - Sensitive words collected for redaction - {"sensitive_words_count": 2}
+2025-06-13 07:42:12,508 - anonympdf.memory_optimizer - INFO - Garbage collection settings optimized - {"mode": "normal", "threshold_mb": 100, "time_threshold": 30}
+2025-06-13 07:42:12,508 - anonympdf.memory_optimizer - INFO - Garbage collector tuned to normal mode via MemoryOptimizer.
+2025-06-13 07:42:12,509 - anonympdf.memory_optimizer - INFO - Entered optimized_processing context with mode: normal
+2025-06-13 07:42:12,514 - anonympdf.memory_optimizer - INFO - Exiting optimized_processing context for mode: normal. Forcing GC.
+2025-06-13 07:42:12,515 - anonympdf.memory_optimizer - INFO - Forcing garbage collection via MemoryOptimizer.
+2025-06-13 07:42:12,776 - anonympdf.memory_optimizer - INFO - Garbage collection completed - {"duration_seconds": 0.2221817970275879, "memory_freed_mb": 55.6875, "objects_collected": 13887, "total_objects_after": 531493}
+2025-06-13 07:42:12,777 - anonympdf.memory_optimizer - INFO - Restored original GC thresholds: (700, 10, 10)
+2025-06-13 07:42:12,777 - anonympdf.pdf - INFO - PDF anonymization completed successfully - {"input_path": "C:\\Users\\tomas\\AppData\\Local\\Temp\\pytest-of-tomas\\pytest-40\\test_anonymize_pdf_flow0\\input.pdf", "output_path": "C:\\Users\\tomas\\AppData\\Local\\Temp\\pytest-of-tomas\\pytest-40\\test_anonymize_pdf_flow0\\anonymized.pdf", "total_redactions": 2}
+2025-06-13 07:42:12,778 - anonympdf.pdf - INFO - BENCHMARK: anonymize_pdf for input.pdf took 0.6131 seconds.
+_____________________________ TestPDFProcessorIntegration.test_generate_redaction_report ______________________________
+tests\test_pdf_processor.py:102: in test_generate_redaction_report
+    assert "total_redactions" in report
+E   AssertionError: assert 'total_redactions' in {'categories': {'CREDIT_CARDS': 1, 'DATE': 3, 'GPE': 2, 'ORG': 1, ...}, 'details': {'DATE': [('555-1234', 'CONF_0.70')...': [('John Doe', 'CONF_0.70')], ...}, 'detectedLanguage': 'en', 'title': 'Redaction Report - 2025-06-13 07:42:12', ...}
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:12,786 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-13 07:42:12,801 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.014744758605957031, "memory_delta": 0.3984375, "function": "find_personal_info"}
+_______________________ TestPDFProcessorIntegration.test_process_pdf_failure_on_invalid_content _______________________
+tests\test_pdf_processor.py:126: in test_process_pdf_failure_on_invalid_content
+    assert result.get("status") == "error"
+E   AssertionError: assert 'failed' == 'error'
+E     - error
+E     + failed
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:12,813 - anonympdf.pdf - INFO - Starting PDF processing - {"filename": "C:\\Users\\tomas\\AppData\\Local\\Temp\\pytest-of-tomas\\pytest-40\\test_process_pdf_failure_on_in0\\test.pdf"}
+2025-06-13 07:42:12,816 - anonympdf.pdf - INFO - File copied to temp directory - {"filename": "test.pdf", "temp_path": "temp\\test.pdf", "file_size": 15}
+2025-06-13 07:42:12,816 - anonympdf.pdf - INFO - Starting PDF anonymization - {"input_path": "temp\\test.pdf", "output_path": "processed\\anonymized_test.pdf"}
+2025-06-13 07:42:12,817 - anonympdf.performance - INFO - Performance tracking: text_extraction - {"duration": 0.0, "memory_delta": 0.0, "function": "extract_text_from_pdf"}
+2025-06-13 07:42:12,817 - anonympdf.pdf - ERROR - Error in anonymize_pdf: TypeError - Logger._log() got an unexpected keyword argument 'error' - {"input_path": "temp\\test.pdf", "output_path": "processed\\anonymized_test.pdf"}
+Traceback (most recent call last):
+  File "C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\app\services\pdf_processor.py", line 490, in anonymize_pdf
+    text = self.extract_text_from_pdf(input_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\app\core\performance.py", line 576, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\app\services\pdf_processor.py", line 699, in extract_text_from_pdf
+    return extract_text_enhanced(pdf_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tomas\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py", line 1124, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tomas\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py", line 1128, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tomas\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py", line 1183, in _execute_mock_call
+    raise effect
+TypeError: Logger._log() got an unexpected keyword argument 'error'
+2025-06-13 07:42:12,818 - anonympdf.pdf - ERROR - BENCHMARK: anonymize_pdf for test.pdf failed after 0.0010 seconds.
+2025-06-13 07:42:12,818 - anonympdf.pdf - ERROR - PDF processing failed - {"filename": "test.pdf", "error": "An exception occurred during anonymization", "processing_time": 0.0019941329956054688}
+2025-06-13 07:42:12,819 - anonympdf.performance - INFO - Performance tracking: pdf_processing - {"duration": 0.0029914379119873047, "memory_delta": 0.0, "file_size_mb": 1.430511474609375e-05, "file_extension": ".pdf", "operation_type": "pdf_processing"}
+2025-06-13 07:42:12,819 - anonympdf.performance - INFO - File processing completed: pdf_processing - {"file_size_mb": 1.430511474609375e-05, "duration": 0.0029914379119873047, "throughput": 0.0047820196062803855, "memory_delta": 0.0}
+2025-06-13 07:42:12,820 - anonympdf.pdf - INFO - Temporary file cleaned up - {"temp_path": "temp\\test.pdf"}
+____________________________ TestPDFProcessorIntegration.test_deduplicate_with_confidence _____________________________
+tests\test_pdf_processor.py:135: in test_deduplicate_with_confidence
+    low_conf_name = DetectionContext(text="123 Corp", category="names", start=0, end=8, confidence=0.4)
+E   TypeError: DetectionContext.__init__() got an unexpected keyword argument 'start'
+_____________________________ TestFileProcessingMetrics.test_throughput_stats_calculation _____________________________
+tests\test_performance_enhanced.py:312: in test_throughput_stats_calculation
+    with self.metrics.track_file_processing(file_path, file_size) as tracker:
+E   TypeError: 'dict' object does not support the context manager protocol
+_____________________________ TestGlobalFunctions.test_performance_report_with_optimizers _____________________________
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:918: in assert_called_once
+    raise AssertionError(msg)
+E   AssertionError: Expected 'get_optimized_processor' to have been called once. Called 0 times.
+
+During handling of the above exception, another exception occurred:
+tests\test_performance_enhanced.py:482: in test_performance_report_with_optimizers
+    mock_get_processor.assert_called_once()
+E   AssertionError: Expected 'get_optimized_processor' to have been called once. Called 0 times.
+_____________________________________ TestIntegration.test_end_to_end_processing ______________________________________
+tests\test_performance_optimizer.py:364: in test_end_to_end_processing
+    assert status['status'] == 'completed'
+E   AssertionError: assert 'queued' == 'completed'
+E     - completed
+E     + queued
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:15,314 - anonympdf.performance_optimizer - INFO - Batch submitted - {"batch_id": "end_to_end_batch", "task_count": 3, "priority": 1}
+_______________________________ TestIntegration.test_performance_improvement_simulation _______________________________
+tests\test_performance_optimizer.py:380: in test_performance_improvement_simulation
+    assert processor.config == get_config().get('performance', {})
+E   AssertionError: assert {'chunk_size'...x_workers': 4} == {'batch_engin...kers': 4, ...}
+E     Omitting 1 identical items, use -vv to show
+E     Left contains 1 more item:
+E     {'chunk_size': 100}
+E     Right contains 4 more items:
+E     {'batch_engine': {'batch_timeout_seconds': 10, 'max_batch_size': 100},
+E      'cache_size': 1000,
+E      'cache_ttl_seconds': 3600,
+E      'parallel_processing': {'chunk_size': 100, 'max_workers': 4}}
+E     Use -v to get more diff
+________________________________ TestAnomalyDetector.test_alert_threshold_integration _________________________________
+tests\test_real_time_monitor.py:156: in test_alert_threshold_integration
+    assert len(anomalies) > 0
+E   assert 0 > 0
+E    +  where 0 = len([])
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:15,499 - anonympdf.anonympdf.real_time_monitor - INFO - AnomalyDetector initialized with sensitivity: medium, alert_thresholds: 0
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:15,500 - anonympdf.anonympdf.real_time_monitor - INFO - Added alert threshold for test_metric
+_____________________________ TestRealTimeMonitor.test_ml_monitor_callback_functionality ______________________________
+tests\test_real_time_monitor.py:353: in test_ml_monitor_callback_functionality
+    assert mock_system.call_count == 1
+E   AssertionError: assert 0 == 1
+E    +  where 0 = <MagicMock name='get_system_metrics' id='1929563611408'>.call_count
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:15,635 - anonympdf.anonympdf.real_time_monitor - INFO - AnomalyDetector initialized with sensitivity: medium, alert_thresholds: 0
+2025-06-13 07:42:15,636 - anonympdf.anonympdf.real_time_monitor - INFO - PerformanceAggregator initialized
+2025-06-13 07:42:15,661 - anonympdf.anonympdf.real_time_monitor - INFO - RealTimeMonitor initialized
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:15,665 - anonympdf.anonympdf.real_time_monitor - INFO - Registered as ML metrics callback for automatic forwarding
+___________________________________ TestRealTimeMonitor.test_alert_callback_system ____________________________________
+tests\test_real_time_monitor.py:452: in test_alert_callback_system
+    self.monitor._process_anomaly_alerts([mock_anomaly])
+app\core\real_time_monitor.py:670: in _process_anomaly_alerts
+    self._store_anomaly(anomaly)
+app\core\real_time_monitor.py:709: in _store_anomaly
+    json.dumps(anomaly.context)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py:231: in dumps
+    return _default_encoder.encode(obj)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\json\encoder.py:180: in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+E   TypeError: Object of type Mock is not JSON serializable
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:16,843 - anonympdf.anonympdf.real_time_monitor - INFO - AnomalyDetector initialized with sensitivity: medium, alert_thresholds: 0
+2025-06-13 07:42:16,844 - anonympdf.anonympdf.real_time_monitor - INFO - PerformanceAggregator initialized
+2025-06-13 07:42:16,876 - anonympdf.anonympdf.real_time_monitor - INFO - RealTimeMonitor initialized
+________________________________ TestTrainingDataStorage.test_get_dataset_stats_empty _________________________________
+tests\test_training_data_collector.py:132: in test_get_dataset_stats_empty
+    assert stats.total_samples == 0
+E   AttributeError: 'NoneType' object has no attribute 'total_samples'
+_________________________ TestTrainingDataCollector.test_get_balanced_training_set_with_data __________________________
+tests\test_training_data_collector.py:219: in test_get_balanced_training_set_with_data
+    assert stats.total_samples == 13
+E   assert 6 == 13
+E    +  where 6 = DatasetStats(total_samples=6, positive_samples=3, negative_samples=3, categories={}, document_types={}, date_range=(datetime.datetime(2025, 6, 13, 7, 42, 30, 272601), datetime.datetime(2025, 6, 13, 7, 42, 30, 272601)), quality_score=1.0).total_samples
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:30,272 - anonympdf.app.core.training_data - INFO - Created balanced training set: 6 examples
+___________________________ TestABTestManager.test_record_and_evaluate_metrics_variant_wins ___________________________
+tests\adaptive\test_ab_testing.py:112: in test_record_and_evaluate_metrics_variant_wins
+    self.assertEqual(result.metrics_comparison['accuracy']['winner'], 'variant')
+E   KeyError: 'winner'
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:30,699 - anonympdf.ab_testing - INFO - Loading A/B tests from database.
+2025-06-13 07:42:30,700 - anonympdf.ab_testing - INFO - Loaded 0 tests.
+2025-06-13 07:42:30,700 - anonympdf.ab_testing - INFO - ABTestManager initialized with database at test_ab_manager.db.
+2025-06-13 07:42:30,700 - anonympdf.ab_testing - INFO - Saving test ab_9faf144f to database.
+2025-06-13 07:42:30,707 - anonympdf.ab_testing - INFO - Created new A/B test 'Evaluation Test' with ID ab_9faf144f.
+2025-06-13 07:42:30,707 - anonympdf.ab_testing - INFO - Saving test ab_9faf144f to database.
+2025-06-13 07:42:30,718 - anonympdf.ab_testing - INFO - Started A/B test 'Evaluation Test' (ID: ab_9faf144f).
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\scipy\stats\_axis_nan_policy.py:586: RuntimeWarning: Precision loss occurred in moment calculation due to catastrophic cancellation. This occurs when the data are nearly identical. Results may be unreliable.
+  res = hypotest_fun_out(*samples, **kwds)
+2025-06-13 07:42:31,123 - anonympdf.ab_testing - INFO - Database connection to test_ab_manager.db closed.
+_____________________ TestOnlineLearner.test_retrain_model_saves_examples_and_triggers_retraining _____________________
+tests\adaptive\test_online_learner.py:123: in test_retrain_model_saves_examples_and_triggers_retraining
+    online_learner.retrain_model(sample_training_examples)
+E   AttributeError: 'OnlineLearner' object has no attribute 'retrain_model'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:31,271 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
+______________________ TestOnlineLearner.test_retrain_model_saves_examples_but_skips_retraining _______________________
+tests\adaptive\test_online_learner.py:134: in test_retrain_model_saves_examples_but_skips_retraining
+    online_learner.retrain_model(sample_training_examples)
+E   AttributeError: 'OnlineLearner' object has no attribute 'retrain_model'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:31,296 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
+_______________________________ TestPatternLearner.test_discover_and_validate_patterns ________________________________
+tests\adaptive\test_pattern_learner.py:39: in test_discover_and_validate_patterns
+    assert len(patterns) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-13 07:42:31,475 - anonympdf.app.core.adaptive.pattern_learner - INFO - PatternLearner initialized - {"min_confidence": 0.8, "min_samples": 3}
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:31,476 - anonympdf.app.core.adaptive.pattern_learner - WARNING - Insufficient samples for pattern discovery. Need 3, got 1
+_______________________________ test_feedback_creates_pattern_and_overrides_prediction ________________________________
+tests\system\test_adaptive_workflow.py:194: in test_feedback_creates_pattern_and_overrides_prediction
+    assert result is not None, "Pattern was not created in the database."
+E   AssertionError: Pattern was not created in the database.
+E   assert None is not None
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:38,919 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-13 07:42:38,928 - anonympdf.adaptive_pattern_db - INFO - Retrieved 0 active patterns from the database.
+2025-06-13 07:42:38,929 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.010159492492675781, "memory_delta": 0.04296875, "function": "find_personal_info"}
+2025-06-13 07:42:38,929 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-13 07:42:38,930 - anonympdf.app.core.adaptive.pattern_learner - WARNING - Insufficient samples for pattern discovery. Need 10, got 1
+___________________________________________ test_ab_testing_full_lifecycle ____________________________________________
+tests\system\test_adaptive_workflow.py:262: in test_ab_testing_full_lifecycle
+    assert evaluation_result is not None, "Evaluation should produce a result."
+E   AssertionError: Evaluation should produce a result.
+E   assert None is not None
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-13 07:42:38,986 - anonympdf.ab_testing - INFO - Saving test ab_40daa779 to database.
+2025-06-13 07:42:38,993 - anonympdf.ab_testing - INFO - Created new A/B test 'E2E Model Performance Test' with ID ab_40daa779.
+2025-06-13 07:42:38,993 - anonympdf.ab_testing - INFO - Saving test ab_40daa779 to database.
+2025-06-13 07:42:38,999 - anonympdf.ab_testing - INFO - Started A/B test 'E2E Model Performance Test' (ID: ab_40daa779).
+2025-06-13 07:42:39,357 - anonympdf.adaptive_learning.coordinator - INFO - Evaluating and logging result for A/B test ab_40daa779.
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\scipy\stats\_axis_nan_policy.py:586: RuntimeWarning: Precision loss occurred in moment calculation due to catastrophic cancellation. This occurs when the data are nearly identical. Results may be unreliable.
+  res = hypotest_fun_out(*samples, **kwds)
+2025-06-13 07:42:39,361 - anonympdf.adaptive_learning.coordinator - ERROR - Failed to evaluate or log A/B test ab_40daa779: 'QualityAnalyzer' object has no attribute 'log_ab_test_result' - {"exc_info": true}
+---------------------------------------------- Captured stderr teardown -----------------------------------------------
+2025-06-13 07:42:39,368 - anonympdf.adaptive_pattern_db - INFO - Database connection to data\temp_test_dbs\adaptive_patterns_3829d0a36e964585b3ea9d63733a3de0.db closed.
+2025-06-13 07:42:39,369 - anonympdf.ab_testing - INFO - Database connection to data\temp_test_dbs\ab_tests_3efecb7818ea4912a59df14cc629ab0e.db closed.
+================================================ slowest 10 durations =================================================
+7.31s setup    tests/system/test_adaptive_workflow.py::test_fixture_creation
+3.91s setup    tests/test_feedback_system.py::TestUserFeedbackProcessor::test_submit_and_process_feedback
+3.50s call     tests/test_feedback_system.py::TestFeedbackSystemIntegration::test_feedback_submission_flow_is_deterministic
+2.61s setup    tests/test_training_data_collector.py::TestTrainingDataCollector::test_collect_all_training_data_empty_storage
+2.17s setup    tests/test_training_data_collector.py::TestTrainingDataCollector::test_get_balanced_training_set_with_data
+2.15s setup    tests/test_training_data_collector.py::TestTrainingDataCollector::test_collect_all_training_data_with_examples_in_storage
+2.15s setup    tests/test_training_data_collector.py::TestTrainingDataCollector::test_collector_initialization
+2.14s setup    tests/test_training_data_collector.py::TestTrainingDataCollector::test_get_balanced_training_set_empty
+1.44s setup    tests/test_morning_ses5_improvements.py::TestMorningSes5Integration::test_contextual_validation_of_technical_terms
+1.35s setup    tests/test_morning_ses5_improvements.py::TestMorningSes5Integration::test_redaction_report_generation
+=============================================== short test summary info ===============================================
+ERROR tests/test_analytics_engine.py::TestQualityInsightsGenerator::test_generate_report_with_insights
+ERROR tests/test_performance_enhanced.py::TestPerformanceOptimizedProcessor::test_initialization - AttributeError: <module 'app.core.performance' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymP...
+ERROR tests/test_performance_enhanced.py::TestPerformanceOptimizedProcessor::test_process_files_parallel - AttributeError: <module 'app.core.performance' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymP...
+ERROR tests/test_performance_enhanced.py::TestPerformanceOptimizedProcessor::test_optimized_session_management - AttributeError: <module 'app.core.performance' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymP...
+FAILED tests/test_config_manager.py::TestConfigManager::test_fallback_to_defaults - AttributeError: <class 'app.core.config_manager.ConfigManager'> does not have the attribute '_create_default_config...
+FAILED tests/test_config_manager.py::TestConfigManager::test_singleton_behavior - AttributeError: <module 'app.core.config_manager' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_Anon...
+FAILED tests/test_feedback_system.py::test_feedback_system_initialization - KeyError: 'storage_path'
+FAILED tests/test_feedback_system.py::test_feedback_submission_and_processing - KeyError: 'storage_path'
+FAILED tests/test_feedback_system.py::TestUserFeedbackProcessor::test_submit_and_process_feedback - AssertionError: Expected 'add_training_data' to be called once. Called 0 times.
+FAILED tests/test_feedback_system.py::TestFeedbackSystemIntegration::test_feedback_submission_flow_is_deterministic - KeyError: 'storage_path'
+FAILED tests/test_morning_ses5_improvements.py::TestMorningSes5Patterns::test_lithuanian_name_all_caps_pattern - TypeError: string indices must be integers, not 'str'
+FAILED tests/test_morning_ses5_improvements.py::TestMorningSes5Patterns::test_lithuanian_name_contextual_pattern - TypeError: string indices must be integers, not 'str'
+FAILED tests/test_morning_ses5_improvements.py::TestMorningSes5Patterns::test_lithuanian_address_flexible_pattern - TypeError: string indices must be integers, not 'str'
+FAILED tests/test_morning_ses5_improvements.py::TestMorningSes5Patterns::test_lithuanian_personal_code_contextual_pattern - TypeError: string indices must be integers, not 'str'
+FAILED tests/test_morning_ses5_improvements.py::TestMorningSes5Integration::test_comprehensive_lithuanian_document_processing - AttributeError: 'LithuanianLanguageEnhancer' object has no attribute 'find_lithuanian_patterns'
+FAILED tests/test_morning_ses5_improvements.py::TestMorningSes5Integration::test_anti_overredaction_in_technical_context - AttributeError: 'LithuanianLanguageEnhancer' object has no attribute 'find_lithuanian_patterns'
+FAILED tests/test_morning_ses5_improvements.py::TestMorningSes5Integration::test_redaction_report_generation - AttributeError: 'LithuanianLanguageEnhancer' object has no attribute 'find_lithuanian_patterns'
+FAILED tests/test_pdf_processor.py::TestPDFProcessorUnit::test_find_personal_info - AssertionError: assert 'names' in {'CARDINAL': [('8-800-555-3535', 'CONF_0.70')], 'DATE': [('38801011234', 'CONF_0....
+FAILED tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_anonymize_pdf_flow - AssertionError: assert 'names' in {'categories': {'ORG': 1, 'PERSON': 1}, 'details': {'ORG': [('PDF', 'CONF_0.70')]...
+FAILED tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_generate_redaction_report - AssertionError: assert 'total_redactions' in {'categories': {'CREDIT_CARDS': 1, 'DATE': 3, 'GPE': 2, 'ORG': 1, ...}...
+FAILED tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_process_pdf_failure_on_invalid_content - AssertionError: assert 'failed' == 'error'
+FAILED tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_deduplicate_with_confidence - TypeError: DetectionContext.__init__() got an unexpected keyword argument 'start'
+FAILED tests/test_performance_enhanced.py::TestFileProcessingMetrics::test_throughput_stats_calculation - TypeError: 'dict' object does not support the context manager protocol
+FAILED tests/test_performance_enhanced.py::TestGlobalFunctions::test_performance_report_with_optimizers - AssertionError: Expected 'get_optimized_processor' to have been called once. Called 0 times.
+FAILED tests/test_performance_optimizer.py::TestIntegration::test_end_to_end_processing - AssertionError: assert 'queued' == 'completed'
+FAILED tests/test_performance_optimizer.py::TestIntegration::test_performance_improvement_simulation - AssertionError: assert {'chunk_size'...x_workers': 4} == {'batch_engin...kers': 4, ...}
+FAILED tests/test_real_time_monitor.py::TestAnomalyDetector::test_alert_threshold_integration - assert 0 > 0
+FAILED tests/test_real_time_monitor.py::TestRealTimeMonitor::test_ml_monitor_callback_functionality - AssertionError: assert 0 == 1
+FAILED tests/test_real_time_monitor.py::TestRealTimeMonitor::test_alert_callback_system - TypeError: Object of type Mock is not JSON serializable
+FAILED tests/test_training_data_collector.py::TestTrainingDataStorage::test_get_dataset_stats_empty - AttributeError: 'NoneType' object has no attribute 'total_samples'
+FAILED tests/test_training_data_collector.py::TestTrainingDataCollector::test_get_balanced_training_set_with_data - assert 6 == 13
+FAILED tests/adaptive/test_ab_testing.py::TestABTestManager::test_record_and_evaluate_metrics_variant_wins - KeyError: 'winner'
+FAILED tests/adaptive/test_online_learner.py::TestOnlineLearner::test_retrain_model_saves_examples_and_triggers_retraining - AttributeError: 'OnlineLearner' object has no attribute 'retrain_model'
+FAILED tests/adaptive/test_online_learner.py::TestOnlineLearner::test_retrain_model_saves_examples_but_skips_retraining - AttributeError: 'OnlineLearner' object has no attribute 'retrain_model'
+FAILED tests/adaptive/test_pattern_learner.py::TestPatternLearner::test_discover_and_validate_patterns - assert 0 == 1
+FAILED tests/system/test_adaptive_workflow.py::test_feedback_creates_pattern_and_overrides_prediction - AssertionError: Pattern was not created in the database.
+FAILED tests/system/test_adaptive_workflow.py::test_ab_testing_full_lifecycle - AssertionError: Evaluation should produce a result.
+================================= 33 failed, 286 passed, 4 errors in 67.28s (0:01:07) =================================
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF>

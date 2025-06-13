@@ -1,0 +1,128 @@
+================================================================================= short test summary info ==================================================================================
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_initialization - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_add_detection_result - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_add_detection_result_with_ground_truth - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_analyze_detection_quality_empty - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_analyze_detection_quality_single_category - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_analyze_detection_quality_multiple_categories - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_analyze_detection_quality_with_document_type_filter - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_analyze_detection_quality_with_ground_truth - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_detect_quality_issues_low_confidence - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_detect_quality_issues_performance_degradation - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_detect_quality_issues_high_false_positive - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_get_quality_report_empty - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_get_quality_report_with_data - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_get_improvement_suggestions_no_issues - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_get_improvement_suggestions_with_issues - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_storage_integration - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_get_quality_trends_insufficient_data - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_get_quality_trends_valid_metric - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_get_quality_trends_declining - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_get_quality_trends_invalid_metric - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityAnalyzer::test_thread_safety - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityInsightsGenerator::test_generate_pattern_insights_empty - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityInsightsGenerator::test_generate_pattern_insights_with_data - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityInsightsGenerator::test_generate_model_insights_insufficient_data - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityInsightsGenerator::test_generate_model_insights_excellent_model - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestQualityInsightsGenerator::test_generate_model_insights_needs_improvement - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestAnalyticsEngineIntegration::test_config_integration - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestAnalyticsEngineIntegration::test_ml_integration_compatibility - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_analytics_engine.py::TestAnalyticsEngineIntegration::test_performance_impact - AttributeError: 'dict' object has no attribute 'parent'
+ERROR tests/test_feedback_system.py::TestUserFeedbackSystem::test_initialization - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_feedback_system.py::TestUserFeedbackSystem::test_storage_initialization - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_feedback_system.py::TestUserFeedbackSystem::test_submit_feedback_integration - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_feedback_system.py::TestUserFeedbackSystem::test_get_system_status - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_feedback_system.py::TestUserFeedbackSystem::test_processing_loop_triggers_retraining_and_updates_timestamp - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_feedback_system.py::TestUserFeedbackSystem::test_processing_loop_retraining_failure - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_feedback_system.py::TestFeedbackSystemIntegration::test_config_integration - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_feedback_system.py::TestFeedbackSystemIntegration::test_training_data_integration - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_feedback_system.py::TestFeedbackSystemIntegration::test_concurrent_feedback_submission - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_feedback_system.py::TestFeedbackSystemIntegration::test_performance_impact - AttributeError: <module 'app.core.feedback_system' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\feedback_system.py'> does not have the attribute '...
+ERROR tests/test_ml_integration_layer.py::TestMLIntegrationLayerFeedback::test_add_user_feedback_confirmed_correct - AttributeError: <module 'app.core.ml_integration' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\ml_integration.py'> does not have the attribute 'cr...
+ERROR tests/test_ml_integration_layer.py::TestMLIntegrationLayerFeedback::test_add_user_feedback_false_positive - AttributeError: <module 'app.core.ml_integration' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\ml_integration.py'> does not have the attribute 'cr...
+ERROR tests/test_ml_integration_layer.py::TestMLIntegrationLayerFeedback::test_add_user_feedback_category_correction - AttributeError: <module 'app.core.ml_integration' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\ml_integration.py'> does not have the attribute 'cr...
+ERROR tests/test_ml_integration_layer.py::TestMLIntegrationLayerFeedback::test_add_user_feedback_context_details - AttributeError: <module 'app.core.ml_integration' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\ml_integration.py'> does not have the attribute 'cr...
+ERROR tests/test_ml_integration_layer.py::TestMLIntegrationLayerFeedback::test_add_user_feedback_handles_uuid - AttributeError: <module 'app.core.ml_integration' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\ml_integration.py'> does not have the attribute 'cr...
+ERROR tests/test_ml_integration_layer.py::TestMLIntegrationLayerFeedback::test_add_user_feedback_handles_user_feedback_system_failure - AttributeError: <module 'app.core.ml_integration' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\ml_integration.py'> does not have the attribute 'cr...
+ERROR tests/test_ml_integration_layer.py::TestMLIntegrationLayerDetectionProcessing::test_detect_with_ml_integration_calls_quality_analyzer - AttributeError: <module 'app.core.ml_integration' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\ml_integration.py'> does not have the attribute 'cr...
+ERROR tests/test_ml_integration_layer.py::TestMLIntegrationLayerDetectionProcessing::test_detect_with_ml_integration_calls_quality_analyzer_on_fallback - AttributeError: <module 'app.core.ml_integration' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\ml_integration.py'> does not have the attribute 'cr...
+ERROR tests/test_ml_integration_layer.py::TestMLConfidenceScorerIntegration::test_adaptive_pattern_overrides_ml_model - AttributeError: <module 'app.core.ml_integration' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\ml_integration.py'> does not have the attribute 'cr...
+ERROR tests/test_performance_enhanced.py::TestPerformanceOptimizedProcessor::test_processor_initialization - KeyError: 'performance'
+ERROR tests/test_performance_enhanced.py::TestPerformanceOptimizedProcessor::test_optimized_processing_session - KeyError: 'performance'
+ERROR tests/test_performance_enhanced.py::TestPerformanceOptimizedProcessor::test_parallel_file_processing - KeyError: 'performance'
+ERROR tests/test_performance_enhanced.py::TestPerformanceOptimizedProcessor::test_empty_files_processing - KeyError: 'performance'
+ERROR tests/test_performance_enhanced.py::TestPerformanceOptimizedProcessor::test_single_file_processing_with_caching - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestParallelProcessor::test_determine_processing_mode - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestParallelProcessor::test_process_single_document - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestParallelProcessor::test_process_batch_sequential - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestParallelProcessor::test_process_batch_parallel_threads - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestParallelProcessor::test_execute_task - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestParallelProcessor::test_execute_task_with_error - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestBatchEngine::test_submit_batch - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestBatchEngine::test_process_next_batch - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestBatchEngine::test_get_queue_stats - KeyError: 'performance'
+ERROR tests/test_performance_optimizer.py::TestBatchEngine::test_process_empty_queue - KeyError: 'performance'
+ERROR tests/test_training_data_collector.py::TestTrainingDataStorage::test_storage_initialization - PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpv3ini8wv\\training_data.db'
+ERROR tests/test_training_data_collector.py::TestTrainingDataStorage::test_get_dataset_stats_empty - PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\tomas\\AppData\\Local\\Temp\\tmp7szpmpf2\\training_data.db'
+ERROR tests/test_training_data_collector.py::TestTrainingDataStorage::test_get_dataset_stats_with_data - PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpj3tcyl3x\\training_data.db'
+ERROR tests/test_training_data_collector.py::TestTrainingDataCollector::test_collect_all_training_data_empty_storage - PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\tomas\\AppData\\Local\\Temp\\tmp21kv2jxs\\training_data.db'
+ERROR tests/test_training_data_collector.py::TestTrainingDataCollector::test_collect_all_training_data_with_examples_in_storage - PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\tomas\\AppData\\Local\\Temp\\tmp_ung_f4a\\training_data.db'
+ERROR tests/test_training_data_collector.py::TestTrainingDataCollector::test_get_balanced_training_set_empty - PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\tomas\\AppData\\Local\\Temp\\tmplxxigsi4\\training_data.db'
+ERROR tests/adaptive/test_coordinator.py::test_initialization - AttributeError: <module 'app.core.adaptive.coordinator' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\adaptive\\coordinator.py'> does not have the ...
+ERROR tests/adaptive/test_coordinator.py::test_process_feedback_and_learn_cycle - AttributeError: <module 'app.core.adaptive.coordinator' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\adaptive\\coordinator.py'> does not have the ...
+ERROR tests/adaptive/test_coordinator.py::test_process_feedback_with_no_new_pii - AttributeError: <module 'app.core.adaptive.coordinator' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\adaptive\\coordinator.py'> does not have the ...
+ERROR tests/adaptive/test_coordinator.py::test_ab_testing_integration - AttributeError: <module 'app.core.adaptive.coordinator' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\adaptive\\coordinator.py'> does not have the ...
+ERROR tests/adaptive/test_coordinator.py::test_evaluate_and_log_ab_test - AttributeError: <module 'app.core.adaptive.coordinator' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\adaptive\\coordinator.py'> does not have the ...
+ERROR tests/adaptive/test_coordinator.py::test_close_method - AttributeError: <module 'app.core.adaptive.coordinator' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\adaptive\\coordinator.py'> does not have the ...
+ERROR tests/adaptive/test_online_learner.py::test_retrain_model_saves_examples_and_triggers_retraining - TypeError: TrainingExample.__init__() got an unexpected keyword argument 'id'
+ERROR tests/adaptive/test_online_learner.py::test_retrain_model_saves_examples_but_skips_retraining - TypeError: TrainingExample.__init__() got an unexpected keyword argument 'id'
+ERROR tests/adaptive/test_pattern_learner.py::TestPatternLearner::test_initialization - TypeError: PatternLearner.__init__() got an unexpected keyword argument 'db'
+ERROR tests/adaptive/test_pattern_learner.py::TestPatternLearner::test_discover_patterns_no_pii - TypeError: PatternLearner.__init__() got an unexpected keyword argument 'db'
+ERROR tests/adaptive/test_pattern_learner.py::TestPatternLearner::test_discover_simple_pattern - TypeError: PatternLearner.__init__() got an unexpected keyword argument 'db'
+ERROR tests/adaptive/test_pattern_learner.py::TestPatternLearner::test_pattern_confidence_threshold - TypeError: PatternLearner.__init__() got an unexpected keyword argument 'db'
+ERROR tests/system/test_adaptive_workflow.py::test_fixture_creation - TypeError: QualityAnalyzer.__init__() got an unexpected keyword argument 'storage_path'
+ERROR tests/system/test_adaptive_workflow.py::test_feedback_creates_pattern_and_overrides_prediction - TypeError: QualityAnalyzer.__init__() got an unexpected keyword argument 'storage_path'
+ERROR tests/system/test_adaptive_workflow.py::test_ab_testing_full_lifecycle - TypeError: QualityAnalyzer.__init__() got an unexpected keyword argument 'storage_path'
+FAILED tests/test_config_manager.py::TestConfigManager::test_configuration_validation - assert False is True
+FAILED tests/test_intelligent_cache.py::TestGlobalCacheFunctions::test_cache_get_put - KeyError: 'performance'
+FAILED tests/test_intelligent_cache.py::TestGlobalCacheFunctions::test_cache_pattern_function - KeyError: 'performance'
+FAILED tests/test_intelligent_cache.py::TestGlobalCacheFunctions::test_cache_model_prediction_function - KeyError: 'performance'
+FAILED tests/test_intelligent_cache.py::TestCacheDecorator::test_function_result_caching - KeyError: 'performance'
+FAILED tests/test_intelligent_cache.py::TestCacheDecorator::test_custom_key_function - KeyError: 'performance'
+FAILED tests/test_memory_optimizer.py::TestIntegration::test_memory_threshold_handling - AssertionError: MemoryMonitor should log a warning for high memory usage
+FAILED tests/test_morning_ses5_improvements.py::TestMorningSes5Integration::test_comprehensive_lithuanian_document_processing - KeyError: 'names'
+FAILED tests/test_morning_ses5_improvements.py::TestMorningSes5Integration::test_anti_overredaction_in_technical_context - KeyError: 'names'
+FAILED tests/test_pdf_processor.py::test_find_personal_info - KeyError: 'names'
+FAILED tests/test_pdf_processor.py::test_generate_redaction_report - AssertionError: assert 'NAMES' in {'CARDINAL': 3, 'CREDIT_CARDS': 1, 'DATE': 2, 'EMAIL': 1, ...}
+FAILED tests/test_performance.py::TestPerformanceIntegration::test_get_performance_report - KeyError: 'performance'
+FAILED tests/test_performance_enhanced.py::TestGlobalFunctions::test_get_performance_report - KeyError: 'performance'
+FAILED tests/test_performance_enhanced.py::TestGlobalFunctions::test_get_parallel_processor - KeyError: 'performance'
+FAILED tests/test_performance_enhanced.py::TestGlobalFunctions::test_performance_report_with_optimizers - KeyError: 'performance'
+FAILED tests/test_performance_enhanced.py::TestIntegration::test_end_to_end_parallel_processing - KeyError: 'performance'
+FAILED tests/test_performance_enhanced.py::TestIntegration::test_concurrent_metric_collection - KeyError: 'performance'
+FAILED tests/test_performance_enhanced.py::TestIntegration::test_performance_under_load - KeyError: 'performance'
+FAILED tests/test_performance_optimizer.py::TestGlobalInstances::test_get_parallel_processor - KeyError: 'performance'
+FAILED tests/test_performance_optimizer.py::TestGlobalInstances::test_get_batch_engine - KeyError: 'performance'
+FAILED tests/test_performance_optimizer.py::TestIntegration::test_end_to_end_processing - KeyError: 'performance'
+FAILED tests/test_performance_optimizer.py::TestIntegration::test_performance_improvement_simulation - KeyError: 'performance'
+FAILED tests/test_real_time_monitor.py::TestAnomalyDetector::test_alert_threshold_integration - assert 0 > 0
+FAILED tests/test_real_time_monitor.py::TestRealTimeMonitor::test_ml_monitor_callback_functionality - AssertionError: assert 0 == 1
+FAILED tests/test_real_time_monitor.py::TestRealTimeMonitor::test_alert_callback_system - TypeError: Object of type Mock is not JSON serializable
+FAILED tests/test_training_data_collector.py::TestTrainingDataStorage::test_save_and_load_training_examples - TypeError: create_dummy_example() got an unexpected keyword argument 'source'
+FAILED tests/test_training_data_collector.py::TestTrainingDataCollector::test_get_balanced_training_set_with_data - NameError: name 'max_samples' is not defined
+FAILED tests/test_validation_utils.py::TestPersonNameValidation::test_length_validation - AssertionError: assert not True
+FAILED tests/adaptive/test_ab_testing.py::TestABTestManager::test_create_and_load_test_persistence - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_ab_testing.py::TestABTestManager::test_create_test - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_ab_testing.py::TestABTestManager::test_evaluate_inconclusive_test_not_enough_data - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_ab_testing.py::TestABTestManager::test_get_assignment - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_ab_testing.py::TestABTestManager::test_get_assignment_for_inactive_test - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_ab_testing.py::TestABTestManager::test_get_assignment_for_non_existent_test - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_ab_testing.py::TestABTestManager::test_record_and_evaluate_metrics_variant_wins - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_ab_testing.py::TestABTestManager::test_start_test - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_pattern_db.py::TestAdaptivePatternDB::test_add_and_get_pattern - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_pattern_db.py::TestAdaptivePatternDB::test_deactivate_non_existent_pattern - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_pattern_db.py::TestAdaptivePatternDB::test_deactivate_pattern - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_pattern_db.py::TestAdaptivePatternDB::test_get_active_patterns - AttributeError: 'str' object has no attribute 'parent'
+FAILED tests/adaptive/test_pattern_db.py::TestAdaptivePatternDB::test_update_pattern - AttributeError: 'str' object has no attribute 'parent'
+================================================================== 41 failed, 270 passed, 84 errors in 146.29s (0:02:26) ===================================================================
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF>

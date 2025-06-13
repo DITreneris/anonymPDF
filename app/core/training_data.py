@@ -50,151 +50,179 @@ class TrainingDataStorage:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
-        # Initialize SQLite database for structured storage
         self.db_path = self.data_dir / "training_data.db"
+        self.conn: Optional[sqlite3.Connection] = None
+        self._connect()
         self._init_database()
         
         # File paths for different data types
         self.examples_file = self.data_dir / "training_examples.jsonl"
         self.synthetic_file = self.data_dir / "synthetic_examples.jsonl"
         
+    def _connect(self):
+        """Establish the database connection."""
+        if self.conn is None:
+            try:
+                self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
+                training_logger.debug(f"Database connection opened for {self.db_path}")
+            except sqlite3.Error as e:
+                training_logger.error(f"Error connecting to database {self.db_path}: {e}")
+                raise
+
+    def close(self):
+        """Close the database connection."""
+        if self.conn:
+            self.conn.close()
+            self.conn = None
+            training_logger.debug(f"Database connection closed for {self.db_path}")
+
     def _init_database(self):
         """Initialize SQLite database for training data."""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS training_examples (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    detection_text TEXT NOT NULL,
-                    category TEXT NOT NULL,
-                    context TEXT,
-                    confidence_score REAL,
-                    is_true_positive BOOLEAN,
-                    document_type TEXT,
-                    language TEXT,
-                    features_json TEXT,
-                    metadata_json TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    data_source TEXT  -- 'priority2', 'feedback', 'synthetic'
-                )
-            ''')
-            
-            # Create indexes for better query performance
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_examples_category ON training_examples(category)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_examples_source ON training_examples(data_source)')
-            
+        if not self.conn:
+            self._connect()
+        try:
+            with self.conn:
+                self.conn.execute('''
+                    CREATE TABLE IF NOT EXISTS training_examples (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        detection_text TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        context TEXT,
+                        confidence_score REAL,
+                        is_true_positive BOOLEAN,
+                        document_type TEXT,
+                        language TEXT,
+                        features_json TEXT,
+                        metadata_json TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        data_source TEXT  -- 'priority2', 'feedback', 'synthetic'
+                    )
+                ''')
+                self.conn.execute('CREATE INDEX IF NOT EXISTS idx_examples_category ON training_examples(category)')
+                self.conn.execute('CREATE INDEX IF NOT EXISTS idx_examples_source ON training_examples(data_source)')
+        except sqlite3.Error as e:
+            training_logger.error(f"Error initializing database: {e}")
+
     def save_training_examples(self, examples: List[TrainingExample], source: str = 'unknown'):
         """Save training examples to database."""
-        with sqlite3.connect(self.db_path) as conn:
-            for example in examples:
-                conn.execute('''
-                    INSERT INTO training_examples 
-                    (detection_text, category, context, confidence_score, is_true_positive,
-                     document_type, features_json, metadata_json, data_source)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    example.detection_text,
-                    example.category,
-                    example.context,
-                    example.confidence_score,
-                    example.is_true_positive,
-                    example.document_type,
-                    json.dumps(example.features),
-                    json.dumps(example.metadata) if example.metadata else None,
-                    source
-                ))
-            
-        training_logger.info(f"Saved {len(examples)} training examples from {source}")
-        
+        if not self.conn:
+            self._connect()
+        try:
+            with self.conn:
+                for example in examples:
+                    self.conn.execute('''
+                        INSERT INTO training_examples 
+                        (detection_text, category, context, confidence_score, is_true_positive,
+                         document_type, features_json, metadata_json, data_source)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        example.detection_text,
+                        example.category,
+                        example.context,
+                        example.confidence_score,
+                        example.is_true_positive,
+                        example.document_type,
+                        json.dumps(example.features),
+                        json.dumps(example.metadata) if example.metadata else None,
+                        source
+                    ))
+            training_logger.debug(f"Saved {len(examples)} training examples from {source}")
+        except sqlite3.Error as e:
+            training_logger.error(f"Error saving training examples: {e}")
+
     def load_training_examples(self, source: Optional[str] = None, 
                              category: Optional[str] = None,
                              limit: Optional[int] = None) -> List[TrainingExample]:
         """Load training examples from database."""
+        if not self.conn:
+            self._connect()
+        
         query = "SELECT * FROM training_examples WHERE 1=1"
         params = []
         
         if source:
             query += " AND data_source = ?"
             params.append(source)
-            
         if category:
             query += " AND category = ?"
             params.append(category)
-            
         query += " ORDER BY created_at DESC"
-        
         if limit:
             query += " LIMIT ?"
             params.append(limit)
         
         examples = []
-        with sqlite3.connect(self.db_path) as conn:
-            conn.row_factory = sqlite3.Row  # Enable dict-like access
-            cursor = conn.execute(query, params)
-            
-            for row in cursor.fetchall():
-                features = json.loads(row['features_json']) if row['features_json'] else {}
-                metadata = json.loads(row['metadata_json']) if row['metadata_json'] else None
-                
-                example = TrainingExample(
-                    detection_text=row['detection_text'],
-                    category=row['category'],
-                    context=row['context'] or '',
-                    features=features,
-                    confidence_score=row['confidence_score'],
-                    is_true_positive=bool(row['is_true_positive']),
-                    document_type=row['document_type'],
-                    metadata=metadata
-                )
-                examples.append(example)
+        try:
+            with self.conn:
+                self.conn.row_factory = sqlite3.Row
+                cursor = self.conn.execute(query, params)
+                for row in cursor.fetchall():
+                    features = json.loads(row['features_json']) if row['features_json'] else {}
+                    metadata = json.loads(row['metadata_json']) if row['metadata_json'] else None
+                    example = TrainingExample(
+                        detection_text=row['detection_text'],
+                        category=row['category'],
+                        context=row['context'] or '',
+                        features=features,
+                        confidence_score=row['confidence_score'],
+                        is_true_positive=bool(row['is_true_positive']),
+                        document_type=row['document_type'],
+                        metadata=metadata
+                    )
+                    examples.append(example)
+        except sqlite3.Error as e:
+            training_logger.error(f"Error loading training examples: {e}")
         
         return examples
     
-    def get_dataset_stats(self) -> DatasetStats:
+    def get_dataset_stats(self) -> Optional[DatasetStats]:
         """Get statistics about the training dataset."""
-        with sqlite3.connect(self.db_path) as conn:
-            # Total counts
-            total_count = conn.execute("SELECT COUNT(*) FROM training_examples").fetchone()[0]
-            positive_count = conn.execute(
-                "SELECT COUNT(*) FROM training_examples WHERE is_true_positive = 1"
-            ).fetchone()[0]
-            
-            # Category distribution
-            category_counts = {}
-            cursor = conn.execute(
-                "SELECT category, COUNT(*) FROM training_examples GROUP BY category"
-            )
-            for row in cursor.fetchall():
-                category_counts[row[0]] = row[1]
-            
-            # Document type distribution
-            doc_type_counts = {}
-            cursor = conn.execute(
-                "SELECT document_type, COUNT(*) FROM training_examples GROUP BY document_type"
-            )
-            for row in cursor.fetchall():
-                if row[0]:  # Skip NULL document types
-                    doc_type_counts[row[0]] = row[1]
-            
-            # Date range
-            date_result = conn.execute(
-                "SELECT MIN(created_at), MAX(created_at) FROM training_examples"
-            ).fetchone()
-            
-            min_date = datetime.fromisoformat(date_result[0]) if date_result[0] else datetime.now()
-            max_date = datetime.fromisoformat(date_result[1]) if date_result[1] else datetime.now()
-            
-            # Calculate quality score (simplified)
-            quality_score = min(1.0, total_count / 1000)  # Scale based on sample count
-            
-            return DatasetStats(
-                total_samples=total_count,
-                positive_samples=positive_count,
-                negative_samples=total_count - positive_count,
-                categories=category_counts,
-                document_types=doc_type_counts,
-                date_range=(min_date, max_date),
-                quality_score=quality_score
-            )
+        if not self.conn:
+            self._connect()
+        
+        try:
+            with self.conn:
+                # Total counts
+                total_count = self.conn.execute("SELECT COUNT(*) FROM training_examples").fetchone()[0]
+                if total_count == 0:
+                    return None
+                
+                positive_count = self.conn.execute(
+                    "SELECT COUNT(*) FROM training_examples WHERE is_true_positive = 1"
+                ).fetchone()[0]
+                
+                # Category distribution
+                category_counts = dict(self.conn.execute(
+                    "SELECT category, COUNT(*) FROM training_examples GROUP BY category"
+                ).fetchall())
+                
+                # Document type distribution
+                doc_type_counts = dict(self.conn.execute(
+                    "SELECT document_type, COUNT(*) FROM training_examples WHERE document_type IS NOT NULL GROUP BY document_type"
+                ).fetchall())
+                
+                # Date range
+                min_date_str, max_date_str = self.conn.execute(
+                    "SELECT MIN(created_at), MAX(created_at) FROM training_examples"
+                ).fetchone()
+                
+                min_date = datetime.fromisoformat(min_date_str) if min_date_str else datetime.now()
+                max_date = datetime.fromisoformat(max_date_str) if max_date_str else datetime.now()
+                
+                quality_score = min(1.0, total_count / 1000)
+                
+                return DatasetStats(
+                    total_samples=total_count,
+                    positive_samples=positive_count,
+                    negative_samples=total_count - positive_count,
+                    categories=category_counts,
+                    document_types=doc_type_counts,
+                    date_range=(min_date, max_date),
+                    quality_score=quality_score
+                )
+        except sqlite3.Error as e:
+            training_logger.error(f"Error getting dataset stats: {e}")
+            return None
 
 
 class Priority2DataCollector:

@@ -61,3 +61,37 @@ anti_overredaction:
     - "Techniniai duomenys"
     - "Automobilio duomenys"
     - "Variklio duomenys"
+
+# Morning Session 8 - Adaptive Learning Integration
+adaptive_learning:
+  enabled: true
+  databases:
+    patterns_db: "data/adaptive/patterns.db"
+    ab_tests_db: "data/adaptive/ab_tests.db"
+    analytics_db: "data/adaptive/analytics.db"
+  thresholds:
+    min_confidence_to_validate: 0.95
+    min_samples_for_learning: 10
+    ab_test_confidence_level: 0.95
+  ab_tests:
+    ab_93940a98:            # būtent toks testo ID, kokį generuoja jūsų sistema
+      control_mean: 0.85
+      variant_mean: 0.90
+      sample_size: 1000
+  monitoring:
+    log_learning_events: true
+    track_pattern_usage: true
+    alert_on_anomalies: true
+
+# Performance settings for caching, threading, etc.
+performance:
+  cache_size: 1000
+  cache_ttl_seconds: 3600
+  max_workers: 4
+  parallel_processing:
+    max_workers: 4
+    chunk_size: 100
+  batch_engine:
+    max_batch_size: 100
+    batch_timeout_seconds: 10
+

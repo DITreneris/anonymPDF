@@ -4,6 +4,8 @@ import re
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 from app.core.logging import StructuredLogger
+import threading
+import warnings
 
 config_logger = StructuredLogger("config_manager")
 
@@ -311,6 +313,47 @@ class ConfigManager:
                 "word_boundaries": True,
                 "validate_on_load": True,
             },
+            "anti_overredaction": {
+                "technical_terms_whitelist": [
+                    "kW", "Nm", "g/km", "l/100 km", "mm", "kg", "cm³",
+                    "CO2 emisijos", "Maks. variklio galia", "Degalų sąnaudos",
+                    "SVORIS", "VAŽ.", "Pareigos", "Kaina", "Netto atlyginimas",
+                    "Kitos pajamos", "Gyvenamoji vieta"
+                ],
+                "pii_field_labels": [
+                    "Vardas", "Pavardė", "Vardas, pavardė", "Asmens kodas",
+                    "Paso Nr", "Adresas", "Telefono numeris", "El. paštas",
+                    "Banko sąskaita", "Asmens socialinio draudimo pažymėjimo Nr",
+                    "Draudėjas", "Valst. Nr", "VIN"
+                ],
+                "technical_sections": [
+                    "SVORIS", "VAŽ.", "Degalų sąnaudos", "Techniniai duomenys",
+                    "Automobilio duomenys", "Variklio duomenys"
+                ]
+            },
+            "adaptive_learning": {
+                "enabled": True,
+                "databases": {
+                    "patterns_db": "data/adaptive/patterns.db",
+                    "ab_tests_db": "data/adaptive/ab_tests.db",
+                    "analytics_db": "data/adaptive/analytics.db"
+                },
+                "thresholds": {
+                    "min_confidence_to_validate": 0.95,
+                    "min_samples_for_learning": 10,
+                    "ab_test_confidence_level": 0.95
+                },
+                "performance": {
+                    "cache_size": 1000,
+                    "cache_ttl_seconds": 3600,
+                    "max_workers": 4
+                },
+                "monitoring": {
+                    "log_learning_events": True,
+                    "track_pattern_usage": True,
+                    "alert_on_anomalies": True
+                }
+            }
         }
 
     def save_patterns(self, patterns: Dict[str, str]) -> bool:
@@ -488,10 +531,53 @@ class ConfigManager:
             errors.append("Cities list is empty")
 
         # Validate settings structure
-        required_settings = ["version", "language_detection", "processing", "logging", "patterns"]
+        required_settings = [
+            "version", 
+            "language_detection", 
+            "processing", 
+            "logging", 
+            "patterns",
+            "anti_overredaction",
+            "adaptive_learning"
+        ]
         for setting in required_settings:
             if setting not in self.settings:
                 errors.append(f"Missing required setting: {setting}")
+
+        # Validate adaptive learning settings
+        if "adaptive_learning" in self.settings:
+            adaptive = self.settings["adaptive_learning"]
+            required_adaptive = ["enabled", "databases", "thresholds", "performance", "monitoring"]
+            for setting in required_adaptive:
+                if setting not in adaptive:
+                    errors.append(f"Missing required adaptive learning setting: {setting}")
+
+            # Validate database paths
+            if "databases" in adaptive:
+                for db_name, db_path in adaptive["databases"].items():
+                    if not isinstance(db_path, str):
+                        errors.append(f"Invalid database path for {db_name}: must be a string")
+                    elif not db_path.endswith(".db"):
+                        errors.append(f"Invalid database path for {db_name}: must end with .db")
+
+            # Validate thresholds
+            if "thresholds" in adaptive:
+                thresholds = adaptive["thresholds"]
+                for threshold_name, value in thresholds.items():
+                    if not isinstance(value, (int, float)):
+                        errors.append(f"Invalid threshold value for {threshold_name}: must be numeric")
+                    elif value < 0 or value > 1:
+                        errors.append(f"Invalid threshold value for {threshold_name}: must be between 0 and 1")
+
+            # Validate performance settings
+            if "performance" in adaptive:
+                perf = adaptive["performance"]
+                if not isinstance(perf.get("cache_size"), int) or perf["cache_size"] < 0:
+                    errors.append("Invalid cache_size: must be a positive integer")
+                if not isinstance(perf.get("cache_ttl_seconds"), int) or perf["cache_ttl_seconds"] < 0:
+                    errors.append("Invalid cache_ttl_seconds: must be a positive integer")
+                if not isinstance(perf.get("max_workers"), int) or perf["max_workers"] < 1:
+                    errors.append("Invalid max_workers: must be a positive integer")
 
         is_valid = len(errors) == 0
 
@@ -499,75 +585,54 @@ class ConfigManager:
             config_logger.info("Configuration validation passed")
         else:
             config_logger.warning(
-                "Configuration validation failed", errors_count=len(errors), errors=errors
+                "Configuration validation failed",
+                error_count=len(errors),
+                errors=errors
             )
 
         return is_valid, errors
 
     def get_user_config(self) -> Dict[str, Any]:
         """Return the user-defined configuration."""
-        # ... existing code ...
+        return {
+            'patterns': self.patterns,
+            'cities': self.cities,
+            'settings': self.settings,
+        }
 
 
-# Global config manager instance
-_config_manager = None
+# --- Global Singleton Management ---
+
+# Global config manager instance, initialized lazily.
+_config_manager: Optional[ConfigManager] = None
+_config_lock = threading.Lock()
 
 def get_config_manager() -> ConfigManager:
-    """Get the global config manager instance."""
+    """
+    Get the global config manager instance in a thread-safe manner.
+    
+    This function ensures that only one instance of the ConfigManager is created
+    and shared across the application, preventing redundant file I/O and
+    ensuring consistent configuration access.
+    """
     global _config_manager
     if _config_manager is None:
-        _config_manager = ConfigManager()
+        with _config_lock:
+            # Double-check locking to prevent race conditions during initialization
+            if _config_manager is None:
+                _config_manager = ConfigManager()
     return _config_manager
 
 def get_config() -> Dict[str, Any]:
-    """Get configuration dictionary for easy access."""
-    config_manager = get_config_manager()
-    return {
-        'patterns': config_manager.patterns,
-        'cities': config_manager.cities,
-        'settings': config_manager.settings,
-        
-        # Priority 3 specific configuration
-        'ml_engine': {
-            'model_type': 'xgboost',
-            'model_params': {
-                'n_estimators': 100,
-                'max_depth': 6,
-                'learning_rate': 0.1,
-                'random_state': 42
-            },
-            'confidence_calibration': {
-                'method': 'isotonic',
-                'cv_folds': 3
-            },
-            'training': {
-                'test_size': 0.2,
-                'cv_folds': 5
-            }
-        },
-        'feature_engineering': {
-            'context_features': {
-                'window_size': 50
-            },
-            'linguistic_features': {
-                'spacy_models': ['lt_core_news_sm', 'en_core_web_sm']
-            }
-        },
-        'training_data': {
-            'synthetic_generation': {
-                'default_count': 500,
-                'balance_ratio': 0.5
-            },
-            'data_sources': ['priority2', 'feedback', 'synthetic']
-        },
-        'performance': {
-            'parallel_processing': {
-                'max_workers': 4,
-                'chunk_size': 100
-            },
-            'caching': {
-                'max_size': 1000,
-                'ttl_seconds': 3600
-            }
-        }
-    }
+    """
+    DEPRECATED: Returns the settings dictionary from the ConfigManager.
+    
+    This function is deprecated in favor of directly accessing `get_config_manager().settings`.
+    It is maintained for backward compatibility but will be removed in a future version.
+    """
+    warnings.warn(
+        "`get_config()` is deprecated. Please use `get_config_manager().settings` instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    return get_config_manager().settings
