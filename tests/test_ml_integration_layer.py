@@ -28,6 +28,7 @@ from app.core.feedback_system import (
 )
 from app.core.analytics_engine import QualityAnalyzer
 from app.core.adaptive.coordinator import AdaptiveLearningCoordinator
+from app.core.adaptive.pattern_db import AdaptivePattern
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "unit: mark test as a unit test")
@@ -306,12 +307,16 @@ class TestMLConfidenceScorerIntegration:
 
     def test_adaptive_pattern_overrides_ml_model(self, mock_dependencies):
         coord = mock_dependencies['coordinator']
-        pattern = {
-            "pattern_id": "p_user_123",
-            "regex": r"USR-123-ABC",
-            "pii_category": "USER_ID",
-            "confidence": 0.99
-        }
+        pattern = AdaptivePattern(
+            pattern_id="p_user_123",
+            regex=r"USR-123-ABC",
+            pii_category="USER_ID",
+            confidence=0.99,
+            positive_matches=10,
+            negative_matches=0,
+            version=1,
+            is_active=True
+        )
         coord.get_adaptive_patterns.return_value = [pattern]
 
         scorer = MLConfidenceScorer(config={}, coordinator=coord)
@@ -322,7 +327,8 @@ class TestMLConfidenceScorerIntegration:
             pred = scorer.calculate_ml_confidence(
                 detection="found user USR-123-ABC here",
                 context="some context",
-                features={"feature1": 1.0}
+                features={"feature1": 1.0},
+                pii_category="USER_ID"
             )
 
             assert pred.confidence == 0.99

@@ -3,13 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from app.api.endpoints import pdf, analytics
+from app.api.endpoints import pdf, analytics, feedback, monitoring
 from app.core.dependencies import validate_dependencies_on_startup
 from app.db.migrations import initialize_database_on_startup
 from app.core.logging import api_logger
 from app.version import __version__
 import sys
 import os
+import logging
+from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 
 # Validate dependencies and initialize database on startup
 try:
@@ -29,6 +32,30 @@ except Exception as e:
     api_logger.error(f"Application startup failed: {str(e)}")
     sys.exit(1)
 
+# --- Global UTF-8 Logging Configuration ---
+# This is a critical fix for Windows environments to prevent UnicodeEncodeError.
+# It ensures all log outputs, including from dependencies, use UTF-8.
+def setup_utf8_logging():
+    if sys.platform == "win32":
+        try:
+            # For console output
+            sys.stdout.reconfigure(encoding='utf-8')
+            sys.stderr.reconfigure(encoding='utf-8')
+        except TypeError:
+            # In some environments (like non-interactive), reconfigure might not be available
+            # or needed. We can fallback to a basic configuration.
+            pass
+
+    # Configure the root logger
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.StreamHandler(sys.stdout) # Ensure handler uses the reconfigured stdout
+        ]
+    )
+# --- End of Global Logging Configuration ---
+
 app = FastAPI(
     title="AnonymPDF API", description="API for anonymizing PDF documents", version="1.0.0"
 )
@@ -43,8 +70,10 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(pdf.router, prefix="/api/v1", tags=["pdf"])
-app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
+app.include_router(pdf.router, prefix="/api/v1", tags=["PDF Processing"])
+app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics"])
+app.include_router(feedback.router, prefix="/api/v1", tags=["Feedback"])
+app.include_router(monitoring.router, prefix="/api/v1/monitoring", tags=["Monitoring"])
 
 # Mount static files for frontend (PyInstaller and dev compatible)
 if hasattr(sys, "_MEIPASS"):

@@ -7,8 +7,8 @@ and document structure awareness to improve PII detection accuracy.
 
 import re
 import logging
-from typing import Dict, List, Tuple, Optional, Set
-from dataclasses import dataclass
+from typing import Dict, List, Tuple, Optional, Set, Any
+from dataclasses import dataclass, field
 from enum import Enum
 from app.core.validation_utils import GEOGRAPHIC_EXCLUSIONS
 
@@ -26,16 +26,62 @@ class ConfidenceLevel(Enum):
 
 @dataclass
 class DetectionContext:
-    """Context information for a PII detection."""
-    text: str
-    category: str
-    start_pos: int
-    end_pos: int
-    confidence: float
-    context_before: str
-    context_after: str
-    validation_flags: List[str]
-    document_section: Optional[str] = None
+    """
+    A dataclass-like object holding enriched information about a PII detection.
+    This provides a structured way to pass around detection data.
+    """
+    __slots__ = ['text', 'category', 'start_char', 'end_char', 'confidence', 'context_before', 'context_after', 'validation_result', 'is_valid', 'full_text', 'validator', 'original_text', 'page_number', 'bounding_box', 'document_section']
+
+    def __init__(self, text: str, category: str, start_char: int, end_char: int,
+                 full_text: str, validator, confidence: float = 0.5,
+                 context_window: int = 50, page_number: Optional[int] = None, bounding_box: Optional[Any] = None):
+        self.text = text
+        self.category = category
+        self.start_char = start_char
+        self.end_char = end_char
+        self.full_text = full_text
+        self.validator = validator
+        self.confidence = confidence  # Initial confidence
+        self.context_before = full_text[max(0, start_char - context_window):start_char]
+        self.context_after = full_text[end_char:end_char + context_window]
+        self.validation_result = None  # To be filled by validator
+        self.is_valid = True  # Default to valid
+        self.original_text = text # Preserve original form if needed
+        self.page_number = page_number
+        self.bounding_box = bounding_box
+        self.document_section = None # To be filled by validator
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serializes the object to a dictionary."""
+        return {
+            "text": self.text,
+            "category": self.category,
+            "start_char": self.start_char,
+            "end_char": self.end_char,
+            "confidence": round(self.confidence, 3),
+            "is_valid": self.is_valid,
+            "validation_result": self.validation_result,
+            "page_number": self.page_number,
+            "document_section": self.document_section
+        }
+
+    def get_confidence_level(self) -> ConfidenceLevel:
+        """Return the confidence level based on the score."""
+        if self.confidence >= ConfidenceLevel.VERY_HIGH.value:
+            return ConfidenceLevel.VERY_HIGH
+        if self.confidence >= ConfidenceLevel.HIGH.value:
+            return ConfidenceLevel.HIGH
+        if self.confidence >= ConfidenceLevel.MEDIUM.value:
+            return ConfidenceLevel.MEDIUM
+        if self.confidence >= ConfidenceLevel.LOW.value:
+            return ConfidenceLevel.LOW
+        return ConfidenceLevel.VERY_LOW
+
+    def get_context(self, window_size: int) -> str:
+        """Returns the context window around the detection."""
+        # This method assumes context_before and context_after are populated.
+        # It reconstructs the context window for external use.
+        return f"{self.context_before}{self.text}{self.context_after}"
 
 
 class DocumentStructureAnalyzer:
@@ -90,14 +136,14 @@ class DocumentStructureAnalyzer:
     def identify_document_section(self, text: str, position: int, window_size: int = 100) -> Optional[str]:
         """
         Identify what section of the document a position belongs to.
-        
+    
         Args:
             text: Full document text
             position: Character position to analyze
             window_size: Size of context window to analyze
-            
+        
         Returns:
-            Section type or None if not identifiable
+        Section type or None if not identifiable
         """
         context_logger.debug(f"Identifying section for position {position}")
 
@@ -131,13 +177,17 @@ class DocumentStructureAnalyzer:
                             pattern=pattern_obj.pattern
                         )
                         return section_type
-        
-        context_logger.debug("No match on primary line, falling back to context window search.")
-        # Second pass (fallback): search the entire context window
+
+        context_logger.debug("Primary line search failed - initiating context window fallback.")
+
+        # Fallback: expand search to full context window
         context_start_win = max(0, position - window_size)
         context_end_win = min(len(text), position + window_size)
         context_window_text = text[context_start_win:context_end_win]
-        context_logger.debug(f"Context window text for fallback: '{context_window_text[:200]}...' (first 200 chars)")
+
+        # Log context preview with conditional ellipsis
+        ellipsis = "..." if len(context_window_text) > 200 else ""
+        context_logger.debug(f"Fallback context window ({len(context_window_text)} chars): '{context_window_text[:200]}{ellipsis}'")
 
         for section_type, pattern_objects in self.compiled_patterns.items():
             # Exclude form_field and table_header from broad window search if they are strictly line-anchored
@@ -177,8 +227,10 @@ class DocumentStructureAnalyzer:
 class ContextualValidator:
     """Provides context-aware validation for PII detections."""
     
-    def __init__(self):
+    def __init__(self, cities: List[str], brand_names: List[str]):
         self.structure_analyzer = DocumentStructureAnalyzer()
+        self.cities = {city.lower() for city in cities}
+        self.brand_names = {brand.lower() for brand in brand_names}
         
         # Context patterns that indicate false positives
         self.false_positive_contexts = {
@@ -337,17 +389,16 @@ class ContextualValidator:
         return confidence
 
     def get_confidence_level(self, confidence: float) -> ConfidenceLevel:
-        """Convert numeric confidence to confidence level enum."""
-        if confidence >= 0.9:
+        """Return the confidence level based on the score."""
+        if confidence >= ConfidenceLevel.VERY_HIGH.value:
             return ConfidenceLevel.VERY_HIGH
-        elif confidence >= 0.8:
+        if confidence >= ConfidenceLevel.HIGH.value:
             return ConfidenceLevel.HIGH
-        elif confidence >= 0.6:
+        if confidence >= ConfidenceLevel.MEDIUM.value:
             return ConfidenceLevel.MEDIUM
-        elif confidence >= 0.4:
+        if confidence >= ConfidenceLevel.LOW.value:
             return ConfidenceLevel.LOW
-        else:
-            return ConfidenceLevel.VERY_LOW
+        return ConfidenceLevel.VERY_LOW
     
     def validate_with_context(self, detection: str, category: str, 
                             full_text: str, start_pos: int, end_pos: int,
@@ -403,156 +454,150 @@ class ContextualValidator:
         if category == 'organization' and detection.lower() in ['when', 'where', 'what', 'which', 'how']:
             validation_flags.append("common_word")
         
-        return DetectionContext(
+        detection_obj = DetectionContext(
             text=detection,
             category=category,
-            start_pos=start_pos,
-            end_pos=end_pos,
+            start_char=start_pos,
+            end_char=end_pos,
             confidence=confidence,
-            context_before=context_before,
-            context_after=context_after,
-            validation_flags=validation_flags,
-            document_section=document_section
+            full_text=full_text,
+            validator=self,
+            context_window=context_window,
+            page_number=None,
+            bounding_box=None
         )
+        detection_obj.validation_result = validation_flags
+        detection_obj.document_section = document_section
+        return detection_obj
+
+    def validate(self, detection: DetectionContext, full_text: str):
+        """
+        Validates a single detection by checking its surrounding context,
+        and adjusts its confidence score.
+        """
+        # Define a window around the detection to analyze its context.
+        window_size = 50  # characters
+        start = max(0, detection.start_char - window_size)
+        end = min(len(full_text), detection.end_char + window_size)
+        context_window = full_text[start:end]
+
+        # Example validation: check for keywords that boost or reduce confidence.
+        if "forbidden" in context_window.lower():
+            detection.confidence *= 0.5  # Reduce confidence
+        elif "confirmed" in context_window.lower():
+            detection.confidence = min(1.0, detection.confidence * 1.2)  # Increase confidence
+
+        # Mark as validated
+        detection.is_valid = True
 
 
 class AdvancedPatternRefinement:
-    """Refines PII detection using advanced and contextual patterns."""
-    
+    """Refines pattern detection using enhanced regex with context awareness."""
+
     def __init__(self):
-        # Enhanced Lithuanian patterns with context awareness
-        self.patterns = {
-            'lithuanian_personal_code_contextual': {
-                'pattern': r'(?:Asmens\s+kodas|Personal\s+code|A\.K\.):\s*(\d{11})',
-                'flags': re.IGNORECASE, 
-                'confidence_boost': 0.2,
-                'description': 'Personal code with explicit label'
-            },
-            'lithuanian_vat_contextual': {
-                'pattern': r'(?:PVM\s+kodas|VAT\s+code|PVM\s+Nr\.):\s*(LT\d{9,12})',
-                'flags': re.IGNORECASE, 
-                'confidence_boost': 0.2,
-                'description': 'VAT code with explicit label'
-            },
-            'email_contextual': {
-                'pattern': r'(?:El\.\s*paštas|Email|E-mail):\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})',
-                'flags': re.IGNORECASE, 
-                'confidence_boost': 0.2,
-                'description': 'Email with explicit label'
-            },
-            'phone_contextual': {
-                'pattern': r'(?:Tel\.|Telefonas|Phone|Mob\.)\s*:\s*(\+?\d{1,4}(?:[\s-]+\d+)+)',
-                'flags': re.IGNORECASE,
-                'confidence_boost': 0.2, 
-                'description': 'Phone number with explicit label' 
-            },
-            'address_contextual': {
-                'pattern': r'(?:Adresas|Address):\s*([^,\n]+(?:,\s*[^,\n]+)*)',
-                'flags': re.IGNORECASE, 
-                'confidence_boost': 0.15,
-                'description': 'Address with explicit label'
-            },
-            'lithuanian_name_contextual': { 
-                'pattern': r'\b(?:vardas|pavardė|asmens?)[\s:]*([A-Ž][a-ž]+(?:\s+[A-Ž][a-ž]+)+)\b', 
-                'flags': re.IGNORECASE,
-                'confidence_boost': 0.15, 
-                'description': 'Lithuanian name with contextual label' 
-            },
+        # Using a dictionary for explicit category mapping is more robust
+        # and avoids the errors from the previous string-matching approach.
+        self.pattern_map = {
+            'email': {'category': 'emails', 'pattern': re.compile(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)")},
+            'lithuanian_personal_code': {'category': 'lithuanian_personal_codes', 'pattern': re.compile(r'\b[3-6]\d{10}\b')},
+            'lithuanian_vat_code': {'category': 'lithuanian_vat_codes', 'pattern': re.compile(r'\bLT\d{9,12}\b')},
+            'phone_generic': {'category': 'phones', 'pattern': re.compile(r'(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b')},
+            'date_yyyy_mm_dd': {'category': 'dates_yyyy_mm_dd', 'pattern': re.compile(r'\b(19|20)\d{2}[-/.](0[1-9]|1[0-2])[-/.](0[1-9]|[12]\d|3[01])\b')},
+            'iban': {'category': 'financial_enhanced', 'pattern': re.compile(r'\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b')},
+            'swift_bic': {'category': 'financial_enhanced', 'pattern': re.compile(r'\b[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b')},
+            'credit_card': {'category': 'credit_cards', 'pattern': re.compile(r'\b(?:\d[ -]*?){13,16}\b')},
+            'ssn': {'category': 'ssns', 'pattern': re.compile(r'\b\d{3}-\d{2}-\d{4}\b')}
         }
-        
-        self.compiled_patterns = {}
-        for name, pattern_info in self.patterns.items():
-            regex_str = pattern_info.get('pattern') or pattern_info.get('regex')
-            flags = pattern_info.get('flags', 0)
-            
-            if not regex_str:
-                context_logger.warning(f"Pattern {name} is missing 'pattern' or 'regex' key. Skipping compilation.")
-                continue
-            
-            try:
-                compiled_regex = re.compile(regex_str, flags)
-            except re.error as e:
-                context_logger.error(f"Failed to compile regex for pattern {name}: {regex_str} with flags {flags}. Error: {e}")
-                continue
 
-            self.compiled_patterns[name] = {
-                'pattern': compiled_regex,
-                'confidence_boost': pattern_info.get('confidence_boost', 0.0),
-                'description': pattern_info.get('description', '')
-            }
-    
+        # Define a clear order of execution. Specific patterns should come before general ones.
+        self.pattern_order = [
+            'email',
+            'lithuanian_personal_code',
+            'lithuanian_vat_code',
+            'ssn',
+            'iban',
+            'swift_bic',
+            'credit_card',
+            'phone_generic',
+            'date_yyyy_mm_dd'
+        ]
+
     def find_enhanced_patterns(self, text: str) -> List[Dict]:
-        """
-        Find PII using enhanced contextual patterns.
-        
-        Args:
-            text: Text to analyze
+        """Finds PII using a curated list of enhanced regular expressions."""
+        detections = []
+        found_spans = set()
+
+        for pattern_name in self.pattern_order:
+            pattern_info = self.pattern_map.get(pattern_name)
+            if not pattern_info:
+                continue
             
-        Returns:
-            List of enhanced detections with confidence boosts
-        """
-        enhanced_detections = []
-        
-        for pattern_name, pattern_info in self.compiled_patterns.items():
-            matches = pattern_info['pattern'].finditer(text)
-            
-            for match in matches:
-                # Extract the actual PII (usually in group 1)
-                pii_text = match.group(1) if match.groups() else match.group(0)
+            pattern = pattern_info['pattern']
+            category = pattern_info['category']
+
+            for match in pattern.finditer(text):
+                start, end = match.span()
                 
-                detection = {
-                    'text': pii_text,
-                    'full_match': match.group(0),
-                    'start': match.start(),
-                    'end': match.end(),
-                    'pattern_name': pattern_name,
-                    'confidence_boost': pattern_info['confidence_boost'],
-                    'description': pattern_info['description'],
-                    'category': self._get_category_from_pattern(pattern_name)
-                }
+                # Skip if this span overlaps with a previously found one
+                if any(start < f_end and end > f_start for f_start, f_end in found_spans):
+                    continue
                 
-                enhanced_detections.append(detection)
+                found_spans.add((start, end))
                 
-                context_logger.info(
-                    "Enhanced pattern detected",
-                    pattern=pattern_name,
-                    text=pii_text,
-                    confidence_boost=pattern_info['confidence_boost']
-                )
-        
-        return enhanced_detections
-    
+                # Get the matched text
+                matched_text = match.group(0)
+
+                # Surgical fix for emails: strip trailing dot if it's likely from end-of-sentence.
+                if category == 'emails' and matched_text.endswith('.'):
+                    matched_text = matched_text.rstrip('.')
+                    # Adjust the end position to match the stripped text
+                    end -= 1
+                
+                detections.append({
+                    "text": matched_text,
+                    "category": category,
+                    "start": start,
+                    "end": end,
+                })
+        return detections
+
     def _get_category_from_pattern(self, pattern_name: str) -> str:
-        """Map pattern name to PII category."""
-        category_mapping = {
-            'lithuanian_personal_code_contextual': 'lithuanian_personal_codes',
-            'lithuanian_vat_contextual': 'lithuanian_vat_codes',
-            'email_contextual': 'emails',
-            'phone_contextual': 'phones',
-            'address_contextual': 'addresses_prefixed',
-            'lithuanian_name_contextual': 'lithuanian_names',
-        }
-        
-        return category_mapping.get(pattern_name, 'unknown')
+        # This method is now obsolete due to the pattern_map,
+        # but kept to avoid breaking other parts of the system if they call it.
+        # It's recommended to refactor any calls to this method.
+        # Fallback to pattern_name for safety.
+        context_logger.warning(
+            "Call to deprecated method _get_category_from_pattern",
+            pattern_name=pattern_name
+        )
+        if 'phone' in pattern_name:
+            return 'phones'
+        if 'date' in pattern_name:
+            return 'dates'
+        if 'email' in pattern_name:
+            return 'emails'
+        return pattern_name
 
 
-def create_context_aware_detection(text: str, category: str, start_pos: int, 
-                                 end_pos: int, full_text: str, 
-                                 validator: ContextualValidator) -> DetectionContext:
+def create_context_aware_detection(
+    text: str, category: str, start: int, end: int, full_text: str, validator: 'ContextualValidator',
+    confidence: Optional[float] = None
+) -> DetectionContext:
     """
-    Create a context-aware detection with confidence scoring.
+    Factory function to create a DetectionContext object.
+    This encapsulates the logic of creating and validating a detection.
+    """
+    detection = DetectionContext(
+        text=text,
+        category=category,
+        start_char=start,
+        end_char=end,
+        full_text=full_text,
+        validator=validator,
+        confidence=confidence if confidence is not None else 0.5
+    )
     
-    Args:
-        text: Detected text
-        category: PII category
-        start_pos: Start position in document
-        end_pos: End position in document
-        full_text: Full document text
-        validator: ContextualValidator instance
-        
-    Returns:
-        DetectionContext with comprehensive analysis
-    """
-    return validator.validate_with_context(
-        text, category, full_text, start_pos, end_pos
-    ) 
+    # Perform validation immediately upon creation
+    validator.validate(detection, full_text)
+    
+    return detection 

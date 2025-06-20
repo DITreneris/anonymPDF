@@ -226,6 +226,35 @@ class QualityAnalyzer:
                 self.conn.rollback()
             raise
 
+    def log_ab_test_result(self, result: ABTestResult):
+        """Log the results of an A/B test to the database."""
+        if not self.conn:
+            self._connect()
+        try:
+            with self.conn:
+                self.conn.execute(
+                    """
+                    INSERT INTO ab_test_results (test_id, timestamp, winner, confidence, summary, metrics_comparison_json)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(test_id) DO UPDATE SET
+                        timestamp=excluded.timestamp,
+                        winner=excluded.winner,
+                        confidence=excluded.confidence,
+                        summary=excluded.summary,
+                        metrics_comparison_json=excluded.metrics_comparison_json
+                    """,
+                    (
+                        result.test_id,
+                        result.timestamp,
+                        result.winner,
+                        result.confidence,
+                        result.summary,
+                        json.dumps(result.metrics_comparison),
+                    ),
+                )
+        except sqlite3.Error as e:
+            analytics_logger.error(f"Error logging A/B test result: {e}", extra={"test_id": result.test_id})
+
     def add_feedback(self, feedback: "UserFeedback"):
         """Add user feedback to the database."""
         if not self.conn: self._connect()
@@ -330,18 +359,37 @@ class QualityInsightsGenerator:
         self.analyzer = analyzer
 
     def generate_report(self) -> Dict[str, Any]:
+        """Generates a comprehensive quality report with metrics and insights."""
         report_data = {}
+        # Fetch detailed quality metrics, not just the summary
+        report_data["quality_metrics"] = self.analyzer.analyze_detection_quality()
         report_data["quality_summary"] = self.analyzer.get_quality_summary()
 
-        # Generate insights
-        insights = self._generate_insights(report_data)
+        # Generate insights from the detailed metrics
+        insights = self._generate_insights(report_data["quality_metrics"])
 
         report_data["insights"] = insights
         return report_data
 
-    def _generate_insights(self, report_data: Dict[str, Any]) -> List[str]:
-        # Implementation of _generate_insights method
-        return []
+    def _generate_insights(self, quality_metrics: Dict[str, Any]) -> List[str]:
+        """Generates actionable insights from detailed quality metrics."""
+        insights = []
+        
+        # Define thresholds from config or use defaults
+        low_confidence_threshold = self.analyzer.config.get("low_confidence_threshold", 0.75)
+        
+        for category, metrics in quality_metrics.items():
+            # Ensure metrics is a dictionary
+            if isinstance(metrics, dict) and 'avg_confidence' in metrics:
+                if metrics['avg_confidence'] < low_confidence_threshold:
+                    insight_str = (
+                        f"Insight: Category '{category}' has low confidence "
+                        f"({metrics['avg_confidence']:.2f}), below threshold of {low_confidence_threshold}. "
+                        f"Consider retraining or adding more specific patterns."
+                    )
+                    insights.append(insight_str)
+        
+        return insights
 
 
 class AnalyticsEngine:

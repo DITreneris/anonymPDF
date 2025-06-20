@@ -1,6 +1,6 @@
 import logging
 import json
-from logging.handlers import RotatingFileHandler
+from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
@@ -20,7 +20,7 @@ class StructuredLogger:
 
         # Configure file handler with rotation
         log_file = log_path / "anonympdf.log"
-        handler = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding='utf-8')
+        handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
 
         # Create formatter for structured logging
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -181,8 +181,36 @@ pdf_logger = StructuredLogger("anonympdf.pdf")
 api_logger = StructuredLogger("anonympdf.api")
 db_logger = StructuredLogger("anonympdf.database")
 dependency_logger = StructuredLogger("anonympdf.dependencies")
+worker_logger = StructuredLogger("anonympdf.worker")
 
 
 def get_logger(name: str) -> StructuredLogger:
     """Get a structured logger instance for the given name."""
     return StructuredLogger(f"anonympdf.{name}")
+
+def setup_logging(config):
+    # ... (other setup)
+    
+    # Use a simple, non-rotating FileHandler for test stability
+    # This avoids the PermissionError on Windows during rapid test runs.
+    handler = logging.FileHandler(log_file_path, mode='w')
+    handler.setFormatter(formatter)
+    
+    # ... (rest of the function)
+
+    # Add a file handler to output logs to a file
+    log_file_path = Path(log_directory) / f"{log_name}.log"
+    file_handler = TimedRotatingFileHandler(
+        log_file_path, when="midnight", interval=1, backupCount=7, encoding="utf-8"
+    )
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # Add a stream handler to output to console
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    # Set encoding for stream handler as well, crucial for Windows environments
+    stream_handler.stream.reconfigure(encoding='utf-8')
+    logger.addHandler(stream_handler)
+
+    return logger

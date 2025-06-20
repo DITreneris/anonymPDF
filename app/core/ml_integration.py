@@ -22,8 +22,8 @@ from app.core.data_models import MLPrediction
 from app.core.feature_engineering import FeatureExtractor, create_feature_extractor
 from app.core.training_data import TrainingDataCollector, create_training_data_collector
 from app.core.context_analyzer import ContextualValidator, DetectionContext, ConfidenceLevel
-from app.core.config_manager import get_config
-from app.core.logging import get_logger
+from app.core.config_manager import get_config, get_config_manager
+from app.core.logging import get_logger, StructuredLogger
 from app.core.feedback_system import UserFeedback, FeedbackType, FeedbackSeverity, create_feedback_system
 # Avoid circular import - import QualityAnalyzer lazily when needed
 
@@ -86,7 +86,11 @@ class MLIntegrationLayer:
         self.ml_scorer: "MLConfidenceScorer" = create_ml_confidence_scorer()
         self.feature_extractor = create_feature_extractor()
         self.training_collector = create_training_data_collector()
-        self.contextual_validator = ContextualValidator()  # Priority 2 fallback
+        config_manager = get_config_manager()
+        self.contextual_validator = ContextualValidator(
+            cities=config_manager.cities,
+            brand_names=config_manager.brand_names
+        )
         self.user_feedback_system = create_feedback_system()
         self.quality_analyzer = None  # Lazy import to avoid circular dependencies
         
@@ -199,6 +203,7 @@ class MLIntegrationLayer:
             detection=text,
             context=context,
             features=features,
+            pii_category=category,
             document_type=document_type
         )
         
@@ -469,4 +474,17 @@ class MLIntegrationLayer:
 # Factory function for easy integration
 def create_ml_integration_layer(config: Optional[Dict] = None) -> MLIntegrationLayer:
     """Factory function to create an MLIntegrationLayer instance."""
-    return MLIntegrationLayer(config=config) 
+    return MLIntegrationLayer(config=config)
+    # Add this to the END of your app/core/ml_integration.py file
+
+# Create alias for backward compatibility
+MLIntegration = MLIntegrationLayer
+
+# Update the __all__ export list
+__all__ = [
+    'MLIntegrationLayer',
+    'MLIntegration',  # Add the alias
+    'DetectionResult',
+    'PerformanceMetrics',
+    'create_ml_integration_layer'
+] 

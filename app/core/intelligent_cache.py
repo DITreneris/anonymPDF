@@ -320,262 +320,370 @@ class ModelCache:
             )
     
     def _hash_input(self, input_data: Any) -> str:
-        """Create hash of input data for caching."""
+        """Hash complex input data to a stable string."""
         try:
-            # Handle different input types
-            if isinstance(input_data, (str, int, float)):
-                data_str = str(input_data)
-            elif isinstance(input_data, dict):
-                data_str = str(sorted(input_data.items()))
-            elif isinstance(input_data, (list, tuple)):
-                data_str = str(input_data)
-            else:
-                # For complex objects, use pickle for consistent hashing
-                data_str = str(pickle.dumps(input_data, protocol=pickle.HIGHEST_PROTOCOL))
-            
-            return hashlib.sha256(data_str.encode()).hexdigest()[:16]  # Short hash
-            
-        except Exception:
-            # Fallback to string representation
-            return hashlib.sha256(str(input_data).encode()).hexdigest()[:16]
+            # For dictionaries, sort by key to ensure hash is consistent
+            if isinstance(input_data, dict):
+                input_data = sorted(input_data.items())
+
+            # Use pickle to handle complex Python objects
+            # Using protocol 4 for better compatibility and efficiency
+            input_bytes = pickle.dumps(input_data, protocol=4)
+            return hashlib.sha256(input_bytes).hexdigest()
+        except (pickle.PicklingError, TypeError) as e:
+            cache_logger.warning(
+                "Could not pickle input data for caching",
+                error=str(e),
+                input_type=type(input_data).__name__
+            )
+            # Fallback to a less stable but still useful representation
+            return repr(input_data)
 
 
 class IntelligentCache:
-    """Main intelligent caching system that combines different cache types."""
-    
+    """
+    A thread-safe, multi-strategy cache manager.
+    It orchestrates different cache types (general, patterns, models)
+    and provides centralized configuration, statistics, and cleanup.
+    """
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
-        Initializes the IntelligentCache system.
-        
+        Initialize the IntelligentCache.
+
         Args:
-            config (Optional[Dict[str, Any]]): A configuration dictionary. 
-                                              If not provided, falls back to global config.
+            config (Optional[Dict[str, Any]]): A configuration dictionary.
+                Overrides settings from the default config manager.
         """
         if config is None:
-            # Fallback to global config gracefully
-            full_config = get_config()
-            performance_config = full_config.get('performance', {})
-            self.config = performance_config.get('caching', {})
+            app_config = get_config()
+            self._config = app_config.get('intelligent_cache', {})
         else:
-            self.config = config
-            
-        self.policy = CachePolicy(self.config.get("policy", "lru"))
-        self.last_cleanup = time.time()
+            self._config = config
 
-        # Initialize different cache types
-        max_size = self.config.get('max_size', 1000)
-        self.general_cache = LRUCache(max_size)
-        self.pattern_cache = PatternCache(max_size // 2)
-        self.model_cache = ModelCache(max_size // 5)
-        
-        # Cache management
-        self._cleanup_interval = 300  # 5 minutes
-        self._monitor = PerformanceMonitor()
-        
-        # Global statistics
-        self._global_stats = {
-            'total_requests': 0,
-            'total_hits': 0,
-            'memory_saved_mb': 0.0
+        self._lock = threading.RLock()
+        self._cache_sizes = self._config.get('cache_sizes', {
+            'general': 1000,
+            'patterns': 500,
+            'models': 200
+        })
+
+        self._caches: Dict[str, Union[LRUCache, PatternCache, ModelCache]] = {}
+        self._stats = {
+            "total_requests": 0,
+            "total_hits": 0,
+            "total_puts": 0,
+            "memory_saved_mb": 0.0,
+            "size": 0,  # Adding overall size for thread safety test
         }
-        self._lock = threading.Lock()
-        
-        cache_logger.info(
-            "IntelligentCache initialized",
-            max_size=max_size,
-            cleanup_interval=self._cleanup_interval
-        )
-    
+        self._last_cleanup_time = time.time()
+        self.cleanup_interval = self._config.get('cleanup_interval', 300)
+
+        # Initialize caches lazily or eagerly based on config
+        if self._config.get('eager_init', False):
+            with self._lock:
+                self._caches['general'] = LRUCache(max_size=self._cache_sizes.get('general', 1000))
+                self._caches['patterns'] = PatternCache(max_size=self._cache_sizes.get('patterns', 500))
+                self._caches['models'] = ModelCache(max_size=self._cache_sizes.get('models', 200))
+
+        cache_logger.info("IntelligentCache initialized",
+                        max_size=self._cache_sizes,
+                        cleanup_interval=self.cleanup_interval)
+
+    @property
+    def config(self):
+        """Get the current cache configuration."""
+        return self._config
+
     def get(self, key: str, cache_type: str = "general") -> Optional[Any]:
-        """Get value from appropriate cache."""
+        """
+        Get an item from a specified cache.
+
+        Args:
+            key (str): The key of the item.
+            cache_type (str): The type of cache ('general', 'patterns', 'models').
+
+        Returns:
+            Optional[Any]: The cached value, or None if not found or expired.
+        """
         with self._lock:
-            self._global_stats['total_requests'] += 1
-        
-        # Route to appropriate cache
-        if cache_type == "general":
-            result = self.general_cache.get(key)
-        elif cache_type == "pattern":
-            # This should use pattern-specific method
-            return None
-        elif cache_type == "model":
-            # This should use model-specific method
-            return None
-        else:
-            result = self.general_cache.get(key)
-        
-        if result is not None:
-            with self._lock:
-                self._global_stats['total_hits'] += 1
-        
-        # Periodic cleanup
-        self._maybe_cleanup()
-        
-        return result
-    
+            self._stats['total_requests'] += 1
+            cache = self._caches.get(cache_type)
+            if not cache:
+                return None  # No such cache exists
+
+        # Lock on the specific cache instance for the actual 'get'
+        # Note: PatternCache and ModelCache use LRUCache internally, which is locked.
+        value = cache.get(key)
+
+        with self._lock:
+            if value is not None:
+                self._stats['total_hits'] += 1
+            return value
+
     def put(self, key: str, value: Any, cache_type: str = "general", **kwargs) -> bool:
-        """Put value in appropriate cache."""
-        success = False
-        
-        if cache_type == "general":
-            success = self.general_cache.put(key, value, **kwargs)
-        elif cache_type == "pattern":
-            # Pattern cache requires special handling
-            pass
-        elif cache_type == "model":
-            # Model cache requires special handling
-            pass
-        else:
-            success = self.general_cache.put(key, value, **kwargs)
-        
-        # Estimate memory saved
-        if success:
-            try:
-                size_estimate = len(str(value)) / 1024 / 1024  # Rough MB estimate
-                with self._lock:
-                    self._global_stats['memory_saved_mb'] += size_estimate
-            except:
-                pass
-        
-        return success
-    
+        """
+        Put an item into a specified cache.
+
+        Args:
+            key (str): The key of the item.
+            value (Any): The value to cache.
+            cache_type (str): The type of cache ('general', 'patterns', 'models').
+            **kwargs: Additional arguments for the specific cache (e.g., ttl_seconds).
+
+        Returns:
+            bool: True if the item was successfully cached, False otherwise.
+        """
+        with self._lock:
+            self._maybe_cleanup()
+
+            if cache_type not in self._caches:
+                # Use a more specific factory pattern if more types are added
+                if cache_type == 'patterns':
+                    self._caches[cache_type] = PatternCache(max_size=self._cache_sizes.get(cache_type, 500))
+                elif cache_type == 'models':
+                    self._caches[cache_type] = ModelCache(max_size=self._cache_sizes.get(cache_type, 200))
+                else: # Default to general
+                    self._caches[cache_type] = LRUCache(max_size=self._cache_sizes.get(cache_type, 1000))
+
+            cache = self._caches[cache_type]
+            # The actual 'put' operation is locked within the specific cache instance
+            success = cache.put(key, value, **kwargs)
+
+            if success:
+                self._stats['total_puts'] += 1
+                # Estimate memory saved
+                try:
+                    # Use pickle to estimate size. Not perfect, but a decent heuristic.
+                    size_bytes = len(pickle.dumps(value, protocol=4))
+                    self._stats['memory_saved_mb'] += size_bytes / (1024 * 1024)
+                except (pickle.PicklingError, TypeError):
+                    pass # Ignore objects that can't be pickled for stats
+
+            # Update total size
+            self._update_total_size()
+            
+            return success
+
+    def _update_total_size(self):
+        """Recalculates the total size across all caches. Must be called within a lock."""
+        total_size = 0
+        for cache in self._caches.values():
+            if hasattr(cache, 'lru_cache'): # For PatternCache, ModelCache
+                 total_size += cache.lru_cache.get_stats().get('size', 0)
+            elif isinstance(cache, LRUCache): # For general LRUCache
+                 total_size += cache.get_stats().get('size', 0)
+        self._stats['size'] = total_size
+
+
     def get_pattern_result(self, content_type: str, features: Dict[str, Any]) -> Optional[Any]:
-        """Get cached result for content pattern."""
+        """
+        Get a cached result for a content pattern.
+
+        Args:
+            content_type (str): The type of content (e.g., 'invoice_v1').
+            features (Dict[str, Any]): A dictionary of features describing the content.
+        """
         with self._lock:
-            self._global_stats['total_requests'] += 1
+            self._stats['total_requests'] += 1
+            if 'patterns' not in self._caches:
+                self._caches['patterns'] = PatternCache(max_size=self._cache_sizes.get('patterns', 500))
+            
+        # The method on PatternCache is thread-safe
+        result = self._caches['patterns'].get_pattern_result(content_type, features)
         
-        result = self.pattern_cache.get_pattern_result(content_type, features)
-        
-        if result is not None:
-            with self._lock:
-                self._global_stats['total_hits'] += 1
-        
-        return result
-    
+        with self._lock:
+            if result is not None:
+                self._stats['total_hits'] += 1
+            return result
+
     def cache_pattern_result(self, content_type: str, features: Dict[str, Any], result: Any, **kwargs):
-        """Cache result for content pattern."""
-        # Track the caching operation in global stats
+        """
+        Cache a result for a content pattern.
+
+        Args:
+            content_type (str): The type of content.
+            features (Dict[str, Any]): The features dictionary.
+            result (Any): The result to cache.
+            **kwargs: Additional arguments (e.g., ttl_seconds).
+        """
         with self._lock:
-            self._global_stats['total_requests'] += 1
-        
-        success = self.pattern_cache.cache_pattern_result(content_type, features, result, **kwargs)
-        
-        if success:
-            # Estimate memory saved
-            try:
-                size_estimate = len(str(result)) / 1024 / 1024  # Rough MB estimate
-                with self._lock:
-                    self._global_stats['memory_saved_mb'] += size_estimate
-            except:
-                pass
-        
-        return success
-    
+            self._maybe_cleanup()
+
+            if 'patterns' not in self._caches:
+                self._caches['patterns'] = PatternCache(max_size=self._cache_sizes.get('patterns', 500))
+            
+            cache = self._caches['patterns']
+            # The method on PatternCache is thread-safe
+            success = cache.cache_pattern_result(content_type, features, result, **kwargs)
+
+            if success:
+                self._stats['total_puts'] += 1
+                try:
+                    size_bytes = len(pickle.dumps(result, protocol=4))
+                    self._stats['memory_saved_mb'] += size_bytes / (1024 * 1024)
+                except (pickle.PicklingError, TypeError):
+                    pass
+            
+            self._update_total_size()
+            return success
+
     def get_model_prediction(self, model_name: str, input_data: Any, model_version: str = "default") -> Optional[Any]:
-        """Get cached model prediction."""
+        """
+        Get a cached model prediction.
+
+        Args:
+            model_name (str): The name of the model.
+            input_data (Any): The input data for the prediction.
+            model_version (str): The version of the model.
+
+        Returns:
+            Optional[Any]: The cached prediction, or None if not found.
+        """
         with self._lock:
-            self._global_stats['total_requests'] += 1
+            self._stats['total_requests'] += 1
+            if 'models' not in self._caches:
+                self._caches['models'] = ModelCache(max_size=self._cache_sizes.get('models', 200))
+
+        # The method on ModelCache is thread-safe
+        prediction = self._caches['models'].get_prediction(model_name, input_data, model_version)
         
-        result = self.model_cache.get_prediction(model_name, input_data, model_version)
-        
-        if result is not None:
-            with self._lock:
-                self._global_stats['total_hits'] += 1
-        
-        return result
-    
+        with self._lock:
+            if prediction is not None:
+                self._stats['total_hits'] += 1
+            return prediction
+
     def cache_model_prediction(self, model_name: str, input_data: Any, prediction: Any, model_version: str = "default", **kwargs):
-        """Cache model prediction."""
-        # Track the caching operation in global stats
+        """
+        Cache a model prediction.
+
+        Args:
+            model_name (str): The name of the model.
+            input_data (Any): The input data for the prediction.
+            prediction (Any): The prediction to cache.
+            model_version (str): The version of the model.
+            **kwargs: Additional arguments for the cache (e.g., ttl_seconds).
+        """
         with self._lock:
-            self._global_stats['total_requests'] += 1
-        
-        success = self.model_cache.cache_prediction(model_name, input_data, prediction, model_version, **kwargs)
-        
-        if success:
-            # Estimate memory saved
-            try:
-                size_estimate = len(str(prediction)) / 1024 / 1024  # Rough MB estimate
-                with self._lock:
-                    self._global_stats['memory_saved_mb'] += size_estimate
-            except:
-                pass
-        
-        return success
-    
+            self._maybe_cleanup()
+
+            if 'models' not in self._caches:
+                self._caches['models'] = ModelCache(max_size=self._cache_sizes.get('models', 200))
+            
+            cache = self._caches['models']
+            # The method on ModelCache is thread-safe
+            success = cache.cache_prediction(model_name, input_data, prediction, model_version, **kwargs)
+
+            if success:
+                self._stats['total_puts'] += 1
+                try:
+                    size_bytes = len(pickle.dumps(prediction, protocol=4))
+                    self._stats['memory_saved_mb'] += size_bytes / (1024 * 1024)
+                except (pickle.PicklingError, TypeError):
+                    pass
+            
+            self._update_total_size()
+            return success
+
     def invalidate_model(self, model_name: str, model_version: str = "default"):
-        """Invalidate cached model predictions."""
-        self.model_cache.invalidate_model(model_name, model_version)
-    
-    def clear_all(self):
-        """Clear all caches."""
-        self.general_cache.clear()
-        self.pattern_cache.lru_cache.clear()
-        self.model_cache.lru_cache.clear()
-        
+        """
+        Invalidate cached model predictions.
+
+        Args:
+            model_name (str): The name of the model to invalidate.
+            model_version (str): The version of the model to invalidate.
+        """
         with self._lock:
-            self._global_stats = {
-                'total_requests': 0,
-                'total_hits': 0,
-                'memory_saved_mb': 0.0
+            if 'models' in self._caches:
+                self._caches['models'].invalidate_model(model_name, model_version)
+                self._update_total_size()
+                cache_logger.info("Invalidated model cache", model_name=model_name, model_version=model_version)
+
+    def clear_all(self):
+        """Clears all entries from all managed caches."""
+        with self._lock:
+            for cache in self._caches.values():
+                if hasattr(cache, 'clear'): # LRUCache
+                    cache.clear()
+                elif hasattr(cache, 'lru_cache'): # PatternCache, ModelCache
+                    cache.lru_cache.clear()
+
+            # Reset statistics
+            self._stats = {
+                "total_requests": 0,
+                "total_hits": 0,
+                "total_puts": 0,
+                "memory_saved_mb": 0.0,
+                "size": 0
             }
-        
-        cache_logger.info("All caches cleared")
-    
+            cache_logger.info("All caches cleared.")
+
     def _maybe_cleanup(self):
         """Perform cleanup if needed."""
-        current_time = time.time()
-        if current_time - self.last_cleanup > self._cleanup_interval:
-            self._cleanup_expired()
-            self.last_cleanup = current_time
-    
-    def _cleanup_expired(self):
-        """Clean up expired entries from all caches."""
-        total_cleaned = 0
-        
-        total_cleaned += self.general_cache.cleanup_expired()
-        total_cleaned += self.pattern_cache.lru_cache.cleanup_expired()
-        total_cleaned += self.model_cache.lru_cache.cleanup_expired()
-        
-        if total_cleaned > 0:
-            cache_logger.info(
-                "Cache cleanup completed",
-                expired_entries_removed=total_cleaned
-            )
-        
-        # Force garbage collection to free memory
-        gc.collect()
-    
-    def get_comprehensive_stats(self) -> Dict[str, Any]:
-        """Get comprehensive statistics from all caches."""
         with self._lock:
-            global_hit_rate = (
-                self._global_stats['total_hits'] / self._global_stats['total_requests']
-                if self._global_stats['total_requests'] > 0 else 0
-            )
-        
-        return {
-            'global': {
-                **self._global_stats,
-                'hit_rate': global_hit_rate
-            },
-            'general_cache': self.general_cache.get_stats(),
-            'pattern_cache': {
-                'cache_stats': self.pattern_cache.lru_cache.get_stats(),
-                'pattern_stats': self.pattern_cache.get_pattern_stats()
-            },
-            'model_cache': self.model_cache.lru_cache.get_stats(),
-            'memory_estimate': {
-                'estimated_memory_saved_mb': self._global_stats['memory_saved_mb'],
-                'total_entries': (
-                    len(self.general_cache._cache) +
-                    len(self.pattern_cache.lru_cache._cache) +
-                    len(self.model_cache.lru_cache._cache)
-                )
+            if time.time() - self._last_cleanup_time > self.cleanup_interval:
+                self._cleanup_expired()
+                self._last_cleanup_time = time.time()
+
+    def _cleanup_expired(self) -> int:
+        """Clean up expired items from all caches."""
+        with self._lock:
+            total_expired = 0
+            for cache_name, cache in self._caches.items():
+                # Handle caches that have the method directly (e.g., LRUCache)
+                if hasattr(cache, 'cleanup_expired'):
+                    expired_count = cache.cleanup_expired()
+                    total_expired += expired_count
+                # Handle composite caches (e.g., PatternCache, ModelCache)
+                elif hasattr(cache, 'lru_cache') and hasattr(cache.lru_cache, 'cleanup_expired'):
+                    expired_count = cache.lru_cache.cleanup_expired()
+                    total_expired += expired_count
+            
+            if total_expired > 0:
+                cache_logger.info(f"Cleaned up {total_expired} expired items.")
+            
+            self._update_total_size()
+            return total_expired
+
+    def get_comprehensive_stats(self) -> Dict[str, Any]:
+        """
+        Get a comprehensive report of statistics from all managed caches.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing global stats and
+                            per-cache stats.
+        """
+        with self._lock:
+            self._update_total_size() # Ensure size is up-to-date
+            
+            # Create a deep copy to prevent modification of internal stats
+            comprehensive_stats = {
+                "global": self._stats.copy()
             }
-        }
+            
+            total_requests = self._stats.get("total_requests", 0)
+            total_hits = self._stats.get("total_hits", 0)
+            
+            if total_requests > 0:
+                comprehensive_stats["global"]["hit_rate"] = total_hits / total_requests
+            else:
+                comprehensive_stats["global"]["hit_rate"] = 0
+            
+            per_cache_stats = {}
+            for name, cache in self._caches.items():
+                if hasattr(cache, 'get_stats'):
+                    per_cache_stats[name] = cache.get_stats()
+                elif hasattr(cache, 'lru_cache'): # For PatternCache and ModelCache
+                    per_cache_stats[name] = cache.lru_cache.get_stats()
+                    if hasattr(cache, 'get_pattern_stats'): # Specific to PatternCache
+                         per_cache_stats[name]['pattern_specific'] = cache.get_pattern_stats()
+
+            comprehensive_stats["per_cache"] = per_cache_stats
+            
+            return comprehensive_stats
 
 
-_global_cache_instance: Optional[weakref.ref[IntelligentCache]] = None
+_global_cache_instance: Optional[weakref.ref["IntelligentCache"]] = None
 _global_cache_lock = threading.Lock()
 
 
@@ -623,7 +731,7 @@ def cache_model_prediction(model_name: str, input_data: Any, model_version: str 
 
 # Cache decorator for easy function caching
 def cache_result(cache_type: str = "general", ttl_seconds: Optional[float] = None, key_func: Optional[Callable] = None):
-    """Decorator to cache function results."""
+    """Decorator for caching function results."""
     def decorator(func: Callable) -> Callable:
         def wrapper(*args, **kwargs):
             # Generate cache key
@@ -644,4 +752,7 @@ def cache_result(cache_type: str = "general", ttl_seconds: Optional[float] = Non
             return result
         
         return wrapper
-    return decorator 
+    return decorator
+
+# Globally accessible singleton instance of the cache manager
+cache_manager = get_intelligent_cache()

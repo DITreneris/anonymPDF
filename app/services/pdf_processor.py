@@ -1,3 +1,4 @@
+import threading
 from typing import List, Tuple, Dict
 from pdfminer.high_level import extract_text
 from fastapi import HTTPException
@@ -44,19 +45,22 @@ from app.core.text_extraction import extract_text_enhanced
 from app.core.salutation_detector import detect_lithuanian_salutations
 
 class PDFProcessor:
-    def __init__(self):
+    def __init__(self, config_manager: ConfigManager):
         pdf_logger.info("Initializing PDF processor with Priority 2 enhancements")
 
         # Initialize configuration manager
-        self.config_manager = ConfigManager()
+        self.config_manager = config_manager
         pdf_logger.info(
             "Configuration manager loaded",
             patterns_count=len(self.config_manager.patterns),
             cities_count=len(self.config_manager.cities),
         )
 
-        # Priority 2: Initialize context-aware components
-        self.contextual_validator = ContextualValidator()
+        # Priority 2: Initialize context-aware components with injected config
+        self.contextual_validator = ContextualValidator(
+            cities=self.config_manager.cities,
+            brand_names=self.config_manager.brand_names
+        )
         self.advanced_patterns = AdvancedPatternRefinement()
         self.document_analyzer = DocumentStructureAnalyzer()
         self.lithuanian_enhancer = LithuanianLanguageEnhancer()
@@ -244,39 +248,24 @@ class PDFProcessor:
             # Create context-aware detection for enhanced patterns
             detection_context = create_context_aware_detection(
                 detection['text'], detection['category'], 
-                detection['start'], detection['end'], text, self.contextual_validator
-            )
-            
-            # Apply confidence boost from enhanced pattern
-            detection_context.confidence += detection.get('confidence_boost', 0.0)
-            
-            # Add to appropriate category using the helper
-            self._add_detection(
-                personal_info,
-                detection['category'],
-                detection['text'],
-                "ENHANCED_PATTERN",
-                detection_context.confidence
+                detection['start'], detection['end'], 
+                text, self.contextual_validator,
+                confidence=detection.get('confidence', 0.5)
             )
             context_aware_detections.append(detection_context)
 
-        # Priority 2: Apply Lithuanian enhanced patterns if Lithuanian language
+        # Priority 2: Apply Lithuanian-specific enhancements if language is 'lt'
         if language == "lt":
-            lt_detections = self.lithuanian_enhancer.find_enhanced_lithuanian_patterns(text)
-            for detection in lt_detections:
+            lithuanian_detections = self.lithuanian_enhancer.find_enhanced_lithuanian_patterns(text)
+            for detection in lithuanian_detections:
                 detection_context = create_context_aware_detection(
-                    detection['text'], detection['category'],
-                    detection['start'], detection['end'], text, self.contextual_validator
-                )
-                detection_context.confidence += detection.get('confidence_boost', 0.0)
-                
-                # Use the helper to ensure consistent format
-                self._add_detection(
-                    personal_info,
-                    detection['category'],
                     detection['text'],
-                    "LT_ENHANCED",
-                    detection_context.confidence
+                    detection['category'],
+                    detection['start'],
+                    detection['end'],
+                    text,
+                    self.contextual_validator,
+                    confidence=detection.get('confidence', 0.5)
                 )
                 context_aware_detections.append(detection_context)
 
@@ -325,399 +314,356 @@ class PDFProcessor:
         return self.deduplicate_with_confidence(personal_info, context_aware_detections)
 
     def detect_lithuanian_cities_enhanced(self, text: str, language: str) -> List[Tuple[str, str]]:
-        """Enhanced Lithuanian city detection with confidence scoring."""
-        city_detections = []
-
-        # Create a pattern for all city names (case-insensitive) from configuration
+        """
+        Enhanced city detection, leveraging contextual analysis to reduce false positives.
+        Only runs for Lithuanian text.
+        """
+        if language != "lt":
+            return []
+            
+        detected_cities = []
         for city in self.config_manager.cities:
-            # Use word boundaries to avoid partial matches
-            pattern = r"\b" + re.escape(city) + r"\b"
-            matches = re.finditer(pattern, text, re.IGNORECASE)
-
-            for match in matches:
-                # Priority 2: Calculate confidence for city detection
-                base_confidence = 0.8  # Cities are generally high confidence
-                
-                # Apply Lithuanian geographic validation if Lithuanian language
-                if language == "lt" and self.lithuanian_enhancer.is_lithuanian_geographic_term(match.group()):
-                    base_confidence += 0.1
-                
-                city_detections.append((match.group(), f"LITHUANIAN_LOCATION_CONF_{base_confidence:.2f}"))
-                pdf_logger.info(
-                    "Enhanced Lithuanian location detected",
-                    city=match.group(),
-                    start=match.start(),
-                    end=match.end(),
-                    confidence=base_confidence
+            # Use word boundaries to avoid matching parts of words
+            pattern = r'\b' + re.escape(city) + r'\b'
+            
+            for match in re.finditer(pattern, text, re.IGNORECASE):
+                # Priority 2: Use ContextualValidator for enhanced validation
+                is_valid, reason = self.lithuanian_analyzer.validate_city_context(
+                    city, text, match.start()
                 )
-
-        return city_detections
+                if is_valid:
+                    detected_cities.append((city, "CITY_VALIDATED_BY_CONTEXT"))
+                else:
+                    pdf_logger.info("City detection skipped due to context", city=city, reason=reason)
+                    
+        return detected_cities
 
     def deduplicate_with_confidence(self,
                                   personal_info: Dict[str, List[Tuple[str, str]]],
                                   context_detections: List[DetectionContext]) -> Dict[str, List[Tuple[str, str]]]:
         """
-        Deduplicates detections within each category, keeping the one with the highest confidence.
-        This version is more robust and handles malformed data gracefully.
+        Deduplicate detections based on position and confidence score.
+        Highest confidence detection for an overlapping area is kept.
         """
+        
+        # Sort detections by confidence score (highest first)
+        sorted_detections = sorted(context_detections, key=lambda d: d.confidence, reverse=True)
+        
+        # Keep track of character positions that have been redacted
+        redacted_positions = set()
+        
         final_detections = defaultdict(list)
         
-        # Use a dictionary to track the best detection for each unique text
-        best_detections = {}
+        for detection in sorted_detections:
+            # Check if this detection's range overlaps with an already claimed range
+            detection_range = set(range(detection.start, detection.end))
+            if not detection_range.intersection(redacted_positions):
+                
+                # Check for document term exclusion, unless it's a high-confidence pattern
+                if (detection.text.lower() in DOCUMENT_TERMS and 
+                    detection.confidence in [ConfidenceLevel.LOW, ConfidenceLevel.MEDIUM]):
+                    pdf_logger.info(
+                        "Skipping common document term with low/medium confidence",
+                        term=detection.text
+                    )
+                    continue
 
-        all_detections = []
-        # First, gather all context-aware detections
-        for detection in context_detections:
-            all_detections.append({
-                "text": detection.text,
-                "category": detection.category,
-                "confidence": detection.confidence
-            })
-
-        # Then, gather all regex/other detections from the main dict
-        for category, items in personal_info.items():
-            if not isinstance(items, list):
-                continue # Skip malformed entries
-            for item in items:
-                if isinstance(item, (list, tuple)) and len(item) == 2:
-                    text, _ = item
-                    # Assign a baseline confidence if not available
-                    all_detections.append({
-                        "text": text, "category": category, "confidence": 0.5
-                    })
-
-        # Now, iterate and find the best detection for each text
-        for detection in all_detections:
-            text = detection.get("text", "").strip()
-            category = detection.get("category")
-            confidence = detection.get("confidence", 0.0)
-
-            if not text or not category:
-                continue
-
-            key = (text, category)
-            if key not in best_detections or confidence > best_detections[key]["confidence"]:
-                best_detections[key] = {
-                    "text": text,
-                    "category": category,
-                    "confidence": confidence
-                }
-
-        # Finally, build the output dictionary from the best detections
-        for key, detection in best_detections.items():
-            final_detections[detection["category"]].append(
-                (detection["text"], f"CONF_{detection['confidence']:.2f}")
-            )
-            
+                # Add to final list
+                final_detections[detection.pii_type].append(
+                    (detection.text, f"{detection.source.name}_{detection.confidence:.2f}")
+                )
+                
+                # Claim this character range
+                redacted_positions.update(detection_range)
+        
         return dict(final_detections)
 
     def should_preserve_detection(self, text: str, pattern_type: str, surrounding_text: str) -> bool:
         """
-        Determines if a detected PII should be preserved (not redacted).
-        Morning Session 5 Improvement: Anti-overredaction logic.
-        
-        Args:
-            text: The detected text
-            pattern_type: Type of pattern that detected this text
-            surrounding_text: Context around the detection
-            
-        Returns:
-            bool: True if should preserve (not redact), False if should redact
+        Determine if a detection should be preserved based on its context,
+        e.g., to prevent over-redaction of technical terms.
         """
-        # Get anti-overredaction settings
-        anti_overredaction = self.config_manager.settings.get('anti_overredaction', {})
-        technical_terms = set(anti_overredaction.get('technical_terms_whitelist', []))
-        technical_sections = anti_overredaction.get('technical_sections', [])
-        pii_field_labels = anti_overredaction.get('pii_field_labels', [])
+        # Example rule: if it looks like a file path, don't redact city names
+        if pattern_type == "GPE" and any(term in surrounding_text for term in ["path:", "file:", "C:\\"]):
+            return False
+            
+        # Example rule: preserve common words if they are not part of a name-like structure
+        if text.lower() in ["summary", "total"] and pattern_type == "PERSON":
+            # Very basic check, could be improved
+            if not text.istitle():
+                return False
+
+        return True
+
+    def _extract_and_validate_with_patterns(
+        self, text: str, patterns: Dict, language: str, text_doc=None
+    ) -> List[DetectionContext]:
+        """
+        Internal helper to extract PII using regex patterns and perform contextual validation.
+        This is a refactored and enhanced version for Priority 2.
+        """
+        detections = []
         
-        # Check if the text or surrounding context contains technical terms
-        text_lower = text.lower()
-        surrounding_lower = surrounding_text.lower()
-        
-        # If the detected text is adjacent to technical terms, preserve it
-        for tech_term in technical_terms:
-            tech_term_lower = tech_term.lower()
-            if tech_term_lower in surrounding_lower:
-                pdf_logger.info(
-                    "Detection preserved due to technical term context",
-                    text=text,
-                    pattern_type=pattern_type,
-                    technical_term=tech_term
-                )
-                return True
-        
-        # Check if we're in a technical section
-        for tech_section in technical_sections:
-            if tech_section.lower() in surrounding_lower:
-                # Only preserve if it's not a PII field
-                is_pii_field = any(pii_label.lower() in surrounding_lower for pii_label in pii_field_labels)
-                if not is_pii_field:
-                    pdf_logger.info(
-                        "Detection preserved due to technical section context",
-                        text=text,
-                        pattern_type=pattern_type,
-                        technical_section=tech_section
+        for pii_type, pattern in patterns.items():
+            try:
+                # Use finditer to get match objects with positions
+                for match in re.finditer(pattern, text):
+                    matched_text = match.group(0)
+                    
+                    # Create a context-aware detection object
+                    context_detection = create_context_aware_detection(
+                        matched_text,
+                        pii_type,
+                        match.start(),
+                        match.end(),
+                        text,
+                        self.contextual_validator,
                     )
-                    return True
-        
-        # Special handling for numeric patterns in technical contexts
-        if pattern_type in ['eleven_digit_numeric', 'health_insurance_number', 'medical_record_number']:
-            # Look for technical units or contexts that suggest this is not PII
-            technical_indicators = ['kw', 'nm', 'kg', 'mm', 'cm³', 'g/km', 'l/100', 'co2', 'emisijos', 'galia', 'sąnaudos']
-            if any(indicator in surrounding_lower for indicator in technical_indicators):
-                pdf_logger.info(
-                    "Numeric detection preserved due to technical indicators",
-                    text=text,
-                    pattern_type=pattern_type
-                )
-                return True
-        
-        return False
+                    
+                    # Validate the context-aware detection
+                    is_valid, reason = self.contextual_validator.validate_with_context(context_detection)
+                    
+                    if is_valid:
+                        detections.append(context_detection)
+                    else:
+                        pdf_logger.info(
+                            "Pattern detection skipped due to context",
+                            text=matched_text,
+                            pattern=pii_type,
+                            reason=reason,
+                        )
+            except re.error as e:
+                pdf_logger.error("Invalid regex pattern", pattern=pattern, pii_type=pii_type, error=str(e))
+                
+        return detections
 
     def detect_lithuanian_cities(self, text: str) -> List[Tuple[str, str]]:
-        """Legacy method - kept for backward compatibility."""
-        return self.detect_lithuanian_cities_enhanced(text, "lt")
+        """Find Lithuanian city names in the text."""
+        # This function is now superseded by detect_lithuanian_cities_enhanced
+        # but kept for backward compatibility or simple use cases.
+        cities_found = []
+        for city in self.config_manager.cities:
+            if re.search(r"\b" + re.escape(city) + r"\b", text, re.IGNORECASE):
+                cities_found.append((city, "CITY"))
+        return cities_found
 
     def anonymize_pdf(self, input_path: Path, output_path: Path) -> Tuple[bool, Dict]:
-        """Anonymize PDF by redacting personal information."""
-        pdf_logger.info(
-            "Starting PDF anonymization", input_path=str(input_path), output_path=str(output_path)
-        )
-        anonymization_start_time = time.time()
-
+        """
+        Anonymizes a PDF by redacting detected personal information.
+        This is the core redaction logic.
+        """
+        
+        start_time = time.time()
+        
         try:
-            # Extract text from PDF
+            # 1. Extract text and identify PII
             text = self.extract_text_from_pdf(input_path)
-            pdf_logger.info(
-                "Text extracted from PDF", text_length=len(text), input_path=str(input_path)
-            )
+            if not text.strip():
+                return False, {"error": "No content found in PDF"}
 
-            # Detect language
             language = self.detect_language(text)
+            personal_info = self.find_personal_info(text, language)
 
-            # Find personal information using the detected language
-            personal_info = self.find_personal_info(text, language=language)
+            # 2. Check if there is anything to redact
+            total_redactions = sum(len(v) for v in personal_info.values())
+            if total_redactions == 0:
+                pdf_logger.info("No PII found, no redaction needed.", file=input_path.name)
+                # If no redactions are needed, we can consider it a success.
+                # The "anonymized" file will be a copy of the original.
+                import shutil
+                shutil.copy(str(input_path), str(output_path))
+                return True, {
+                    "status": "success_no_pii",
+                    "redactions": 0,
+                    "processing_time": time.time() - start_time
+                }
 
-            # Log PII detection results
-            total_pii_found = sum(len(items) for items in personal_info.values())
-            pdf_logger.info(
-                "PII detection completed",
-                language=language,
-                total_pii_items=total_pii_found,
-                categories_found=len([k for k, v in personal_info.items() if v]),
-            )
-
-            # Collect all sensitive words
-            sensitive_words = []
+            # 3. Perform the redaction using PyMuPDF
+            doc = fitz.open(input_path)
+            redactions_applied = 0
+            
+            # Consolidate all PII text to search for
+            all_pii_texts = set()
             for category, items in personal_info.items():
-                sensitive_words.extend([item[0] for item in items])
+                for item_text, _ in items:
+                    all_pii_texts.add(item_text)
 
-            # A simple log to ensure we have words to redact, especially for PERSON category
-            if personal_info.get("PERSON"):
-                pdf_logger.info(f"Found {len(personal_info.get('PERSON', []))} person names to redact.")
+            for page in doc:
+                for pii_text in all_pii_texts:
+                    # Search for the text on the page
+                    text_instances = page.search_for(pii_text)
+                    
+                    # Apply redaction to all found instances
+                    for inst in text_instances:
+                        page.add_redact_annot(inst, fill=(0, 0, 0)) # Black fill
+                        redactions_applied += 1
+                
+                # Apply the redactions for the current page
+                page.apply_redactions()
 
-            # Check if sensitive words were found
-            if not sensitive_words:
-                pdf_logger.warning("No sensitive words found for redaction")
-                return False, {
-                    "error": "No sensitive words found for redaction",
-                    "details": "No sensitive words found for redaction",
-                }
-
-            # Redact the PDF using PyMuPDF
-            redaction_successful = redact_pdf(str(input_path), str(output_path), sensitive_words)
-
-            if not redaction_successful:
-                pdf_logger.error(
-                    "PDF redaction failed",
-                    input_path=str(input_path),
-                    output_path=str(output_path),
-                    sensitive_words_count=len(sensitive_words),
-                )
-                return False, {
-                    "error": "PDF redaction failed",
-                    "details": "redact_pdf returned False",
-                }
-
-            # Generate report of redacted information
-            report = self.generate_redaction_report(personal_info, language)
+            # 4. Save the redacted PDF
+            doc.save(str(output_path), garbage=4, deflate=True)
+            doc.close()
 
             pdf_logger.info(
-                "PDF anonymization completed successfully",
-                input_path=str(input_path),
-                output_path=str(output_path),
-                total_redactions=report.get("totalRedactions", 0),
+                "PDF anonymized successfully",
+                input_file=input_path.name,
+                output_file=output_path.name,
+                redactions_applied=redactions_applied
             )
-
-            anonymization_duration = time.time() - anonymization_start_time
-            pdf_logger.info(f"BENCHMARK: anonymize_pdf for {input_path.name} took {anonymization_duration:.4f} seconds.")
-
-            return True, report
+            
+            # 5. Generate and return the report
+            report = self.generate_redaction_report(personal_info, language)
+            
+            return True, {
+                "status": "success",
+                "report": report,
+                "redactions_applied": redactions_applied,
+                "output_path": str(output_path),
+                "processing_time": time.time() - start_time
+            }
 
         except Exception as e:
-            pdf_logger.log_error(
-                "anonymize_pdf", e, input_path=str(input_path), output_path=str(output_path)
-            )
-            anonymization_duration = time.time() - anonymization_start_time
-            pdf_logger.error(f"BENCHMARK: anonymize_pdf for {input_path.name} failed after {anonymization_duration:.4f} seconds.")
-            return False, {"error": "An exception occurred during anonymization", "details": str(e)}
+            pdf_logger.error("Failed to anonymize PDF", file=input_path.name, error=str(e), exc_info=True)
+            return False, {"error": str(e), "processing_time": time.time() - start_time}
 
     def generate_redaction_report(
         self, personal_info: Dict[str, List[Tuple[str, str]]], language: str
     ) -> Dict:
-        """Generate a structured report of redacted information."""
-        total_redactions = 0
-        categories = {}
-
-        for category, items in personal_info.items():
-            if items:
-                category_name = category.upper()
-                categories[category_name] = len(items)
-                total_redactions += len(items)
-
-        report_data = {
-            "title": f"Redaction Report - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            "detectedLanguage": language,
-            "totalRedactions": total_redactions,
-            "categories": categories,
-            "details": personal_info,  # Include raw details for potential future use or deeper inspection
+        """Generate a detailed redaction report."""
+        report = {
+            "total_redactions": sum(len(v) for v in personal_info.values()),
+            "language": language,
+            "categories": {k: len(v) for k, v in personal_info.items() if v},
+            "details": defaultdict(list)
         }
-        return report_data
+
+        # Priority 3: Enhanced report with confidence scores
+        for category, items in personal_info.items():
+            if not items:
+                continue
+            for text, context_str in items:
+                # Attempt to parse confidence from context string (e.g., "NER_0.85")
+                try:
+                    confidence = float(context_str.split('_')[-1])
+                except (ValueError, IndexError):
+                    confidence = 0.5  # Default confidence if parsing fails
+                
+                report["details"][category].append((text, f"CONF_{confidence:.2f}"))
+        
+        pdf_logger.info("Redaction report generated", total_redactions=report["total_redactions"], language=language)
+        return report
 
     async def process_pdf(self, file_path: str) -> dict:
-        """Process PDF file at file_path and extract text."""
-        start_time = time.time()
+        """
+        Main orchestration function to process a PDF file asynchronously.
+        It handles text extraction, PII detection, anonymization, and reporting.
+        """
+        pdf_path = Path(file_path)
+        if not pdf_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
 
-        pdf_logger.info("Starting PDF processing", filename=file_path)
-
-        if not str(file_path).lower().endswith(".pdf"):
-            pdf_logger.error("Invalid file type for processing", filename=file_path)
-            raise HTTPException(status_code=400, detail="File must be a PDF")
-
-        file_path_obj = Path(file_path)
-        temp_path = self.temp_dir / file_path_obj.name
-
-        # Start performance tracking
-        file_size = 0
-        performance_tracking = None
-
+        file_size_bytes = pdf_path.stat().st_size
+        tracker = file_processing_metrics.track_file_processing(pdf_path, file_size_bytes)
+        response_data = {}
+        
         try:
-            # Copy the file to temp_path for processing
-            with open(file_path_obj, "rb") as src, open(temp_path, "wb") as dst:
-                content = src.read()
-                dst.write(content)
-                file_size = len(content)
+            # Extract text
+            text = self.extract_text_from_pdf(pdf_path)
+            if not text.strip():
+                raise HTTPException(status_code=400, detail="PDF content is empty or could not be extracted")
 
-            # Initialize performance tracking with file metrics
-            performance_tracking = file_processing_metrics.track_file_processing(
-                file_path_obj, file_size, "pdf_processing"
-            )
+            # Detect language
+            language = self.detect_language(text)
 
-            pdf_logger.info(
-                "File copied to temp directory",
-                filename=file_path_obj.name,
-                temp_path=str(temp_path),
-                file_size=file_size,
-            )
+            # Find personal information
+            personal_info = self.find_personal_info(text, language)
 
-            # Process the PDF
-            processing_start = time.time()
-            success, report_data = self.anonymize_pdf(
-                temp_path, self.processed_dir / f"anonymized_{file_path_obj.name}"
-            )
-            processing_time = time.time() - processing_start
+            # Generate a unique output path
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_filename = f"{pdf_path.stem}_redacted_{timestamp}.pdf"
+            output_path = self.processed_dir / output_filename
 
-            if success:
-                total_time = time.time() - start_time
-
-                # Count total redactions from report
-                redactions_count = report_data.get("totalRedactions", 0)
-
-                pdf_logger.info(
-                    "PDF processing completed successfully",
-                    filename=file_path_obj.name,
-                    processing_time=processing_time,
-                    total_time=total_time,
-                    redactions_count=redactions_count,
-                )
-
-                return {
-                    "filename": file_path_obj.name,
-                    "status": "processed",
-                    "report": report_data,  # Return as dict, not JSON string
-                    "processing_time": processing_time,
-                    "redactions_count": redactions_count,
-                    "metadata": {
-                        "total_time": total_time,
-                        "file_size": len(content),
-                        "detected_language": report_data.get("detectedLanguage", "unknown"),
-                    },
+            # Anonymize the PDF
+            success, anonymization_details = self.anonymize_pdf(pdf_path, output_path)
+            
+            if not success:
+                response_data = {
+                    "status": "error",
+                    "error": anonymization_details.get("error", "Unknown error during anonymization"),
+                    "redactions": 0,
                 }
             else:
-                pdf_logger.error(
-                    "PDF processing failed",
-                    filename=file_path_obj.name,
-                    error=report_data.get("error", "Unknown error"),
-                    processing_time=processing_time,
-                )
+                # Generate redaction report
+                report = self.generate_redaction_report(personal_info, language)
 
-                return {
-                    "filename": file_path_obj.name,
-                    "status": "failed",
-                    "error": report_data.get("error", "Unknown error during PDF processing"),
-                    "details": report_data.get("details", "No additional details available"),
-                    "processing_time": processing_time,
+                response_data = {
+                    "anonymized_file_path": str(output_path),
+                    "status": "processed",
+                    "report": report,
                 }
 
         except Exception as e:
-            total_time = time.time() - start_time
-            pdf_logger.log_error(
-                "process_pdf", e, filename=file_path_obj.name, processing_time=total_time
-            )
-
-            return {
-                "filename": file_path_obj.name,
-                "status": "failed",
-                "error": "An exception occurred during PDF processing",
-                "details": str(e),
-                "processing_time": total_time,
+            pdf_logger.error("Error processing PDF", file=file_path, error=str(e), exc_info=True)
+            
+            response_data = {
+                "status": "error",
+                "error": f"An unexpected error occurred: {type(e).__name__}",
+                "detail": str(e),
             }
-
+            if isinstance(e, HTTPException):
+                # Re-raise HTTPException to be handled by FastAPI's exception middleware
+                raise e
         finally:
-            # End performance tracking
-            if performance_tracking:
-                performance_tracking["end_tracking"]()
+            # Ensure performance tracking is always finalized
+            metrics = tracker['end_tracking']()
+            processing_time = metrics['duration_seconds']
+            response_data["processing_time"] = round(processing_time, 2)
 
-            # Clean up temporary file
-            if temp_path.exists():
-                temp_path.unlink()
-                pdf_logger.info("Temporary file cleaned up", temp_path=str(temp_path))
+        return response_data
 
     def cleanup(self):
         """Clean up temporary files."""
-        for file in self.temp_dir.glob("*"):
-            if file.is_file():
-                file.unlink()
+        for temp_file in self.temp_dir.glob("*"):
+            try:
+                temp_file.unlink()
+            except OSError as e:
+                pdf_logger.warning(
+                    f"Could not remove temp file: {temp_file}", error=str(e)
+                )
 
     @performance_monitor("text_extraction")
     def extract_text_from_pdf(self, pdf_path: Path) -> str:
-        """Extract text from PDF file with enhanced Lithuanian character support."""
+        """Extract all text from a PDF file."""
         return extract_text_enhanced(pdf_path)
 
     def process_pdf_for_anonymization(self, file_path: Path) -> Tuple[bool, str]:
-        """Process a PDF file for anonymization."""
-        try:
-            # Generate output filename
-            output_filename = f"anonymized_{file_path.name}"
-            output_path = self.processed_dir / output_filename
+        """
+        Simplified processing for direct anonymization use cases.
+        Returns success status and the path to the anonymized file.
+        """
+        output_filename = f"{file_path.stem}_anonymized_{int(time.time())}.pdf"
+        output_path = self.processed_dir / output_filename
+        
+        success, details = self.anonymize_pdf(file_path, output_path)
+        
+        if success:
+            return True, str(output_path)
+        else:
+            return False, details.get("error", "Anonymization failed")
 
-            # Process the PDF
-            success, report_data = self.anonymize_pdf(file_path, output_path)
+# Singleton instance of the processor
+_pdf_processor_instance = None
+_pdf_processor_lock = threading.Lock()
 
-            if success:
-                return True, str(output_path)
-            else:
-                return False, report_data.get("error", "Failed to anonymize PDF")
-
-        except Exception as e:
-            return False, str(e)
+def get_pdf_processor() -> PDFProcessor:
+    """
+    Get a singleton instance of the PDFProcessor.
+    This is thread-safe and ensures that spaCy models are loaded only once.
+    """
+    global _pdf_processor_instance
+    with _pdf_processor_lock:
+        if _pdf_processor_instance is None:
+            config_manager = get_config_manager()
+            _pdf_processor_instance = PDFProcessor(config_manager=config_manager)
+    return _pdf_processor_instance

@@ -9,6 +9,8 @@ import re
 import logging
 from typing import List, Tuple, Dict, Optional, Set
 from dataclasses import dataclass
+from app.core.context_analyzer import DetectionContext, create_context_aware_detection, ContextualValidator
+from app.core.config_manager import get_config_manager
 
 # Setup logging
 salutation_logger = logging.getLogger(__name__)
@@ -351,17 +353,38 @@ class LithuanianSalutationDetector:
         
         return redaction_names
 
-# Global instance for easy import
-lithuanian_salutation_detector = LithuanianSalutationDetector()
+def detect_lithuanian_salutations(text: str) -> List[DetectionContext]:
+    """
+    Top-level function to detect Lithuanian salutations and return them as
+    DetectionContext objects, ready for the main PII processing pipeline.
+    """
+    if not hasattr(detect_lithuanian_salutations, "detector"):
+        # Initialize the detector once and cache it as a function attribute
+        detect_lithuanian_salutations.detector = LithuanianSalutationDetector()
 
-def detect_lithuanian_salutations(text: str) -> List[SalutationDetection]:
-    """
-    Main function for Lithuanian salutation detection.
+    detector = detect_lithuanian_salutations.detector
+    salutation_detections = detector.detect_salutations(text)
     
-    Args:
-        text: Text to analyze
-        
-    Returns:
-        List of detected salutations with extracted names
-    """
-    return lithuanian_salutation_detector.detect_salutations(text) 
+    context_detections = []
+    
+    # Correctly initialize the validator using the config manager
+    config_manager = get_config_manager()
+    validator = ContextualValidator(
+        cities=config_manager.cities, 
+        brand_names=config_manager.brand_names
+    )
+
+    for salutation in salutation_detections:
+        # Convert each SalutationDetection into a standard DetectionContext
+        detection = create_context_aware_detection(
+            text=salutation.extracted_name,
+            category='person_name',
+            start=salutation.start_pos,
+            end=salutation.end_pos,
+            full_text=text,
+            validator=validator
+        )
+        detection.confidence = salutation.confidence
+        context_detections.append(detection)
+
+    return context_detections 

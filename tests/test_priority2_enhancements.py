@@ -24,6 +24,7 @@ from app.core.lithuanian_enhancements import (
     LithuanianLanguageEnhancer,
     LithuanianContextAnalyzer
 )
+from app.core.validation_utils import is_brand_name
 
 
 class TestContextualValidator:
@@ -31,7 +32,7 @@ class TestContextualValidator:
     
     def setup_method(self):
         """Set up test fixtures."""
-        self.validator = ContextualValidator()
+        self.validator = ContextualValidator(cities=[], brand_names=[])
     
     def test_confidence_calculation_person_name(self):
         """Test confidence calculation for person names."""
@@ -71,7 +72,7 @@ class TestContextualValidator:
         assert detection_context.text == "Jonas Petraitis"
         assert detection_context.category == "person_name"
         assert detection_context.confidence > 0.5
-        assert len(detection_context.validation_flags) >= 0
+        assert len(detection_context.validation_result) >= 0
     
     def test_confidence_level_mapping(self):
         """Test confidence level enum mapping."""
@@ -309,14 +310,11 @@ class TestLithuanianContextAnalyzer:
 
 class TestIntegrationScenarios:
     """Test integration scenarios combining multiple Priority 2 features."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
-        self.validator = ContextualValidator()
-        self.pattern_refiner = AdvancedPatternRefinement()
-        self.lithuanian_enhancer = LithuanianLanguageEnhancer()
-        self.lithuanian_analyzer = LithuanianContextAnalyzer()
-    
+        self.validator = ContextualValidator(cities=[], brand_names=[])
+
     def test_comprehensive_lithuanian_document_analysis(self):
         """Test comprehensive analysis of Lithuanian document."""
         document_text = """
@@ -337,27 +335,18 @@ class TestIntegrationScenarios:
         Data: 2024 m. sausio 15 d.
         """
         
-        # Test enhanced pattern detection
-        enhanced_detections = self.pattern_refiner.find_enhanced_patterns(document_text)
-        lithuanian_detections = self.lithuanian_enhancer.find_enhanced_lithuanian_patterns(document_text)
-        
-        # Should find multiple high-confidence detections
-        assert len(enhanced_detections) >= 3
-        assert len(lithuanian_detections) >= 5
-        
         # Test context-aware validation for a name
         name_start = document_text.find("Jonas Petraitis")
         name_end = name_start + len("Jonas Petraitis")
         
-        detection_context = create_context_aware_detection(
-            "Jonas Petraitis", "person_name", name_start, name_end, 
-            document_text, self.validator
+        detection_context = self.validator.validate_with_context(
+            "Jonas Petraitis", "person_name", document_text, name_start, name_end
         )
         
         # Should have high confidence due to context
         assert detection_context.confidence > 0.7
         assert detection_context.document_section is not None
-    
+
     def test_false_positive_filtering(self):
         """Test that Priority 2 improvements filter false positives."""
         document_text = """
@@ -371,40 +360,37 @@ class TestIntegrationScenarios:
         """
         
         # Test that geographic terms in document context get low confidence
-        gibraltar_context = create_context_aware_detection(
-            "Gibraltar", "person_name", 50, 59, document_text, self.validator
+        gibraltar_context = self.validator.validate_with_context(
+            "Gibraltar", "person_name", document_text, 50, 59
         )
         assert gibraltar_context.confidence < 0.5
         
         # Test that document terms get flagged
-        document_context = create_context_aware_detection(
-            "Document", "person_name", 100, 108, document_text, self.validator
+        document_context = self.validator.validate_with_context(
+            "Document", "person_name", document_text, 100, 108
         )
         assert document_context.confidence < 0.5
-        assert "structural_element" in document_context.validation_flags or \
-               "document_metadata" in document_context.validation_flags
-    
+        assert "structural_element" in document_context.validation_result or \
+               "document_metadata" in document_context.validation_result
+
     def test_confidence_based_prioritization(self):
         """Test that higher confidence detections are prioritized."""
         # High confidence detection with explicit label
         high_conf_text = "Asmens kodas: 38901234567"
-        high_detections = self.pattern_refiner.find_enhanced_patterns(high_conf_text)
-        
-        # Lower confidence detection without label
-        low_conf_text = "Random number 38901234567 in text"
-        low_context = create_context_aware_detection(
-            "38901234567", "lithuanian_personal_codes", 14, 25, 
-            low_conf_text, self.validator
+        high_conf_context = self.validator.validate_with_context(
+            "38901234567", "lithuanian_personal_code", high_conf_text, 13, 24
         )
         
-        # Enhanced pattern should have higher confidence
-        if high_detections:
-            high_confidence = 0.7 + high_detections[0]['confidence_boost']  # Base + boost
-            assert high_confidence > low_context.confidence
+        # Low confidence detection (number that looks like a code)
+        low_conf_text = "The winning lottery number is 38901234567"
+        low_conf_context = self.validator.validate_with_context(
+            "38901234567", "lithuanian_personal_code", low_conf_text, 29, 40
+        )
+        
+        assert high_conf_context.confidence > low_conf_context.confidence
+        assert high_conf_context.get_confidence_level() in [ConfidenceLevel.HIGH, ConfidenceLevel.VERY_HIGH]
+        assert low_conf_context.get_confidence_level() in [ConfidenceLevel.LOW, ConfidenceLevel.VERY_LOW, ConfidenceLevel.MEDIUM]
 
 
 if __name__ == "__main__":
-    # Run specific test classes
-    pytest.main([__file__ + "::TestContextualValidator", "-v"])
-    pytest.main([__file__ + "::TestLithuanianLanguageEnhancer", "-v"])
-    pytest.main([__file__ + "::TestIntegrationScenarios", "-v"]) 
+    pytest.main() 

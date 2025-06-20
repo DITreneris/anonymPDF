@@ -6,6 +6,7 @@ from datetime import datetime
 from app.core.logging import StructuredLogger
 import threading
 import warnings
+import functools
 
 config_logger = StructuredLogger("config_manager")
 
@@ -23,11 +24,13 @@ class ConfigManager:
         self.patterns_file = self.config_dir / "patterns.yaml"
         self.cities_file = self.config_dir / "cities.yaml"
         self.settings_file = self.config_dir / "settings.yaml"
+        self.brand_names_file = self.config_dir / "brand_names.yaml"
 
         # Initialize configuration
         self.patterns = self.load_patterns()
         self.cities = self.load_cities()
         self.settings = self.load_settings()
+        self.brand_names = self.load_brand_names()
 
         config_logger.info(
             "Configuration manager initialized",
@@ -36,38 +39,50 @@ class ConfigManager:
             cities_count=len(self.cities),
         )
 
-    def load_patterns(self) -> Dict[str, str]:
-        """Load PII patterns from YAML file with fallback to defaults."""
-        try:
-            if self.patterns_file.exists():
+    def load_patterns(self) -> Dict[str, re.Pattern]:
+        """Load PII patterns from YAML file, compile them, and return them."""
+        # First, try to load from file if it exists.
+        if self.patterns_file.exists():
+            try:
                 with open(self.patterns_file, "r", encoding="utf-8") as f:
-                    config = yaml.safe_load(f)
+                    config = yaml.safe_load(f) or {}
                     patterns = config.get("pii_patterns", {})
 
-                    # Validate patterns
-                    validated_patterns = self.validate_patterns(patterns)
+                    # Compile and validate patterns
+                    compiled_patterns = self.compile_and_validate_patterns(patterns)
 
                     config_logger.info(
-                        "Patterns loaded from file",
+                        "Patterns loaded and compiled from file",
                         file=str(self.patterns_file),
-                        patterns_count=len(validated_patterns),
+                        patterns_count=len(compiled_patterns),
                     )
-                    return validated_patterns
-            else:
-                config_logger.info(
-                    "Patterns file not found, creating default", file=str(self.patterns_file)
+                    return compiled_patterns
+            except Exception as e:
+                config_logger.error(
+                    "Failed to load patterns from existing file, falling back to defaults.",
+                    error=str(e),
+                    file=str(self.patterns_file),
                 )
-                default_patterns = self.get_default_patterns()
-                self.save_patterns(default_patterns)
-                return default_patterns
-
+        
+        # This block is reached if file doesn't exist OR if loading from file failed.
+        config_logger.info(
+            "Loading default patterns because file was not found or failed to load."
+        )
+        default_patterns = self.get_default_patterns()
+        
+        try:
+            # Attempt to save the defaults for next time, but don't fail if this doesn't work.
+            # The user should still get a working system with default patterns.
+            patterns_to_save = {k: v.pattern for k, v in default_patterns.items()}
+            self.save_patterns(patterns_to_save)
         except Exception as e:
             config_logger.error(
-                "Failed to load patterns, using defaults",
+                "Failed to save default patterns file. The application will use defaults for this session.",
                 error=str(e),
                 file=str(self.patterns_file),
             )
-            return self.get_default_patterns()
+            
+        return default_patterns
 
     def load_cities(self) -> List[str]:
         """Load Lithuanian cities from YAML file with fallback to defaults."""
@@ -122,33 +137,41 @@ class ConfigManager:
             )
             return self.get_default_settings()
 
-    def validate_patterns(self, patterns: Dict[str, str]) -> Dict[str, str]:
-        """Validate regex patterns and return only valid ones."""
-        validated = {}
+    def compile_and_validate_patterns(self, patterns: Dict[str, Any]) -> Dict[str, re.Pattern]:
+        """
+        Compile and validate regex patterns, returning only valid compiled objects.
+        Accepts dicts with either string patterns or dicts with a 'regex' key.
+        """
+        compiled = {}
 
-        for name, pattern in patterns.items():
+        for name, value in patterns.items():
+            pattern_str = None
+            if isinstance(value, str):
+                pattern_str = value
+            elif isinstance(value, dict) and 'regex' in value:
+                pattern_str = value['regex']
+            
+            if not pattern_str:
+                config_logger.warning("Pattern entry is malformed, skipping", pattern_name=name, pattern_value=value)
+                continue
+
             try:
-                # Test if the pattern compiles
-                re.compile(pattern)
-                validated[name] = pattern
-                config_logger.debug(
-                    "Pattern validated",
-                    pattern_name=name,
-                    pattern=pattern[:50] + "..." if len(pattern) > 50 else pattern,
-                )
+                # Let the pattern string define its own flags (e.g., (?i) for case-insensitivity)
+                compiled_pattern = re.compile(pattern_str)
+                compiled[name] = compiled_pattern
             except re.error as e:
                 config_logger.warning(
                     "Invalid regex pattern skipped",
                     pattern_name=name,
-                    pattern=pattern,
+                    pattern=pattern_str,
                     error=str(e),
                 )
 
-        return validated
+        return compiled
 
-    def get_default_patterns(self) -> Dict[str, str]:
-        """Return default PII patterns."""
-        return {
+    def get_default_patterns(self) -> Dict[str, re.Pattern]:
+        """Return default PII patterns as compiled regex objects."""
+        raw_patterns = {
             # Contact Information
             "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
             "phone": r"\b(?:\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b",
@@ -160,7 +183,7 @@ class ConfigManager:
             # Lithuanian Business Information
             "lithuanian_vat_code_labeled": r"PVM\s+kodas:?\s*LT\d{9,12}",
             "lithuanian_vat_code": r"\bLT\d{9,12}\b",
-            "lithuanian_iban": r"\bLT\d{18}\b",
+            "lithuanian_iban": r"\bLT\d{2}(?:\s?\d{4}){4}\b",
             "lithuanian_business_cert": r"\bAF\d{6}-\d\b",
             "lithuanian_business_cert_alt": r"\b\d{9}\b",
             # Lithuanian Personal Information
@@ -178,16 +201,15 @@ class ConfigManager:
             "lithuanian_postal_code": r"\bLT-\d{5}\b",
             # Healthcare & Medical
             "health_insurance_number": r"\b\d{6,12}\b",
-            "blood_group": r"(?<!\w)(?:A|B|AB|O)[\+\-](?!\w)",
+            "blood_group": r"(?<!\w)(?:A|B|AB|O)[+\-](?!\w)",
             "medical_record_number": r"\b\d{6,10}\b",
             # Automotive
-            "lithuanian_car_plate": r"\b[A-Z]{3}[-\s]?\d{3}\b",
+            "lithuanian_license_plate": r"\b[A-Z]{3}[-\s]?\d{3}\b",
             # Morning Session 5 Improvements - Enhanced car plate detection
             "lithuanian_car_plate_contextual": r"(?i)[Vv]alst\.?\s*[Nn]r\.?\s*[:\-]?\s*([A-Z]{3}[-\s]?\d{3})\b",
-            "lithuanian_car_plate_enhanced": r"(?i)(?:valst\.?\s*nr\.?|automobilio\s+nr\.?|numeris)[\s:–-]*([A-Z]{3}[-\s]?\d{3})\b",
+            "lithuanian_car_plate_enhanced": r"(?i)(?:valst\.?\s*nr\.?|automobilio\s+nr\.?|numeris)[:–-]*([A-Z]{3}[-\s]?\d{3})\b",
             # Financial
             "swift_bic": r"\b[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b",
-            "iban_eu": r"\b[A-Z]{2}\d{2}[A-Z0-9]{1,30}\b",
             "credit_card_enhanced": (
                 r"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|"
                 r"6(?:011|5[0-9]{2})[0-9]{12})\b"
@@ -202,16 +224,47 @@ class ConfigManager:
             "ssn": r"\b\d{3}[-]?\d{2}[-]?\d{4}\b",
             "credit_card": r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b",
             # Morning Session 5 Improvements - Enhanced Lithuanian name detection
-            "lithuanian_name_all_caps": r"\b([A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))\s+([A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))|\b([A-ZČĘĖĮŠŲŪŽ]{2,})\s+([A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))\b",
-            "lithuanian_name_contextual": r"(?:Draudėjas|Vardas|Pavardė|Sutartį\s+sudarė)[\s:–-]*([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)*(?:ienė|aitė|ytė|utė|ūtė|as|is|ys|us|ius|ė|a))\b",
-            "lithuanian_name_contextual_caps": r"(?:Draudėjas|DRAUDĖJAS|Vardas|VARDAS)[\s:–-]*([A-ZČĘĖĮŠŲŪŽ]{3,}\s+[A-ZČĘĖĮŠŲŪŽ]{3,})\b",
+            "lithuanian_name_all_caps": r"\b([A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A)\s+[A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))|\b([A-ZČĘĖĮŠŲŪŽ]{2,}\s+[A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))\b",
+            "lithuanian_name_contextual": r"(?:Draudėjas|Vardas|Pavardė|Sutartį\s+sudarė)[:–-]?\s*([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)+)",
+            "lithuanian_name_simple": r"\b([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:ienė|aitė|ytė|utė|ūtė|as|is|ys|us|ius|ė|a)?)\b",
+            "lithuanian_name_contextual_caps": r"(?:Draudėjas|DRAUDĖJAS|Vardas|VARDAS)[:–-]?\s*([A-ZČĘĖĮŠŲŪŽ]{3,}\s+[A-ZČĘĖĮŠŲŪŽ]{3,})\b",
             # Morning Session 5 Improvements - Enhanced address detection
-            "lithuanian_address_flexible": r"\b([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]{3,}(?:io|ės)?)\s*(?:g\.|gatvė|pr\.|prospektas|al\.|alėja)?(?:\s*\d+(?:[A-Za-z]?(?:-\d+)?)?)?",
+            "lithuanian_address_flexible": r"\b([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]{3,}(?:io|ės)?\s*(?:g\.|gatvė|pr\.|prospektas|al\.|alėja)?(?:\s*\d+(?:[A-Za-z]?(?:-\d+)?)?))",
             # Morning Session 5 Improvements - Enhanced personal code with context
-            "lithuanian_personal_code_contextual": r"(?:asmens\s+kodas|asmens/įmonės\s+kodas|A\.K\.)[\s:–-]*(\d{11})\b",
+            "lithuanian_personal_code_contextual": r"(?:asmens\s+kodas|asmens/įmonės\s+kodas|A\.K\.)[:–-]?\s*(\d{11})\b",
             # A generic pattern to catch potential unknown IDs for the adaptive system
             "UNKNOWN_ID": r"\b[A-Z]{2,5}(?:-|\s)?\d{4,}\b"
         }
+        # We manually remove the old iban pattern if it exists to avoid conflicts.
+        raw_patterns.pop("iban_eu", None)
+        
+        return self.compile_and_validate_patterns(raw_patterns)
+
+    def load_brand_names(self) -> List[str]:
+        """Load brand names from YAML file with fallback to defaults."""
+        try:
+            if self.brand_names_file.exists():
+                with open(self.brand_names_file, "r", encoding="utf-8") as f:
+                    config = yaml.safe_load(f)
+                    brand_names = config.get("brand_names", [])
+                    config_logger.info(
+                        "Brand names loaded from file",
+                        file=str(self.brand_names_file),
+                        count=len(brand_names),
+                    )
+                    return brand_names
+            else:
+                config_logger.info(
+                    "Brand names file not found, creating default", file=str(self.brand_names_file)
+                )
+                default_brand_names = self.get_default_brand_names()
+                self.save_brand_names(default_brand_names)
+                return default_brand_names
+        except Exception as e:
+            config_logger.error(
+                "Failed to load brand names, using defaults", error=str(e), file=str(self.brand_names_file)
+            )
+            return self.get_default_brand_names()
 
     def get_default_cities(self) -> List[str]:
         """Return default Lithuanian cities list."""
@@ -299,6 +352,26 @@ class ConfigManager:
             "Senamiestis",
             "Užupis",
             "Žvėrynas",
+            "Neringa",
+            "Birštonas",
+        ]
+
+    def get_default_brand_names(self) -> List[str]:
+        """Return a default list of common brand names to prevent over-redaction."""
+        return [
+            "Microsoft", "Windows", "Office", "Excel", "Word", "PowerPoint",
+            "Apple", "iPhone", "iPad", "MacBook", "macOS",
+            "Google", "Android", "Chrome", "Gmail", "Google Maps",
+            "Amazon", "AWS", "Kindle", "Echo",
+            "Facebook", "Instagram", "WhatsApp", "Meta",
+            "Adobe", "Photoshop", "Acrobat", "Illustrator",
+            "Oracle", "Java", "MySQL",
+            "IBM", "Intel", "NVIDIA", "AMD",
+            "Tesla", "SpaceX",
+            "Toyota", "Honda", "Ford", "Volkswagen", "BMW", "Mercedes-Benz",
+            "Samsung", "Sony", "LG",
+            "Coca-Cola", "Pepsi",
+            "Nike", "Adidas",
         ]
 
     def get_default_settings(self) -> Dict[str, Any]:
@@ -359,29 +432,14 @@ class ConfigManager:
     def save_patterns(self, patterns: Dict[str, str]) -> bool:
         """Save patterns to YAML file."""
         try:
-            config_data = {
-                "metadata": {
-                    "version": "1.0.0",
-                    "last_updated": datetime.now().isoformat(),
-                    "description": "PII detection patterns for AnonymPDF",
-                },
-                "pii_patterns": patterns,
-            }
-
+            # Ensure we are saving the raw string, not the compiled object
+            patterns_to_save = {k: v if isinstance(v, str) else v.pattern for k, v in patterns.items()}
             with open(self.patterns_file, "w", encoding="utf-8") as f:
-                yaml.dump(config_data, f, default_flow_style=False, allow_unicode=True)
-
-            config_logger.info(
-                "Patterns saved successfully",
-                file=str(self.patterns_file),
-                patterns_count=len(patterns),
-            )
+                yaml.dump({"pii_patterns": patterns_to_save}, f, allow_unicode=True, sort_keys=False)
+            config_logger.info("Patterns saved successfully", file=str(self.patterns_file))
             return True
-
         except Exception as e:
-            config_logger.error(
-                "Failed to save patterns", error=str(e), file=str(self.patterns_file)
-            )
+            config_logger.error("Failed to save patterns", error=str(e), file=str(self.patterns_file))
             return False
 
     def save_cities(self, cities: List[str]) -> bool:
@@ -408,6 +466,17 @@ class ConfigManager:
             config_logger.error("Failed to save cities", error=str(e), file=str(self.cities_file))
             return False
 
+    def save_brand_names(self, brand_names: List[str]) -> bool:
+        """Save brand names list to YAML file."""
+        try:
+            with open(self.brand_names_file, "w", encoding="utf-8") as f:
+                yaml.dump({"brand_names": brand_names}, f, allow_unicode=True, sort_keys=False)
+            config_logger.info("Saved brand names to file", file=str(self.brand_names_file))
+            return True
+        except Exception as e:
+            config_logger.error("Failed to save brand names", file=str(self.brand_names_file), error=str(e))
+            return False
+
     def save_settings(self, settings: Dict[str, Any]) -> bool:
         """Save settings to YAML file."""
         try:
@@ -429,6 +498,7 @@ class ConfigManager:
             self.patterns = self.load_patterns()
             self.cities = self.load_cities()
             self.settings = self.load_settings()
+            self.brand_names = self.load_brand_names()
 
             config_logger.info(
                 "Configuration reloaded successfully",
@@ -604,24 +674,22 @@ class ConfigManager:
 # --- Global Singleton Management ---
 
 # Global config manager instance, initialized lazily.
-_config_manager: Optional[ConfigManager] = None
+_config_manager_instance = None
 _config_lock = threading.Lock()
 
-def get_config_manager() -> ConfigManager:
+@functools.lru_cache(maxsize=1)
+def get_config_manager(config_path: Optional[str] = None) -> ConfigManager:
     """
-    Get the global config manager instance in a thread-safe manner.
-    
-    This function ensures that only one instance of the ConfigManager is created
-    and shared across the application, preventing redundant file I/O and
-    ensuring consistent configuration access.
+    Returns a singleton instance of the ConfigManager.
+    If a config_path is provided, it must be provided on the first call.
     """
-    global _config_manager
-    if _config_manager is None:
+    global _config_manager_instance
+    if _config_manager_instance is None:
         with _config_lock:
-            # Double-check locking to prevent race conditions during initialization
-            if _config_manager is None:
-                _config_manager = ConfigManager()
-    return _config_manager
+            if _config_manager_instance is None:
+                config_dir = Path(config_path) if config_path else Path("config")
+                _config_manager_instance = ConfigManager(config_dir=config_dir)
+    return _config_manager_instance
 
 def get_config() -> Dict[str, Any]:
     """

@@ -1,0 +1,188 @@
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF> pytest tests/test_lithuanian_pii.py
+================================================= test session starts =================================================
+platform win32 -- Python 3.11.9, pytest-7.4.3, pluggy-1.6.0
+rootdir: C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF
+configfile: pytest.ini
+plugins: anyio-3.7.1, asyncio-0.21.1, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collected 14 items
+
+tests\test_lithuanian_pii.py .FFFFFF.......                                                                      [100%]
+
+====================================================== FAILURES =======================================================
+_____________________ TestLithuanianIntegration.test_comprehensive_lithuanian_document_processing _____________________
+tests\test_lithuanian_pii.py:66: in test_comprehensive_lithuanian_document_processing
+    detections = test_pdf_processor.find_personal_info(text, language="lt")
+app\core\performance.py:350: in wrapper
+    return func(*args, **kwargs)
+app\services\pdf_processor.py:329: in find_personal_info
+    return self.deduplicate_with_confidence(personal_info, context_aware_detections)
+app\services\pdf_processor.py:366: in deduplicate_with_confidence
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+app\services\pdf_processor.py:366: in <lambda>
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+E   AttributeError: 'float' object has no attribute 'value'
+------------------------------------------------ Captured stderr setup ------------------------------------------------
+2025-06-20 10:17:32,571 - config_manager - INFO - Loading default patterns because file was not found or failed to load.
+2025-06-20 10:17:32,597 - config_manager - INFO - Patterns saved successfully - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpvmkbb02h\\test_config\\patterns.yaml"}
+2025-06-20 10:17:32,597 - config_manager - INFO - Cities file not found, creating default - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpvmkbb02h\\test_config\\cities.yaml"}
+2025-06-20 10:17:32,605 - config_manager - INFO - Cities saved successfully - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpvmkbb02h\\test_config\\cities.yaml", "cities_count": 81}
+2025-06-20 10:17:32,616 - config_manager - INFO - Settings loaded from file - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpvmkbb02h\\test_config\\settings.yaml"}
+2025-06-20 10:17:32,616 - config_manager - INFO - Brand names file not found, creating default - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpvmkbb02h\\test_config\\brand_names.yaml"}
+2025-06-20 10:17:32,620 - config_manager - INFO - Saved brand names to file - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpvmkbb02h\\test_config\\brand_names.yaml"}
+2025-06-20 10:17:32,621 - config_manager - INFO - Configuration manager initialized - {"config_dir": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpvmkbb02h\\test_config", "patterns_count": 38, "cities_count": 81}
+2025-06-20 10:17:32,621 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-20 10:17:32,621 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
+2025-06-20 10:17:32,622 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-20 10:17:33,333 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-20 10:17:34,492 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-20 10:17:34,495 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+__________________________ TestLithuanianIntegration.test_simple_lithuanian_names_detection ___________________________
+tests\test_lithuanian_pii.py:79: in test_simple_lithuanian_names_detection
+    detections = test_pdf_processor.find_personal_info(text, language="lt")
+app\core\performance.py:350: in wrapper
+    return func(*args, **kwargs)
+app\services\pdf_processor.py:329: in find_personal_info
+    return self.deduplicate_with_confidence(personal_info, context_aware_detections)
+app\services\pdf_processor.py:366: in deduplicate_with_confidence
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+app\services\pdf_processor.py:366: in <lambda>
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+E   AttributeError: 'float' object has no attribute 'value'
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-20 10:17:35,121 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+_______________________ TestLithuanianIntegration.test_contextual_validation_of_technical_terms _______________________
+tests\test_lithuanian_pii.py:87: in test_contextual_validation_of_technical_terms
+    detections = test_pdf_processor.find_personal_info(text, language="lt")
+app\core\performance.py:350: in wrapper
+    return func(*args, **kwargs)
+app\services\pdf_processor.py:329: in find_personal_info
+    return self.deduplicate_with_confidence(personal_info, context_aware_detections)
+app\services\pdf_processor.py:366: in deduplicate_with_confidence
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+app\services\pdf_processor.py:366: in <lambda>
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+E   AttributeError: 'float' object has no attribute 'value'
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-20 10:17:35,255 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+_______________________ TestLithuanianIntegration.test_anti_overredaction_in_technical_context ________________________
+tests\test_lithuanian_pii.py:94: in test_anti_overredaction_in_technical_context
+    detections = test_pdf_processor.find_personal_info(text, language="lt")
+app\core\performance.py:350: in wrapper
+    return func(*args, **kwargs)
+app\services\pdf_processor.py:329: in find_personal_info
+    return self.deduplicate_with_confidence(personal_info, context_aware_detections)
+app\services\pdf_processor.py:366: in deduplicate_with_confidence
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+app\services\pdf_processor.py:366: in <lambda>
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+E   AttributeError: 'float' object has no attribute 'value'
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-20 10:17:35,334 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+__________________________ TestLithuanianIntegration.test_anti_overredaction_of_common_words __________________________
+tests\test_lithuanian_pii.py:101: in test_anti_overredaction_of_common_words
+    detections = test_pdf_processor.find_personal_info(text, language="lt")
+app\core\performance.py:350: in wrapper
+    return func(*args, **kwargs)
+app\services\pdf_processor.py:329: in find_personal_info
+    return self.deduplicate_with_confidence(personal_info, context_aware_detections)
+app\services\pdf_processor.py:366: in deduplicate_with_confidence
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+app\services\pdf_processor.py:366: in <lambda>
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+E   AttributeError: 'float' object has no attribute 'value'
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-20 10:17:35,467 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+_____________________________ TestLithuanianIntegration.test_redaction_report_generation ______________________________
+tests\test_lithuanian_pii.py:118: in test_redaction_report_generation
+    detections = test_pdf_processor.find_personal_info(text, language="lt")
+app\core\performance.py:350: in wrapper
+    return func(*args, **kwargs)
+app\services\pdf_processor.py:329: in find_personal_info
+    return self.deduplicate_with_confidence(personal_info, context_aware_detections)
+app\services\pdf_processor.py:366: in deduplicate_with_confidence
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+app\services\pdf_processor.py:366: in <lambda>
+    sorted_detections = sorted(context_detections, key=lambda d: d.confidence.value, reverse=True)
+E   AttributeError: 'float' object has no attribute 'value'
+------------------------------------------------ Captured stderr call -------------------------------------------------
+2025-06-20 10:17:35,567 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+
+---------- coverage: platform win32, python 3.11.9-final-0 -----------
+Name                                    Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------
+app\__init__.py                             0      0   100%
+app\api\__init__.py                         0      0   100%
+app\api\endpoints\__init__.py               0      0   100%
+app\api\endpoints\analytics.py            258    216    16%   32-35, 40-43, 48-51, 56-59, 69-138, 149-194, 202-232, 242-252, 258-288, 294-306, 312-359, 365-391, 398-425, 439-462, 466-505, 514-537, 547-568, 582-605
+app\api\endpoints\feedback.py              48     26    46%   41-92
+app\api\endpoints\monitoring.py            10      2    80%   14, 21
+app\api\endpoints\pdf.py                  101     66    35%   27, 36-100, 106-107, 113-124, 130-163, 171, 176-182, 188-201
+app\core\__init__.py                        0      0   100%
+app\core\adaptive\__init__.py               0      0   100%
+app\core\adaptive\ab_testing.py           145     97    33%   40, 55, 89-102, 106-133, 137-144, 148-153, 168-177, 181-189, 202-214, 218-241, 255-312, 322-325, 329-331
+app\core\adaptive\coordinator.py          125     83    34%   25-32, 55-65, 95-128, 133, 137, 156-189, 212-219, 226, 230-231, 235-236, 247-266, 270-273
+app\core\adaptive\doc_classifier.py        44     28    36%   31-35, 42-72, 78-79, 84
+app\core\adaptive\online_learner.py        31     31     0%   5-68
+app\core\adaptive\pattern_db.py           125     83    34%   47-51, 56-64, 80-93, 98-121, 125-127, 135-204, 213-222, 234-247, 251, 258-264
+app\core\adaptive\pattern_learner.py       64     40    38%   20, 43-47, 53-103, 106-128
+app\core\adaptive\processing_rules.py      54     29    46%   37-40, 44-67, 71, 75, 82-89, 94
+app\core\analytics_engine.py              214    137    36%   86-94, 98-104, 108-122, 126, 130-131, 135-196, 200-227, 231-256, 260-275, 282-336, 340-353, 359, 363-372, 376-392, 398-401, 405, 409-411, 416
+app\core\config_manager.py                262    134    49%   60-61, 78-79, 109-113, 125-138, 151-152, 155-156, 162-163, 263-267, 379, 441-443, 465-467, 476-478, 482-493, 497-512, 516-540, 544-584, 588-663, 667
+app\core\context_analyzer.py              216    129    40%   56, 70-78, 84, 148-207, 211-224, 295-389, 393-401, 421-471, 486, 488, 533, 552-554, 569-579
+app\core\data_models.py                    45     10    78%   22, 47-51, 56-59
+app\core\dependencies.py                  150     76    49%   29-31, 58-60, 88-90, 113-114, 116, 123, 129-151, 155-187, 201-207, 216-231, 238-243, 254-263, 269-280
+app\core\feature_engineering.py           332    276    17%   21, 44-50, 57, 69-155, 159, 180-181, 197-271, 275-283, 287, 303-304, 308-315, 330-401, 405-415, 419, 434, 438, 479-507, 511-521, 525-528, 532-541, 545-558, 562-576, 583-595, 615-660, 671-691, 695-715, 720-729, 735
+app\core\feedback_system.py               272    196    28%   27-28, 84-97, 101-115, 119-166, 178-221, 228-247, 254-258, 262, 270-277, 281-282, 286-292, 296-330, 339-400, 405-429, 433-436, 450-475, 479-487, 508-513, 517-518, 538-556, 560-567, 571
+app\core\intelligent_cache.py             373    272    27%   47-49, 53-54, 61-64, 73-97, 101-141, 145-150, 158-163, 167-170, 174-178, 186-203, 210-212, 217-219, 223-238, 242-243, 251-260, 267-269, 273, 277-288, 293-296, 305-315, 324-340, 359-360, 384-387, 396, 409-422, 437-466, 470-476, 487-498, 510-529, 543-554, 567-586, 596-600, 604-619, 623-626, 630-646, 656-683, 708, 714, 719, 724, 729, 738-752
+app\core\lithuanian_enhancements.py       124     76    39%   221-222, 231-232, 245-295, 323, 340-395, 449-465, 481-507
+app\core\logging.py                       110     41    63%   44-55, 59-71, 87, 98, 104, 106, 153-158, 162-167, 171-176, 196-216
+app\core\memory_optimizer.py              297    233    22%   39, 46-51, 55-97, 101-115, 123-128, 132-133, 142-158, 165-179, 183-186, 193-234, 238-242, 246-247, 251-267, 279-291, 295-306, 310-316, 320-356, 360-375, 383-386, 393-423, 441-449, 460-476, 484-485, 493-494, 504-514, 525-563, 571-573, 585-586, 593-616, 623-628, 634-636, 642-643, 653-657
+app\core\memory_utils.py                   23      9    61%   15, 20, 25, 30, 42-44, 49-50
+app\core\ml_engine.py                     244    244     0%   8-523
+app\core\ml_integration.py                202    140    31%   20, 59-60, 75, 82-110, 114-117, 137-183, 190-233, 239-261, 265-269, 273-285, 291-296, 308-352, 359-394, 404-426, 430-446, 458-460, 464-466, 470-471, 477
+app\core\ml_monitoring.py                 280    203    28%   39-56, 73, 100-101, 109-110, 114-124, 128-179, 195-202, 206-215, 229-251, 255-289, 293-313, 317-334, 338-386, 393-417, 421-428, 432-447, 453-466, 470-475, 479-502, 506-507, 525-548, 552-567, 571-580, 586, 590, 594-618, 622, 626, 630-631, 635-637, 641-645, 651
+app\core\ml_training_pipeline.py          147    147     0%   8-280
+app\core\nlp_loader.py                     19     19     0%   1-36
+app\core\performance.py                   191    105    45%   42, 46-50, 65-86, 92-97, 104-105, 109-110, 114-115, 127-137, 141-147, 151-159, 187-253, 257-259, 263-267, 271-279, 312-314, 320-331, 336-340, 362-365, 369
+app\core\performance_optimizer.py         393    393     0%   7-877
+app\core\real_time_monitor.py             310    229    26%   51-55, 67-81, 93-110, 114-117, 132-147, 160-168, 180-195, 210-213, 221-225, 239-251, 293-326, 330-336, 340-345, 349-381, 393-453, 457-525, 529-530, 534-538, 542-549, 553-556, 560-563, 571-582, 586-600, 604-641, 645-650, 654-655, 659-660
+app\core\salutation_detector.py           143    113    21%   38-40, 44, 89, 100, 117-140, 144-185, 195-231, 236-252, 256-267, 272-304, 308-333, 341-354, 361-390
+app\core\text_extraction.py               120     92    23%   50-106, 110-127, 131-166, 170-175, 180-222, 227-258, 263-282, 290-318, 322-323, 339
+app\core\training_data.py                 305    250    18%   43, 50-60, 64-70, 74-77, 81-104, 108-131, 137-177, 181-226, 236-242, 254-271, 275-280, 292-333, 345-383, 390-391, 395, 432-452, 456-508, 513-530, 534-568, 572-620, 627-630, 646-668, 682-733, 745-778, 784
+app\core\validation_utils.py              188    161    14%   123-127, 134-173, 185-227, 241-250, 258-323, 335-380, 394-417, 431-516, 531-567
+app\database.py                            12      0   100%
+app\db\migrations.py                      100     46    54%   26, 48-112, 130-131, 136-138, 160-165, 169-185, 196-197
+app\dependencies.py                        25      8    68%   20, 26, 35-36, 41-45
+app\main.py                                82     41    50%   26-27, 31-33, 39-50, 81-84, 93, 97, 102, 107, 112, 120-153
+app\models\pdf_document.py                 21      0   100%
+app\pdf_processor.py                       19     13    32%   19-33
+app\schemas\pdf.py                         18      0   100%
+app\services\__init__.py                    0      0   100%
+app\services\pdf_processor.py             295    185    37%   77, 102-164, 179-187, 202-207, 307-308, 336-354, 369-393, 401-410, 419-452, 458-462, 470-542, 548-569, 576-637, 641-645, 652, 659-667, 679-683
+app\version.py                              1      0   100%
+app\worker.py                              58     38    34%   45-55, 63-115
+---------------------------------------------------------------------
+TOTAL                                    6596   4717    28%
+
+FAIL Required test coverage of 80% not reached. Total coverage: 28.49%
+================================================ slowest 10 durations =================================================
+1.93s setup    tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_comprehensive_lithuanian_document_processing
+0.02s call     tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_simple_lithuanian_names_detection
+0.02s call     tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_comprehensive_lithuanian_document_processing
+0.02s call     tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_anti_overredaction_in_technical_context
+0.02s call     tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_redaction_report_generation
+0.01s call     tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_anti_overredaction_of_common_words
+0.01s call     tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_contextual_validation_of_technical_terms
+
+(3 durations < 0.005s hidden.  Use -vv to show these durations.)
+=============================================== short test summary info ===============================================
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_comprehensive_lithuanian_document_processing - AttributeError: 'float' object has no attribute 'value'
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_simple_lithuanian_names_detection - AttributeError: 'float' object has no attribute 'value'
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_contextual_validation_of_technical_terms - AttributeError: 'float' object has no attribute 'value'
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_anti_overredaction_in_technical_context - AttributeError: 'float' object has no attribute 'value'
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_anti_overredaction_of_common_words - AttributeError: 'float' object has no attribute 'value'
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_redaction_report_generation - AttributeError: 'float' object has no attribute 'value'
+============================================= 6 failed, 8 passed in 4.85s =============================================
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF>

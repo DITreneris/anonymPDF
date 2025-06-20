@@ -95,3 +95,9 @@ performance:
     max_batch_size: 100
     batch_timeout_seconds: 10
 
+# Feedback System Configuration
+feedback_system:
+  storage_path: "data/user_feedback.db"
+  min_feedback_for_retraining: 50
+  auto_retrain_enabled: true
+

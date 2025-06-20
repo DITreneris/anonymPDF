@@ -32,6 +32,8 @@ lt_model_path = get_spacy_model_path("lt_core_news_sm")
 added_files = [
     # Configuration files
     ('config', 'config'),
+    # All data files (databases, etc.)
+    ('data', 'data'),
     # Frontend built assets
     ('frontend/dist', 'frontend/dist'),
     # README and documentation

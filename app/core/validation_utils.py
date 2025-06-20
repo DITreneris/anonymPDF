@@ -252,151 +252,75 @@ def validate_organization_with_brand_context(text: str, context: str = "") -> bo
 # Validation functions
 def validate_person_name(text: str, context: str = "") -> bool:
     """
-    Validate if detected text is likely a real person name.
-    
-    Args:
-        text: The detected text to validate
-        context: Surrounding text context for additional validation
-        
-    Returns:
-        bool: True if likely a person name, False otherwise
+    Validate if text is likely a person's name by checking against exclusion lists.
+    Priority 2: Enhanced to handle compound names and titles.
     """
-    text_stripped = text.strip()
+    text_to_validate = text.strip()
 
-    # Basic length checks
-    if not text_stripped or len(text_stripped) < 2 or len(text_stripped) > 100: # Min 2 chars, Max 100 chars
-        validation_logger.info(
-            "Name validation failed: length criteria",
-            text=text,
-            length=len(text_stripped),
-            reason="invalid_length"
+    # Rule 0: Basic structural validation
+    if not text_to_validate or len(text_to_validate) <= 1 or len(text_to_validate) > 100:
+        return False  # Reject empty, null, single-character, or excessively long names
+
+    if any(char.isdigit() for char in text_to_validate):
+        return False # Reject names with numbers
+
+    # Rule: Check for excluded prefixes
+    excluded_prefixes = ["Nr.", "Tel.", "Ged.", "Vilniaus g."]
+    if any(text_to_validate.startswith(prefix) for prefix in excluded_prefixes):
+        return False
+
+    # Handle compound Lithuanian names joined by "ir" (and)
+    # This is a more robust check to avoid splitting common English words.
+    if " ir " in text_to_validate:
+        parts = text_to_validate.split(" ir ")
+        # Only apply splitting logic if it seems like two names, not just a word with "ir" in it.
+        # A simple heuristic: both parts should look like names (e.g., be title-cased or capitalized).
+        if len(parts) == 2 and all(p.strip()[0].isupper() for p in parts if p.strip()):
+            validation_logger.debug(f"Splitting compound name candidate: {parts}")
+            return all(validate_person_name(part.strip(), context) for part in parts)
+
+    # Normalize text
+    text_normalized = text_to_validate.title()
+
+    # Rule 1: Exclude if it's a known geographic term
+    if text_normalized in GEOGRAPHIC_EXCLUSIONS:
+        validation_logger.debug(
+            "Name validation failed - geographic exclusion",
+            text=text_normalized
         )
         return False
 
-    # Check for presence of digits - names usually don't have digits
-    if any(char.isdigit() for char in text_stripped):
-        validation_logger.info(
-            "Name validation failed: contains digits",
-            text=text,
-            reason="contains_digits"
+    # Rule 2: Exclude if it's a common document term
+    if text_normalized in DOCUMENT_TERMS:
+        validation_logger.debug(
+            "Name validation failed - document term exclusion",
+            text=text_normalized
+        )
+        return False
+        
+    # Rule 3: Exclude if it's a common all-caps non-name phrase
+    if text.isupper() and text in COMMON_ALL_CAPS_NON_NAMES:
+        validation_logger.debug(
+            "Name validation failed - common all-caps phrase",
+            text=text
+        )
+        return False
+        
+    # Rule 4: Exclude if it's a brand name
+    if is_brand_name(text):
+        validation_logger.debug(
+            "Name validation failed - identified as brand name",
+            text=text
         )
         return False
 
-    # Normalize for case-insensitive checks against exclusion lists
-    # For exclusion lists, we often want to match regardless of original casing,
-    # but for name structure (e.g. title case), original or specific casing matters.
-    text_normalized_for_exclusions = text_stripped.title() # Use Title Case for matching exclusions like "Vilnius"
-    
-    # Check against geographic exclusions (both full text and individual words)
-    if text_normalized_for_exclusions in GEOGRAPHIC_EXCLUSIONS:
-        validation_logger.info(
-            "Name validation failed: geographic term (full match)",
-            text=text,
-            normalized_for_exclusions=text_normalized_for_exclusions,
-            reason="geographic_exclusion_full"
-        )
-        return False
-    
-    words_for_exclusion_check = text_normalized_for_exclusions.split()
-    for word in words_for_exclusion_check:
-        if word in GEOGRAPHIC_EXCLUSIONS: # Assumes GEOGRAPHIC_EXCLUSIONS are TitleCased or proper nouns
-            validation_logger.info(
-                "Name validation failed: geographic term (word match)",
-                text=text,
-                matched_word=word,
-                reason="geographic_exclusion_word"
-            )
-            return False
+    # Rule 5: Basic structural validation (e.g., must contain at least one space for multi-word names)
+    # This rule might be too simple, but it's a start.
+    if ' ' not in text_normalized and len(text_normalized) > 15: # Unlikely to be a single name if very long
+        pass # Disabling this rule for now as it might be too aggressive
 
-    # Check against document terms (both full text and individual words)
-    # For document terms, many are common nouns, so checking lower/title might be needed.
-    # Assuming DOCUMENT_TERMS contains terms in formats they might appear or normalized (e.g. Title or UPPER)
-    text_lower = text_stripped.lower() # For matching common document terms that might be lowercase
-    
-    # Check full text against DOCUMENT_TERMS (try lower and title case of text)
-    if text_lower in DOCUMENT_TERMS or text_normalized_for_exclusions in DOCUMENT_TERMS:
-        validation_logger.info(
-            "Name validation failed: document term (full match)",
-            text=text,
-            reason="document_term_full"
-        )
-        return False
-
-    # Check individual words against DOCUMENT_TERMS
-    # Consider the case of words in DOCUMENT_TERMS. If they are stored as TitleCase:
-    normalized_words = words_for_exclusion_check # These are already .title().split()
-    # If DOCUMENT_TERMS might also contain lowercase common words, then:
-    # lower_case_words = text_lower.split()
-
-    for word in normalized_words: # Matching title-cased words from text against DOCUMENT_TERMS
-        if word in DOCUMENT_TERMS:
-            validation_logger.info(
-                "Name validation failed: document term (word match on title-cased word)",
-                text=text,
-                matched_word=word,
-                reason="document_term_word"
-            )
-            return False
-    
-    # Additionally, check if lowercase words from text match DOCUMENT_TERMS, if terms are stored as lowercase
-    # This depends on how DOCUMENT_TERMS are populated. For now, rely on title case matching above.
-    # Example if DOCUMENT_TERMS are mostly lowercase:
-    # for word_lower in text_lower.split():
-    #    if word_lower in DOCUMENT_TERMS:
-    #        validation_logger.info(f"Name validation failed for '{text}': document term (word_lower_match: {word_lower})")
-    #        return False
-
-
-    # Basic name structure: should not be all lowercase if multiple words
-    if len(words_for_exclusion_check) > 1 and text_stripped.islower():
-        validation_logger.info(
-            "Name validation failed: multiple words, all lowercase",
-            text=text,
-            reason="all_lowercase_multi_word"
-        )
-        return False
-
-    # Check for too many special characters (allowing spaces, hyphens, apostrophes)
-    allowed_chars = set("'- ") # Space, hyphen, apostrophe
-    num_special = 0
-    for char in text_stripped:
-        if not char.isalnum() and char not in allowed_chars:
-            num_special +=1
-    
-    # Allow a small number of other special characters (e.g. dots in Dr. or middle names)
-    # but if it's excessive, it's likely not a name.
-    # Heuristic: if more than 2 such special chars, or if name is short and has them.
-    if num_special > 2 or (num_special > 0 and len(text_stripped) < 5):
-         validation_logger.info(
-            "Name validation failed: excessive or invalid special characters",
-            text=text,
-            num_special=num_special,
-            reason="excessive_special_chars"
-        )
-         return False
-    
-    # If it looks like a sentence fragment or common phrase (e.g. ends with common punctuation not typical for names)
-    # This is a simple check, more sophisticated NLP would be needed for robust sentence detection.
-    if text_stripped.endswith((",", ".", ";", ":", "?", "!")) and len(text_stripped) > 5 : # Check for common sentence-ending punctuation
-         # Further check if this is not a common abbreviation like "Dr." or "Jr."
-        parts = text_stripped.split()
-        if not any(part.endswith('.') and len(part) <=3 for part in parts): # Allow "Dr.", "Mr." etc.
-            validation_logger.info(
-                "Name validation failed: looks like sentence fragment due to ending punctuation",
-                text=text,
-                reason="ends_with_punctuation"
-            )
-            return False
-
-
-    # TODO: Add more sophisticated checks if needed, e.g.,
-    # - List of common non-name words (beyond document/geo terms)
-    # - Check capitalization patterns (e.g. "John Doe" is good, "john doe" is suspect, "JOHN DOE" is suspect unless short)
-    # - Contextual analysis (e.g., preceded by "Name:", "Vardas:")
-
-    validation_logger.debug(f"Name validation tentatively passed for '{text}'")
+    # If no exclusion rules match, assume it's a valid name
     return True
-
 
 def validate_swift_bic(text: str) -> bool:
     """

@@ -3,9 +3,78 @@ import tempfile
 from pathlib import Path
 from typing import Generator
 import yaml
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from starlette.testclient import TestClient
 
-from app.core.config_manager import ConfigManager
+from app.main import app
+from app.core.config_manager import ConfigManager, get_config_manager
 from app.services.pdf_processor import PDFProcessor
+from app.core.context_analyzer import ContextualValidator
+from app.database import Base
+from app.core.adaptive.pattern_db import AdaptivePatternDB
+from app.core.adaptive.ab_testing import ABTestManager
+from app.core.adaptive.coordinator import AdaptiveLearningCoordinator
+
+
+@pytest.fixture(scope="function")
+def db_session() -> Generator[Session, None, None]:
+    """
+    Create a temporary, in-memory SQLite database session for each test function.
+    This ensures test isolation.
+    """
+    # Use a file-based db for better cross-process/thread visibility if needed,
+    # but for most unit/integration tests, in-memory is faster.
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.rollback()  # Rollback any uncommitted transactions
+        db.close()
+
+
+@pytest.fixture(scope="module")
+def client() -> Generator[TestClient, None, None]:
+    """
+    Get a TestClient instance that reads/writes to the test database.
+    """
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture(scope="session")
+def adaptive_pattern_db(db_session: Session) -> Generator[AdaptivePatternDB, None, None]:
+    """Fixture for the adaptive pattern database, using the test session."""
+    pattern_db = AdaptivePatternDB(db_session=db_session)
+    yield pattern_db
+
+
+@pytest.fixture(scope="session")
+def ab_test_manager(tmp_path_factory: pytest.TempPathFactory) -> Generator[ABTestManager, None, None]:
+    """Fixture for the A/B test manager, using a temporary database file."""
+    db_path = tmp_path_factory.mktemp("ab_test_data") / "ab_tests.db"
+    manager = ABTestManager(db_path=db_path)
+    yield manager
+    manager.close()
+
+
+@pytest.fixture(scope="session")
+def adaptive_coordinator(
+    adaptive_pattern_db: AdaptivePatternDB,
+    ab_test_manager: ABTestManager,
+    config_manager: ConfigManager
+) -> AdaptiveLearningCoordinator:
+    """Fixture for the Adaptive Learning Coordinator."""
+    # This coordinator is now properly initialized with injected, session-scoped dependencies.
+    coordinator = AdaptiveLearningCoordinator(
+        pattern_db=adaptive_pattern_db,
+        ab_test_manager=ab_test_manager,
+        config_manager=config_manager
+    )
+    return coordinator
 
 
 @pytest.fixture(scope="session")
@@ -33,11 +102,16 @@ def test_config_manager(test_config_dir: Path) -> ConfigManager:
 
 
 @pytest.fixture(scope="session")
+def config_manager(test_config_manager) -> ConfigManager:
+    """Alias for test_config_manager for easier use in system tests."""
+    return test_config_manager
+
+
+@pytest.fixture(scope="session")
 def test_pdf_processor(test_config_manager: ConfigManager) -> PDFProcessor:
     """Create a test PDF processor with test configuration."""
-    processor = PDFProcessor()
-    # Replace the config manager with our test one
-    processor.config_manager = test_config_manager
+    # The constructor now requires the config manager.
+    processor = PDFProcessor(config_manager=test_config_manager)
     return processor
 
 

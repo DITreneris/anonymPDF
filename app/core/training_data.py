@@ -20,8 +20,8 @@ import pandas as pd
 # Import existing components
 from app.core.data_models import TrainingExample
 from app.core.feature_engineering import FeatureExtractor, create_feature_extractor
-from app.core.context_analyzer import ContextualValidator, DetectionContext
-from app.core.config_manager import get_config
+from app.core.context_analyzer import ContextualValidator, DetectionContext, create_context_aware_detection
+from app.core.config_manager import get_config, get_config_manager
 from app.core.logging import get_logger
 
 training_logger = get_logger(__name__)
@@ -167,7 +167,8 @@ class TrainingDataStorage:
                         confidence_score=row['confidence_score'],
                         is_true_positive=bool(row['is_true_positive']),
                         document_type=row['document_type'],
-                        metadata=metadata
+                        metadata=metadata,
+                        created_at=datetime.fromisoformat(row['created_at']) if row['created_at'] else datetime.now()
                     )
                     examples.append(example)
         except sqlite3.Error as e:
@@ -226,11 +227,19 @@ class TrainingDataStorage:
 
 
 class Priority2DataCollector:
-    """Collects training data from existing Priority 2 results."""
-    
+    """
+    Handles data collection for advanced Priority 2 features,
+    including contextual validation and confidence scoring.
+    """
+
     def __init__(self):
+        config_manager = get_config_manager()
+        self.contextual_validator = ContextualValidator(
+            cities=config_manager.cities,
+            brand_names=config_manager.brand_names
+        )
+        self.logger = logging.getLogger(__name__)
         self.feature_extractor = create_feature_extractor()
-        self.contextual_validator = ContextualValidator()
         
     def collect_from_priority2_logs(self, log_dir: str = "logs") -> List[TrainingExample]:
         """
@@ -322,6 +331,56 @@ class Priority2DataCollector:
         
         training_logger.info(f"Created {len(examples)} training examples from detection results")
         return examples
+
+    def collect_validated_examples(self, examples: List[TrainingExample]) -> List[TrainingExample]:
+        """
+        Collect validated training examples.
+        
+        Args:
+            examples: List of training examples
+            
+        Returns:
+            List of validated training examples
+        """
+        validated_examples = []
+        
+        for example in examples:
+            try:
+                # Perform contextual validation
+                is_valid, context = self.contextual_validator.validate(example.detection_text)
+                
+                if is_valid:
+                    # If valid, use the original confidence score
+                    validated_example = TrainingExample(
+                        detection_text=example.detection_text,
+                        category=example.category,
+                        context=context,
+                        features=example.features,
+                        confidence_score=example.confidence_score,
+                        is_true_positive=example.is_true_positive,
+                        document_type=example.document_type,
+                        metadata=example.metadata
+                    )
+                    validated_examples.append(validated_example)
+                else:
+                    # If not valid, use a default confidence score
+                    validated_example = TrainingExample(
+                        detection_text=example.detection_text,
+                        category=example.category,
+                        context=context,
+                        features=example.features,
+                        confidence_score=0.5,
+                        is_true_positive=False,
+                        document_type=example.document_type,
+                        metadata=example.metadata
+                    )
+                    validated_examples.append(validated_example)
+            except Exception as e:
+                training_logger.error(f"Failed to validate example: {e}")
+                continue
+        
+        training_logger.info(f"Collected {len(validated_examples)} validated examples")
+        return validated_examples
 
 
 class SyntheticDataGenerator:
@@ -566,9 +625,9 @@ class TrainingDataCollector:
     
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or get_config().get('training_data', {})
-        self.storage = TrainingDataStorage()
-        self.priority2_collector = Priority2DataCollector()
+        self.storage = TrainingDataStorage(data_dir=self.config.get('db_path', 'data/training'))
         self.synthetic_generator = SyntheticDataGenerator()
+        self.priority2_collector = Priority2DataCollector()
         
     def collect_all_training_data(self, include_synthetic: bool = True,
                                  synthetic_count: int = 500) -> List[TrainingExample]:
@@ -609,53 +668,69 @@ class TrainingDataCollector:
         return all_examples
     
     def get_balanced_training_set(self, max_samples: int = 10000,
-                                 balance_ratio: float = 0.5) -> Tuple[List[TrainingExample], DatasetStats]:
+                                 balance_ratio: float = 0.5) -> Tuple[List[TrainingExample], Optional[DatasetStats]]:
         """
-        Get a balanced training set with specified positive/negative ratio.
-        
+        Retrieves a balanced training set from the database.
+
         Args:
-            max_samples: Maximum number of samples to return
-            balance_ratio: Desired ratio of positive samples
-            
+            max_samples: The total number of samples desired.
+            balance_ratio: The desired ratio of positive to total samples.
+
         Returns:
-            Tuple of (balanced examples, dataset statistics)
+            A tuple containing the list of balanced training examples and their stats.
         """
         all_examples = self.storage.load_training_examples()
-        
-        # Separate positive and negative examples
+        if not all_examples:
+            return [], None
+
         positive_examples = [ex for ex in all_examples if ex.is_true_positive]
         negative_examples = [ex for ex in all_examples if not ex.is_true_positive]
+
+        num_pos_samples = int(max_samples * balance_ratio)
+        num_neg_samples = max_samples - num_pos_samples
+
+        # Adjust sample counts if we don't have enough data
+        num_pos_to_fetch = min(num_pos_samples, len(positive_examples))
+        num_neg_to_fetch = min(num_neg_samples, len(negative_examples))
         
-        # Calculate target counts
-        target_positive = int(max_samples * balance_ratio)
-        target_negative = max_samples - target_positive
+        # Shuffle before sampling
+        random.shuffle(positive_examples)
+        random.shuffle(negative_examples)
+
+        balanced_set = positive_examples[:num_pos_to_fetch] + negative_examples[:num_neg_to_fetch]
+        random.shuffle(balanced_set)
+
+        if not balanced_set:
+            return [], None
+
+        # Create stats for the *returned* balanced set
+        final_pos_count = sum(1 for ex in balanced_set if ex.is_true_positive)
+        final_neg_count = len(balanced_set) - final_pos_count
+        final_total_count = len(balanced_set)
         
-        # Sample examples
-        sampled_positive = random.sample(
-            positive_examples, 
-            min(target_positive, len(positive_examples))
+        final_categories = {}
+        for ex in balanced_set:
+            final_categories[ex.category] = final_categories.get(ex.category, 0) + 1
+            
+        final_doc_types = {}
+        for ex in balanced_set:
+            if ex.document_type:
+                final_doc_types[ex.document_type] = final_doc_types.get(ex.document_type, 0) + 1
+
+        balanced_stats = DatasetStats(
+            total_samples=final_total_count,
+            positive_samples=final_pos_count,
+            negative_samples=final_neg_count,
+            categories=final_categories,
+            document_types=final_doc_types,
+            date_range=(min(ex.created_at for ex in balanced_set), max(ex.created_at for ex in balanced_set)) if balanced_set else (datetime.now(), datetime.now()),
+            quality_score=1.0 # Placeholder
         )
-        sampled_negative = random.sample(
-            negative_examples,
-            min(target_negative, len(negative_examples))
-        )
+
+        training_logger.info(f"Created balanced training set: {final_total_count} examples "
+                             f"({final_pos_count} positive, {final_neg_count} negative)")
         
-        balanced_examples = sampled_positive + sampled_negative
-        random.shuffle(balanced_examples)
-        
-        # Calculate statistics
-        stats = DatasetStats(
-            total_samples=len(balanced_examples),
-            positive_samples=len(sampled_positive),
-            negative_samples=len(sampled_negative),
-            categories={},
-            document_types={},
-            date_range=(datetime.now(), datetime.now()),
-            quality_score=1.0
-        )
-        
-        training_logger.info(f"Created balanced training set: {len(balanced_examples)} examples")
-        return balanced_examples, stats
+        return balanced_set, balanced_stats
     
     def validate_training_data(self, examples: List[TrainingExample]) -> Dict[str, Any]:
         """

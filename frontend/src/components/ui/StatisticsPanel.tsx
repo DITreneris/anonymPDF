@@ -154,7 +154,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
             <Box sx={{ flex: 1 }}>
               <Box sx={{ textAlign: 'center', p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
                 <Typography variant="h4" color="primary.main" sx={{ fontWeight: 700 }}>
-                  {Object.keys(redactionReport.categories).length}
+                  {redactionReport.categories ? Object.keys(redactionReport.categories).length : 0}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   PII Categories
@@ -194,7 +194,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           )}
 
           {/* Categories Breakdown */}
-          {Object.keys(redactionReport.categories).length > 0 && (
+          {redactionReport.categories && Object.keys(redactionReport.categories).length > 0 && (
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -203,7 +203,8 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
               </AccordionSummary>
               <AccordionDetails>
                 <Stack spacing={1}>
-                  {Object.entries(redactionReport.categories)
+                  {redactionReport.categories ? Object.entries(redactionReport.categories)
+                    .filter(([key]) => key !== 'total_redactions') // Filter out total_redactions from display
                     .sort(([,a], [,b]) => b - a) // Sort by count descending
                     .map(([category, count]) => (
                     <Box 
@@ -218,7 +219,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                       }}
                     >
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {category}
+                        {category === 'locations' ? 'Locations (Cities)' : category}
                       </Typography>
                       <Chip 
                         label={count} 
@@ -227,7 +228,7 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                         variant="outlined"
                       />
                     </Box>
-                  ))}
+                  )) : null}
                 </Stack>
               </AccordionDetails>
             </Accordion>

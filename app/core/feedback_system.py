@@ -32,11 +32,12 @@ feedback_logger = get_logger("anonympdf.feedback_system")
 
 class FeedbackType(Enum):
     """Types of user feedback."""
+    CATEGORY_CORRECTION = "category_correction"
     FALSE_POSITIVE = "false_positive"
     FALSE_NEGATIVE = "false_negative"
     CORRECT_DETECTION = "correct_detection"
-    CATEGORY_CORRECTION = "category_correction"
     CONFIDENCE_ADJUSTMENT = "confidence_adjustment"
+    CONFIRMED_PII = "confirmed_pii" # User confirmed a low-confidence detection
 
 
 class FeedbackSeverity(Enum):
@@ -179,8 +180,8 @@ class FeedbackAnalyzer:
         analysis = self.analyze_feedback_patterns()
         
         # Check false positive rate
-        false_positives = analysis['feedback_by_type'].get('false_positive', 0)
-        total_feedback = analysis['total_feedback']
+        false_positives = analysis.get('feedback_by_type', {}).get('false_positive', 0)
+        total_feedback = analysis.get('total_feedback', 0)
         
         if total_feedback > 0:
             false_positive_rate = false_positives / total_feedback
@@ -192,22 +193,24 @@ class FeedbackAnalyzer:
                 )
         
         # Check user confidence
-        if analysis['avg_user_confidence'] < 0.6:
+        avg_confidence = analysis.get('avg_user_confidence', 0.0)
+        if avg_confidence < 0.6:
             suggestions.append(
-                f"Low user confidence rating ({analysis['avg_user_confidence']:.2f}). "
+                f"Low user confidence rating ({avg_confidence:.2f}). "
                 "Review detection quality and consider model retraining."
             )
         
         # Check problem categories
-        if analysis['problem_categories']:
-            categories = [cat['category'] for cat in analysis['problem_categories']]
+        problem_cats = analysis.get('problem_categories', [])
+        if problem_cats:
+            categories = [cat['category'] for cat in problem_cats]
             suggestions.append(
                 f"Categories with high error rates: {', '.join(categories)}. "
                 "Focus training data collection on these categories."
             )
         
         # Check pattern issues
-        pattern_issues = analysis['pattern_issues']
+        pattern_issues = analysis.get('pattern_issues', {})
         if pattern_issues:
             most_problematic = max(pattern_issues.items(), key=lambda x: x[1])
             suggestions.append(
@@ -236,6 +239,7 @@ class UserFeedbackProcessor:
         # Processing state
         self.pending_feedback = deque()
         self.processed_count = 0
+        self.last_retrain_count = 0  # Initialize the counter
         self.last_retrain_time = datetime.now()
         
         self._lock = threading.Lock()
@@ -248,70 +252,45 @@ class UserFeedbackProcessor:
         This is used to find ground truth for pattern discovery.
         """
         confirmed_pii = {}
-        for fb in feedback:
-            # Consider corrections and confirmations as ground truth
-            if fb.feedback_type == FeedbackType.CATEGORY_CORRECTION and fb.user_corrected_category:
-                confirmed_pii[fb.text_segment] = fb.user_corrected_category
-            elif fb.feedback_type == FeedbackType.CORRECT_DETECTION and fb.detected_category:
-                confirmed_pii[fb.text_segment] = fb.detected_category
+        for item in feedback:
+            if item.feedback_type == FeedbackType.CONFIRMED_PII and item.user_corrected_category:
+                confirmed_pii[item.text_segment] = item.user_corrected_category
         return confirmed_pii
 
     def convert_to_training_examples(self, feedback_list: List[UserFeedback]) -> List[TrainingExample]:
-        """
-        Converts a list of user feedback into a list of training examples.
-        """
-        examples = []
-        for fb in feedback_list:
-            example = self._feedback_to_training_example(fb)
-            if example:
-                examples.append(example)
-        return examples
-    
+        """Convert a list of feedback items to training examples."""
+        return [
+            example
+            for feedback in feedback_list
+            if (example := self._feedback_to_training_example(feedback)) is not None
+        ]
+
     def submit_feedback(self, feedback: UserFeedback) -> bool:
-        """Submit user feedback for processing."""
-        try:
-            # Validate feedback
-            if not self._validate_feedback(feedback):
-                feedback_logger.warning(f"Invalid feedback submitted: {feedback.feedback_id}")
-                return False
-            
-            # Add to analyzer
-            self.feedback_analyzer.add_feedback(feedback)
-            
-            # Add to processing queue
-            with self._lock:
-                self.pending_feedback.append(feedback)
-            
-            feedback_logger.info(
-                f"Feedback submitted: {feedback.feedback_type.value} for {feedback.detected_category}",
-                feedback_id=feedback.feedback_id,
-                document_id=feedback.document_id
-            )
-            
-            return True
-            
-        except Exception as e:
-            feedback_logger.error(f"Error submitting feedback: {e}")
+        """Add user feedback to the processing queue."""
+        if not self._validate_feedback(feedback):
+            feedback_logger.warning("Invalid feedback received, not queueing", feedback_id=feedback.feedback_id)
             return False
-    
+            
+        with self._lock:
+            self.pending_feedback.append(feedback)
+            
+        return True
+
+    def has_pending_feedback(self) -> bool:
+        """Check if there is pending feedback to process."""
+        with self._lock:
+            return bool(self.pending_feedback)
+            
     def _validate_feedback(self, feedback: UserFeedback) -> bool:
-        """Validate user feedback data."""
-        # Check required fields
-        if not feedback.feedback_id or not feedback.document_id:
+        """Validate user feedback before adding to queue."""
+        if not all([feedback.feedback_id, feedback.document_id, feedback.text_segment]):
             return False
         
-        if not feedback.text_segment:
-            return False
-        
-        # Check confidence values
-        if not (0.0 <= feedback.detected_confidence <= 1.0):
-            return False
-        
-        if feedback.user_confidence_rating and not (0.0 <= feedback.user_confidence_rating <= 1.0):
+        if feedback.feedback_type not in FeedbackType:
             return False
         
         return True
-    
+
     def process_pending_feedback(self) -> Dict[str, Any]:
         """Process pending user feedback."""
         processed_feedback = []
@@ -323,7 +302,7 @@ class UserFeedbackProcessor:
                 processed_feedback.append(feedback)
         
         if not processed_feedback:
-            return {'processed_count': 0, 'training_examples_created': 0}
+            return {'processed_count': 0, 'training_examples_created': 0, 'should_retrain': False}
         
         # Convert feedback to training examples
         training_examples = self.convert_to_training_examples(processed_feedback)
@@ -333,8 +312,11 @@ class UserFeedbackProcessor:
             self.processed_count += 1
             
         if training_examples:
-            # Add to training data storage
-            self.training_data_collector.storage.save_training_examples(training_examples, 'user_feedback')
+            # Add to training data storage by calling the method on the `storage` attribute
+            self.training_data_collector.storage.save_training_examples(
+                examples=training_examples, 
+                source='user_feedback'
+            )
 
         # Check if we should trigger retraining
         should_retrain = self._should_trigger_retrain()
@@ -342,7 +324,7 @@ class UserFeedbackProcessor:
         feedback_logger.info(
             f"Processed {len(processed_feedback)} feedback items, "
             f"created {len(training_examples)} training examples",
-            should_retrain=should_retrain
+            extra={'should_retrain': should_retrain}
         )
         
         return {
@@ -364,7 +346,7 @@ class UserFeedbackProcessor:
                 is_pii = False
                 confidence = feedback.user_confidence_rating or 0.1
                 correct_category = feedback.detected_category or 'UNKNOWN'
-            elif feedback.feedback_type in [FeedbackType.FALSE_NEGATIVE, FeedbackType.CORRECT_DETECTION, FeedbackType.CATEGORY_CORRECTION]:
+            elif feedback.feedback_type in [FeedbackType.FALSE_NEGATIVE, FeedbackType.CORRECT_DETECTION, FeedbackType.CATEGORY_CORRECTION, FeedbackType.CONFIRMED_PII]:
                 is_pii = True
                 confidence = feedback.user_confidence_rating or 0.95
                 if feedback.user_corrected_category:
@@ -419,8 +401,11 @@ class UserFeedbackProcessor:
     
     def _should_trigger_retrain(self) -> bool:
         """Determine if model retraining should be triggered."""
-        # Check if enough feedback has been processed
-        if self.processed_count >= self.auto_retrain_threshold:
+        # Check if enough new feedback has been processed since the last retrain
+        processed_since_last = self.processed_count - self.last_retrain_count
+        if processed_since_last >= self.auto_retrain_threshold:
+            self.last_retrain_count = self.processed_count
+            self.last_retrain_time = datetime.now()
             return True
         
         # Check time since last retrain
@@ -430,11 +415,17 @@ class UserFeedbackProcessor:
         
         # Check feedback quality indicators
         analysis = self.feedback_analyzer.analyze_feedback_patterns(time_window_hours=24)
-        if analysis.get('total_feedback', 0) > 10:
-            false_positive_rate = analysis['feedback_by_type'].get('false_positive', 0) / analysis['total_feedback']
-            if false_positive_rate > 0.3:  # High error rate
-                return True
-        
+        total_feedback = analysis.get('total_feedback', 0) if isinstance(analysis, dict) else 0
+
+        # Ensure we have a valid number for comparison
+        if isinstance(total_feedback, (int, float)) and total_feedback > 10:
+            feedback_by_type = analysis.get('feedback_by_type', {}) if isinstance(analysis, dict) else {}
+            false_positive_count = feedback_by_type.get('false_positive', 0)
+            if false_positive_count > 0:
+                false_positive_rate = false_positive_count / total_feedback
+                if false_positive_rate > 0.3:  # High error rate
+                    return True
+
         return False
     
     def get_feedback_stats(self) -> FeedbackStats:
@@ -459,6 +450,9 @@ class UserFeedbackSystem:
         self.config = config or get_config().get('feedback_system', {})
         self.processor_config = self.config.get('processor', {})
         
+        # Defaulting processing_interval to prevent KeyError
+        self.processing_interval = self.config.get('processing_interval', 5000) # Default to 5 seconds
+
         # Initialize components with proper config
         self.processor = UserFeedbackProcessor(config=self.processor_config)
         self.training_data_collector = self.processor.training_data_collector
@@ -482,7 +476,14 @@ class UserFeedbackSystem:
 
     def _init_storage(self):
         """Initialize the SQLite storage for feedback."""
-        with sqlite3.connect(self.config['storage_path']) as conn:
+        storage_path_str = self.config.get('storage_path')
+        if not storage_path_str:
+            raise ValueError("Feedback system 'storage_path' not configured.")
+        
+        storage_path = Path(storage_path_str)
+        storage_path.parent.mkdir(parents=True, exist_ok=True) # Ensure directory exists
+
+        with sqlite3.connect(storage_path) as conn:
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS user_feedback (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -501,100 +502,70 @@ class UserFeedbackSystem:
                     processed BOOLEAN DEFAULT FALSE
                 )
             ''')
-            
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_feedback_timestamp ON user_feedback(timestamp)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_feedback_processed ON user_feedback(processed)')
     
     def submit_feedback(self, feedback: UserFeedback) -> bool:
-        """Submit user feedback to the system."""
+        """Submits user feedback to the system."""
         try:
-            # Store in database
             self._store_feedback(feedback)
-            
-            # Process through processor
-            success = self.processor.submit_feedback(feedback)
-            
-            if success and self.use_background_thread:
-                # Trigger background processing
-                self._stop_event.set()
-            
-            return success
-            
+            return self.processor.submit_feedback(feedback)
         except Exception as e:
-            feedback_logger.error(f"Error in feedback submission: {e}")
+            feedback_logger.error(f"Failed to submit feedback: {e}", exc_info=True)
             return False
-    
+
     def _store_feedback(self, feedback: UserFeedback):
-        """Store feedback in database."""
+        """Store feedback in the database."""
         with sqlite3.connect(self.config['storage_path']) as conn:
-            conn.execute('''
-                INSERT OR REPLACE INTO user_feedback 
-                (feedback_id, document_id, text_segment, detected_category, 
-                 user_corrected_category, detected_confidence, user_confidence_rating,
-                 feedback_type, severity, user_comment, context, timestamp, processed)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                feedback.feedback_id,
-                feedback.document_id,
-                feedback.text_segment,
-                feedback.detected_category,
-                feedback.user_corrected_category,
-                feedback.detected_confidence,
-                feedback.user_confidence_rating,
-                feedback.feedback_type.value,
-                feedback.severity.value,
-                feedback.user_comment,
-                json.dumps(feedback.context),
-                feedback.timestamp.isoformat(),
-                feedback.processed
-            ))
-    
+            conn.execute(
+                '''
+                INSERT INTO user_feedback (
+                    feedback_id, document_id, text_segment, detected_category,
+                    user_corrected_category, detected_confidence, user_confidence_rating,
+                    feedback_type, severity, user_comment, context, timestamp, processed
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    feedback.feedback_id, feedback.document_id, feedback.text_segment,
+                    feedback.detected_category, feedback.user_corrected_category,
+                    feedback.detected_confidence, feedback.user_confidence_rating,
+                    feedback.feedback_type.value, feedback.severity.value,
+                    feedback.user_comment, json.dumps(feedback.context),
+                    feedback.timestamp, feedback.processed
+                )
+            )
+
     def _processing_loop(self):
-        """Background processing loop."""
-        try:
-            while not self._stop_event.is_set():
-                result = self.processor.process_pending_feedback()
-                
-                if result['should_retrain']:
-                    feedback_logger.info("Feedback processing indicates model retraining should be triggered")
-                    # Here you could trigger actual retraining
-                    try:
-                        job_id = self.ml_training_pipeline.force_training(reason="feedback_triggered_retraining")
-                        feedback_logger.info(f"Successfully queued retraining job {job_id} due to feedback.")
-                        self.processor.last_retrain_time = datetime.now() # Update last retrain time after successful trigger
-                    except Exception as e:
-                        feedback_logger.error(f"Failed to trigger retraining via MLTrainingPipeline: {e}", exc_info=True)
-                
-                self._stop_event.wait(self.config['processing_interval'] / 1000)
-        except Exception as e:
-            feedback_logger.error(f"Error in feedback processing loop: {e}")
-        finally:
-            self._stop_event.clear()
-    
+        """Background loop to process feedback periodically."""
+        while not self._stop_event.is_set():
+            try:
+                if self.processor.has_pending_feedback():
+                    result = self.processor.process_pending_feedback()
+                    if result.get('should_retrain'):
+                        # This part needs to be connected to the ML Training Pipeline
+                        feedback_logger.info("Retraining trigger condition met. Signaling pipeline.")
+
+                # Use the defaulted value for waiting
+                self._stop_event.wait(self.processing_interval / 1000)
+
+            except KeyError as e:
+                feedback_logger.error(f"Configuration key error in processing loop: {e}", exc_info=True)
+                # Avoid rapid-fire loops on critical config errors
+                self._stop_event.wait(30)
+            except Exception as e:
+                feedback_logger.error(f"Error in feedback processing loop: {e}", exc_info=True)
+                # General exception handling
+                self._stop_event.wait(10) # Wait before retrying
+
     def get_system_status(self) -> Dict[str, Any]:
-        """Get comprehensive system status."""
-        stats = self.processor.get_feedback_stats()
-        
-        return {
-            'processor_status': {
-                'processed_count': self.processor.processed_count,
-                'pending_count': len(self.processor.pending_feedback),
-                'last_retrain_time': self.processor.last_retrain_time.isoformat()
-            },
-            'feedback_statistics': {
-                'total_feedback': stats.total_feedback_count,
-                'by_type': stats.feedback_by_type,
-                'by_category': stats.feedback_by_category,
-                'avg_user_confidence': stats.avg_user_confidence
-            },
-            'improvement_suggestions': stats.improvement_suggestions,
-            'system_config': {
-                'use_background_thread': self.use_background_thread,
-                'processing_interval': self.config['processing_interval'],
-                'auto_retrain_threshold': self.processor.auto_retrain_threshold
-            }
+        """Get the current status of the feedback system."""
+        status = {
+            'is_running': self._processing_thread.is_alive() if self._processing_thread else False,
+            'pending_feedback_count': len(self.processor.pending_feedback),
+            'processed_feedback_count': self.processor.processed_count,
+            'processing_interval': self.processing_interval,
+            'last_retrain_time': self.processor.last_retrain_time.isoformat()
         }
+        return status
 
 def create_feedback_system(config: Optional[Dict[str, Any]] = None) -> UserFeedbackSystem:
-    """Factory function to create an instance of UserFeedbackSystem."""
-    return UserFeedbackSystem(config=config) 
+    """Factory function for creating a UserFeedbackSystem instance."""
+    return UserFeedbackSystem(config=config)

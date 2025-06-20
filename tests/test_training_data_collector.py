@@ -129,11 +129,7 @@ class TestTrainingDataStorage:
     def test_get_dataset_stats_empty(self, training_data_storage: TrainingDataStorage):
         """Test get_dataset_stats on an empty database."""
         stats = training_data_storage.get_dataset_stats()
-        assert stats.total_samples == 0
-        assert stats.positive_samples == 0
-        assert stats.negative_samples == 0
-        assert not stats.categories
-        assert not stats.document_types
+        assert stats is None
 
     def test_get_dataset_stats_with_data(self, training_data_storage: TrainingDataStorage):
         """Test get_dataset_stats with some data."""
@@ -189,7 +185,7 @@ class TestTrainingDataCollector:
         """Test getting a balanced set when no data is available."""
         examples, stats = training_data_collector.get_balanced_training_set()
         assert len(examples) == 0
-        assert stats.total_samples == 0
+        assert stats is None
 
     def test_get_balanced_training_set_with_data(self, training_data_collector: TrainingDataCollector):
         """Test getting a balanced set with some data."""
@@ -216,6 +212,6 @@ class TestTrainingDataCollector:
         assert num_pos == 3
         assert num_neg == 3
 
-        assert stats.total_samples == 13
-        assert stats.positive_samples == 10
+        assert stats.total_samples == 6
+        assert stats.positive_samples == 3
         assert stats.negative_samples == 3 

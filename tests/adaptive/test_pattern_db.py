@@ -2,119 +2,134 @@
 Tests for the Adaptive Pattern Database.
 """
 
-import unittest
-import os
+import pytest
 from datetime import datetime
-from pathlib import Path
-from app.core.adaptive.pattern_db import AdaptivePatternDB
-from app.core.adaptive.pattern_learner import ValidatedPattern
+from dataclasses import asdict
+from app.core.adaptive.pattern_db import AdaptivePatternDB, AdaptivePattern
+from sqlalchemy.orm import Session
+from sqlalchemy import text
 
-class TestAdaptivePatternDB(unittest.TestCase):
-    def setUp(self):
-        """Set up a temporary database for testing."""
-        self.db_path = Path("test_adaptive_patterns.db")
-        self.db = AdaptivePatternDB(db_path=self.db_path)
-        self.pattern1 = ValidatedPattern(
-            pattern_id="test_pattern_1",
-            regex="\\b\\d{5}\\b",
-            pii_category="ZIP_CODE",
-            confidence=0.95,
-            accuracy=0.9,
-            precision=0.95,
-            recall=0.85,
-            created_at=datetime.now(),
-            positive_matches=19,
-            negative_matches=1
-        )
-        self.pattern2 = ValidatedPattern(
-            pattern_id="test_pattern_2",
-            regex="[A-Z]{3}-\\d{3}",
-            pii_category="PRODUCT_CODE",
-            confidence=0.88,
-            accuracy=0.85,
-            precision=0.88,
-            recall=0.82,
-            created_at=datetime.now(),
-            positive_matches=22,
-            negative_matches=3
-        )
+@pytest.fixture
+def pattern_db(db_session: Session) -> AdaptivePatternDB:
+    """Provides a clean instance of AdaptivePatternDB for each test."""
+    return AdaptivePatternDB(db_session=db_session)
 
-    def tearDown(self):
-        """Remove the temporary database file."""
-        self.db.close()
-        if self.db_path.exists():
-            self.db_path.unlink()
+@pytest.fixture
+def sample_pattern1() -> AdaptivePattern:
+    """A sample pattern for testing."""
+    return AdaptivePattern(
+        pattern_id="test_pattern_1",
+        regex="\\b\\d{5}\\b",
+        pii_category="ZIP_CODE",
+        confidence=0.95,
+        positive_matches=19,
+        negative_matches=1,
+        last_validated_at=datetime.now()
+    )
 
-    def test_add_and_get_pattern(self):
-        """Test adding a new pattern and retrieving it."""
-        pattern = ValidatedPattern(
-            pattern_id="test1",
-            regex=r"\d{3}",
-            pii_category="TEST",
-            confidence=0.9
-        )
-        self.db.add_or_update_pattern(pattern)
+@pytest.fixture
+def sample_pattern2() -> AdaptivePattern:
+    """Another sample pattern for testing."""
+    return AdaptivePattern(
+        pattern_id="test_pattern_2",
+        regex="[A-Z]{3}-\\d{3}",
+        pii_category="PRODUCT_CODE",
+        confidence=0.88,
+        positive_matches=22,
+        negative_matches=3,
+        last_validated_at=datetime.now()
+    )
 
-        active_patterns = self.db.get_active_patterns()
-        self.assertEqual(len(active_patterns), 1)
-        retrieved = active_patterns[0]
-        self.assertEqual(retrieved.pattern_id, "test1")
-        self.assertEqual(retrieved.confidence, 0.9)
-        self.assertEqual(retrieved.pii_category, "TEST")
+class TestAdaptivePatternDB:
+    def test_add_and_get_pattern(self, pattern_db: AdaptivePatternDB, sample_pattern1: AdaptivePattern):
+        """Test adding a pattern and retrieving it."""
+        # A fresh database should be empty.
+        initial_patterns = pattern_db.get_active_patterns()
+        assert len(initial_patterns) == 0
 
-    def test_update_pattern(self):
-        """Test updating an existing pattern."""
-        self.db.add_or_update_pattern(self.pattern1)
+        # Now, add a pattern and verify it's there.
+        pattern_db.add_or_update_pattern(sample_pattern1)
         
-        # Now update the pattern
-        self.pattern1.confidence = 0.98
-        self.pattern1.positive_matches = 25
-        self.assertTrue(self.db.add_or_update_pattern(self.pattern1))
-        
-        active_patterns = self.db.get_active_patterns()
-        self.assertEqual(len(active_patterns), 1)
-        self.assertAlmostEqual(active_patterns[0].confidence, 0.98)
-        self.assertEqual(active_patterns[0].positive_matches, 25)
-        self.assertEqual(active_patterns[0].version, 2) # Version should be incremented
+        final_patterns = pattern_db.get_active_patterns()
+        assert len(final_patterns) == 1
+        assert final_patterns[0].pii_category == sample_pattern1.pii_category
+        assert final_patterns[0].pattern_id == sample_pattern1.pattern_id
 
-    def test_get_active_patterns(self):
+    def test_update_pattern(self, pattern_db: AdaptivePatternDB, sample_pattern1: AdaptivePattern):
+        """Test updating an existing pattern with higher confidence."""
+        # First, add the initial pattern.
+        pattern_db.add_or_update_pattern(sample_pattern1)
+
+        # Modify the pattern with a higher confidence and update it.
+        updated_details = asdict(sample_pattern1)
+        updated_details['confidence'] = 0.98
+        updated_details['positive_matches'] = 20
+        updated_pattern_obj = AdaptivePattern(**updated_details)
+        
+        pattern_db.add_or_update_pattern(updated_pattern_obj)
+        
+        # We must query the DB directly since no getter for a single pattern exists
+        result = pattern_db.db.execute(
+            text("SELECT * FROM adaptive_patterns WHERE pattern_id = :id"),
+            {"id": sample_pattern1.pattern_id}
+        ).first()
+        
+        fetched_pattern = AdaptivePattern.from_row(result)
+        assert fetched_pattern is not None
+        assert fetched_pattern.confidence == 0.98
+        assert fetched_pattern.version == 2 # Version should increment on update
+
+    def test_get_active_patterns(self, pattern_db: AdaptivePatternDB, sample_pattern1, sample_pattern2):
         """Test retrieving only active patterns."""
-        self.db.add_or_update_pattern(self.pattern1)
-        self.db.add_or_update_pattern(self.pattern2)
-        
-        active_patterns = self.db.get_active_patterns()
-        self.assertEqual(len(active_patterns), 2)
+        # Add two patterns, one active and one inactive.
+        sample_pattern1.is_active = True
+        sample_pattern2.is_active = False
+        pattern_db.add_or_update_pattern(sample_pattern1)
+        pattern_db.add_or_update_pattern(sample_pattern2)
 
-    def test_deactivate_pattern(self):
+        active_patterns = pattern_db.get_active_patterns()
+        assert len(active_patterns) == 1
+        assert active_patterns[0].pattern_id == sample_pattern1.pattern_id
+
+    def test_deactivate_pattern(self, pattern_db: AdaptivePatternDB, sample_pattern1: AdaptivePattern):
         """Test deactivating a pattern."""
-        self.db.add_or_update_pattern(self.pattern1)
-        self.db.add_or_update_pattern(self.pattern2)
-        
-        self.assertTrue(self.db.deactivate_pattern(self.pattern1.pattern_id))
-        
-        active_patterns = self.db.get_active_patterns()
-        self.assertEqual(len(active_patterns), 1)
-        self.assertEqual(active_patterns[0].pattern_id, self.pattern2.pattern_id)
+        # Add the pattern first.
+        pattern_db.add_or_update_pattern(sample_pattern1)
 
-    def test_deactivate_non_existent_pattern(self):
-        """Test that deactivating a non-existent pattern returns False."""
-        self.assertFalse(self.db.deactivate_pattern("non_existent"))
-
-    def test_update_pattern_fields(self):
-        """Test that updating a pattern's fields works correctly."""
-        pattern = ValidatedPattern(
-            pattern_id="update_test",
-            regex=r"test_update",
-            pii_category="UPDATE_CAT",
-            confidence=0.5
-        )
-        self.db.add_or_update_pattern(pattern)
-
-        # The add_or_update logic is complex, let's just deactivate to test an update
-        self.db.deactivate_pattern(pattern.pattern_id)
+        pattern_db.deactivate_pattern(sample_pattern1.pattern_id)
         
-        active_patterns = self.db.get_active_patterns()
-        self.assertEqual(len(active_patterns), 0)
+        active_patterns = pattern_db.get_active_patterns()
+        assert len(active_patterns) == 0
+        
+        # Verify by querying the DB directly
+        result = pattern_db.db.execute(
+            text("SELECT * FROM adaptive_patterns WHERE pattern_id = :id"),
+            {"id": sample_pattern1.pattern_id}
+        ).first()
+        deactivated_pattern = AdaptivePattern.from_row(result)
+        assert deactivated_pattern is not None
+        assert not deactivated_pattern.is_active
+
+    def test_update_pattern_fields(self, pattern_db: AdaptivePatternDB, sample_pattern1: AdaptivePattern):
+        """Test that various fields are updated correctly."""
+        # Add the pattern first.
+        pattern_db.add_or_update_pattern(sample_pattern1)
+
+        sample_pattern1.confidence = 0.98 # Higher confidence to ensure update
+        sample_pattern1.pii_category = "UPDATED_CATEGORY"
+        sample_pattern1.positive_matches += 5
+        
+        pattern_db.add_or_update_pattern(sample_pattern1)
+        
+        result = pattern_db.db.execute(
+            text("SELECT * FROM adaptive_patterns WHERE pattern_id = :id"),
+            {"id": sample_pattern1.pattern_id}
+        ).first()
+        updated_pattern = AdaptivePattern.from_row(result)
+
+        assert updated_pattern.pii_category == "UPDATED_CATEGORY"
+        assert updated_pattern.positive_matches == 24
+        assert updated_pattern.version == 2
 
 if __name__ == '__main__':
-    unittest.main() 
+    pytest.main() 

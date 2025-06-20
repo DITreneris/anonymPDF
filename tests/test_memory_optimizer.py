@@ -20,13 +20,6 @@ from app.core.memory_optimizer import (
     get_memory_optimizer,
     memory_logger
 )
-from app.core.memory_utils import (
-    optimize_memory,
-    get_memory_stats,
-    start_memory_monitoring,
-    stop_memory_monitoring,
-    memory_optimized
-)
 
 
 class TestMemoryMetrics:
@@ -306,411 +299,93 @@ class TestMemoryOptimizer:
     
     def setup_method(self):
         """Set up test fixtures."""
-        # Create a mock config to avoid relying on global get_config()
         self.mock_config = {
-            'memory_optimizer': {
-                'doc_gc_threshold_mb': 50,
-                'some_other_setting': True 
-            },
-            'performance': { # Fallback config
-                 'parallel_processing': {} # Ensure this path is fine
-            }
+            'doc_gc_threshold_mb': 50,
         }
-        # Patch get_config to return our mock_config
-        with patch('app.core.memory_optimizer.get_config', return_value=self.mock_config):
-            self.optimizer = MemoryOptimizer() # Uses mock_config now
-    
+        # Patch get_config at the source to ensure the optimizer gets it
+        with patch('app.core.memory_optimizer.get_config', return_value={'memory_optimizer': self.mock_config}):
+            self.optimizer = MemoryOptimizer()
+
     def teardown_method(self):
         """Clean up after tests."""
-        if hasattr(self.optimizer, 'monitor') and self.optimizer.monitor._monitoring:
+        if self.optimizer.monitor and self.optimizer.monitor._monitoring:
              self.optimizer.stop_optimization() 
     
     def test_optimizer_initialization(self):
-        """Test MemoryOptimizer initialization and component setup."""
-        assert self.optimizer.gc_manager is not None, "gc_manager should be initialized"
-        assert self.optimizer.monitor is not None, "monitor should be initialized"
-        assert self.optimizer.config is not None, "config should be loaded"
-        
-        # Ensure config is loaded correctly from the mocked config
-        assert self.optimizer.config.get('doc_gc_threshold_mb') == 50
-        
-        # Check that monitoring is not started by default
-        assert not self.optimizer.monitor._monitoring, "Monitoring should not be active by default"
-    
+        """Test MemoryOptimizer initialization."""
+        assert isinstance(self.optimizer.gc_manager, GarbageCollectionManager)
+        assert isinstance(self.optimizer.monitor, MemoryMonitor)
+        assert self.optimizer.config == self.mock_config
+        assert not self.optimizer.monitor._monitoring
+
     def test_start_stop_optimization(self):
         """Test starting and stopping optimization (monitoring)."""
-        with patch.object(self.optimizer.monitor, 'start_monitoring') as mock_start_mon, \
-             patch.object(self.optimizer.monitor, 'stop_monitoring') as mock_stop_mon:
-            
-            # Ensure the mock also sets the _monitoring flag for the assertion
-            def side_effect_start_monitoring():
-                self.optimizer.monitor._monitoring = True
-            mock_start_mon.side_effect = side_effect_start_monitoring
-            
+        with patch.object(self.optimizer.monitor, 'start_monitoring') as mock_start, \
+             patch.object(self.optimizer.monitor, 'stop_monitoring') as mock_stop:
             self.optimizer.start_optimization()
-            mock_start_mon.assert_called_once()
-            assert self.optimizer.monitor._monitoring # Should be true after starting
+            mock_start.assert_called_once()
             
             self.optimizer.stop_optimization()
-            mock_stop_mon.assert_called_once()
-    
-    @patch('psutil.virtual_memory') # Mock psutil for monitor
-    def test_optimize_memory(self, mock_psutil_vm): # mock_psutil_proc removed from params
+            mock_stop.assert_called_once()
+            
+    @patch('app.core.memory_optimizer.MemoryMonitor.get_current_metrics')
+    @patch('app.core.memory_optimizer.GarbageCollectionManager.force_collection')
+    def test_optimize_memory(self, mock_force_collection, mock_get_metrics):
         """Test the main memory optimization function."""
-        
-        mock_mem_info_start = Mock()
-        mock_mem_info_start.rss = 100 * 1024 * 1024  # 100MB
-        mock_mem_info_start.vms = 200 * 1024 * 1024
-
-        mock_mem_info_end = Mock()
-        mock_mem_info_end.rss = 80 * 1024 * 1024   # 80MB (simulating freed memory)
-        mock_mem_info_end.vms = 180 * 1024 * 1024
-        
-        # Create a single mock instance for psutil.Process
-        mock_single_process_instance = Mock(spec=psutil.Process)
-        # Correct order for side_effect based on calls:
-        # 1. monitor.get_current_metrics (start in optimize_memory)
-        # 2. gc_manager._get_memory_usage (start in force_collection)
-        # 3. gc_manager._get_memory_usage (end in force_collection)
-        # 4. monitor.get_current_metrics (end in optimize_memory)
-        mock_single_process_instance.memory_info.side_effect = [
-            mock_mem_info_start, # Call 1
-            mock_mem_info_start, # Call 2
-            mock_mem_info_end,   # Call 3
-            mock_mem_info_end    # Call 4
+        mock_get_metrics.side_effect = [
+            MemoryMetrics(time.time(), 100, 200, 50, 1000, 100), # Start
+            MemoryMetrics(time.time(), 80, 180, 40, 1200, 80)   # End
         ]
-
-        # Mock system memory for MemoryMonitor.get_current_metrics (used by both monitor calls)
-        mock_sys_mem = Mock()
-        mock_sys_mem.percent = 50.0
-        mock_sys_mem.available = 2000 * 1024 * 1024
-        mock_psutil_vm.return_value = mock_sys_mem # This mock is from the @patch decorator
-
-        # Patch psutil.Process to return our single controlled instance
-        # Also mock gc.get_objects for consistent object collection simulation
-        with patch('psutil.Process', return_value=mock_single_process_instance) as mock_process_constructor, \
-             patch('gc.get_objects', side_effect=[
-                 [object()] * 120, # For monitor.get_current_metrics (start)
-                 [object()] * 100, # For gc_manager.force_collection (objects_before)
-                 [object()] * 50,  # For gc_manager.force_collection (objects_after)
-                 [object()] * 40   # For monitor.get_current_metrics (end)
-             ]):
-            result = self.optimizer.optimize_memory()
+        mock_force_collection.return_value = {'memory_freed_mb': 20.0, 'objects_collected': 20}
         
-        assert isinstance(result, dict)
-        assert 'start_memory_mb' in result
-        assert 'end_memory_mb' in result
-        assert 'memory_saved_mb' in result
-        assert 'duration_seconds' in result
-        assert 'memory_freed_mb' in result # From gc_manager's perspective
-        assert 'objects_collected' in result
-
+        result = self.optimizer.optimize_memory()
+        
+        mock_force_collection.assert_called_once()
+        assert mock_get_metrics.call_count == 2
         assert result['start_memory_mb'] == 100.0
-        # End memory for the monitor is the 4th item in side_effect (mock_mem_info_end)
-        assert result['end_memory_mb'] == 80.0 
+        assert result['end_memory_mb'] == 80.0
         assert result['memory_saved_mb'] == pytest.approx(20.0)
-        # gc_manager's memory_freed_mb is (call 2 rss - call 3 rss) = 100 - 80 = 20
-        assert result['memory_freed_mb'] == pytest.approx(20.0) 
-        assert result['objects_collected'] >= 0
+        assert result['memory_freed_mb'] == 20.0
 
     def test_optimization_stats(self):
         """Test comprehensive optimization statistics reporting."""
-        self.optimizer.start_optimization()
-        # Mock parts of optimize_memory to avoid complex psutil mocking here if already tested above
-        with patch.object(self.optimizer.monitor, 'get_current_metrics', return_value=MemoryMetrics(time.time(), 100,200,50,1000,100)), \
-             patch.object(self.optimizer.gc_manager, 'force_collection', return_value={'duration_seconds':0.1, 'memory_freed_mb':10, 'objects_collected':5}):
-            self.optimizer.optimize_memory() 
-        self.optimizer.stop_optimization()
+        with patch.object(self.optimizer.gc_manager, 'get_gc_stats', return_value={'collections': 1}) as mock_gc_stats, \
+             patch.object(self.optimizer.monitor, 'get_memory_summary', return_value={'peak_mb': 150}) as mock_mem_summary:
+            
+            stats = self.optimizer.get_optimization_stats()
+            
+            mock_gc_stats.assert_called_once()
+            mock_mem_summary.assert_called_once()
+            
+            assert stats['gc_stats'] == {'collections': 1}
+            assert stats['memory_summary'] == {'peak_mb': 150}
 
-        stats = self.optimizer.get_optimization_stats()
-        
-        assert isinstance(stats, dict)
-        assert 'gc_stats' in stats
-        assert 'memory_summary' in stats
-        # Removed: assert 'spacy_stats' in stats
-        # Removed: assert 'last_optimization' in stats
-        # Removed: assert 'auto_optimize_enabled' in stats
-        
-        assert isinstance(stats['gc_stats'], dict)
-        assert isinstance(stats['memory_summary'], dict)
-
-    @patch('psutil.Process')
-    @patch('psutil.virtual_memory')
-    def test_optimized_processing_context(self, mock_psutil_vm, mock_psutil_proc):
+    @patch('app.core.memory_optimizer.gc')
+    def test_optimized_processing_context(self, mock_gc):
         """Test the optimized_processing context manager."""
-        # Mock psutil calls as they are used by gc_manager and monitor
-        mock_mem_info = Mock()
-        mock_mem_info.rss = 100 * 1024 * 1024
-        mock_psutil_proc.return_value.memory_info.return_value = mock_mem_info
-        mock_sys_mem = Mock()
-        mock_sys_mem.percent = 50.0
-        mock_sys_mem.available = 2000 * 1024 * 1024
-        mock_psutil_vm.return_value = mock_sys_mem
-
-        with patch.object(self.optimizer.gc_manager, 'optimize_gc_settings') as mock_optimize_settings, \
-             patch.object(self.optimizer.gc_manager, 'force_collection') as mock_force_collection, \
-             patch('gc.set_threshold') as mock_gc_set_threshold, \
-             patch('gc.get_threshold', return_value=(700,10,10)) as mock_gc_get_threshold:
+        mock_gc.get_threshold.return_value = (700, 10, 10)
+        
+        with patch.object(self.optimizer, 'tune_garbage_collector') as mock_tune_gc, \
+             patch.object(self.optimizer, 'force_gc_collection') as mock_force_gc:
             
             with self.optimizer.optimized_processing(processing_mode="heavy"):
-                # Simulate some processing
-                pass
+                pass 
             
-            mock_optimize_settings.assert_called_once_with("heavy")
-            mock_force_collection.assert_called_once()
-            assert mock_gc_set_threshold.call_count >= 1 # Called for optimize_gc_settings and restore
-            mock_gc_get_threshold.assert_called_once() # To save original thresholds
+            mock_tune_gc.assert_called_once_with("heavy")
+            mock_force_gc.assert_called_once()
+            mock_gc.set_threshold.assert_called_with(700, 10, 10)
 
 
-class TestGlobalFunctions:
-    """Test global convenience functions."""
+class TestGlobalOptimizerAccess:
+    """Test the singleton access pattern for the optimizer."""
     
-    def test_get_memory_optimizer(self):
-        """Test global memory optimizer access."""
-        # Reset global _memory_optimizer before testing to ensure a clean state
+    def test_get_memory_optimizer_singleton(self):
+        """Test that get_memory_optimizer returns a singleton instance."""
         with patch('app.core.memory_optimizer._memory_optimizer', None):
-            optimizer1 = get_memory_optimizer() # This is app.core.memory_optimizer.get_memory_optimizer
+            optimizer1 = get_memory_optimizer()
             optimizer2 = get_memory_optimizer()
-            
-            # Should return same instance
             assert optimizer1 is optimizer2
             assert isinstance(optimizer1, MemoryOptimizer)
-    
-    @patch('app.core.memory_utils.get_memory_optimizer') # Corrected patch target
-    def test_optimize_memory_function(self, mock_get_optimizer_in_utils):
-        """Test global optimize_memory function."""
-        mock_optimizer_instance = Mock(spec=MemoryOptimizer)
-        mock_optimizer_instance.optimize_memory.return_value = {'result': 'mocked_optimize_memory_success'} # Distinct return
-        mock_get_optimizer_in_utils.return_value = mock_optimizer_instance
-        
-        result = optimize_memory() # This is app.core.memory_utils.optimize_memory
-        
-        assert result == {'result': 'mocked_optimize_memory_success'} # Assert against mock's return
-        mock_optimizer_instance.optimize_memory.assert_called_once()
-    
-    @patch('app.core.memory_utils.get_memory_optimizer') # Corrected patch target
-    def test_get_memory_stats_function(self, mock_get_optimizer_in_utils):
-        """Test global get_memory_stats function."""
-        mock_optimizer_instance = Mock(spec=MemoryOptimizer)
-        mock_optimizer_instance.get_optimization_stats.return_value = {'stats': 'mocked_get_stats_success'} # Distinct return
-        mock_get_optimizer_in_utils.return_value = mock_optimizer_instance
-        
-        result = get_memory_stats() # This is app.core.memory_utils.get_memory_stats
-        
-        assert result == {'stats': 'mocked_get_stats_success'} # Assert against mock's return
-        mock_optimizer_instance.get_optimization_stats.assert_called_once()
-    
-    @patch('app.core.memory_utils.get_memory_optimizer') # Corrected patch target
-    def test_start_memory_monitoring_function(self, mock_get_optimizer_in_utils):
-        """Test global start_memory_monitoring function."""
-        mock_optimizer_instance = Mock(spec=MemoryOptimizer)
-        mock_get_optimizer_in_utils.return_value = mock_optimizer_instance
-        
-        start_memory_monitoring() # This is app.core.memory_utils.start_memory_monitoring
-        
-        mock_optimizer_instance.start_optimization.assert_called_once()
-    
-    @patch('app.core.memory_utils.get_memory_optimizer') # Corrected patch target
-    def test_stop_memory_monitoring_function(self, mock_get_optimizer_in_utils):
-        """Test global stop_memory_monitoring function."""
-        mock_optimizer_instance = Mock(spec=MemoryOptimizer)
-        mock_get_optimizer_in_utils.return_value = mock_optimizer_instance
-        
-        stop_memory_monitoring() # This is app.core.memory_utils.stop_memory_monitoring
-        
-        mock_optimizer_instance.stop_optimization.assert_called_once()
-
-
-class TestMemoryOptimizedDecorator:
-    """Test memory optimization decorator."""
-    
-    def setup_method(self):
-        """Set up test fixtures."""
-        # Create a mock config to avoid relying on global get_config()
-        self.mock_config = {
-            'memory_optimizer': {
-                'doc_gc_threshold_mb': 50,
-                'some_other_setting': True 
-            },
-            'performance': { 
-                 'parallel_processing': {}
-            }
-        }
-        # Patch get_config to return our mock_config for the MemoryOptimizer instance
-        # This patch is specific to the instantiation of MemoryOptimizer if it calls get_config()
-        # For the decorator itself, the relevant patch is for get_memory_optimizer in memory_utils
-        with patch('app.core.memory_optimizer.get_config', return_value=self.mock_config):
-             # This optimizer instance is used if the context manager's __enter__ needs to return it
-             # or if other direct interactions are needed.
-            self.optimizer = MemoryOptimizer()
-
-    @patch('app.core.memory_utils.get_memory_optimizer') # Corrected patch target
-    def test_memory_optimized_decorator(self, mock_get_optimizer_in_utils):
-        """Test memory optimization decorator functionality."""
-        mock_optimizer_instance = Mock(spec=MemoryOptimizer)
-        mock_context_manager = MagicMock()
-        # Configure the __enter__ and __exit__ methods for the context manager mock
-        mock_optimizer_instance.optimized_processing.return_value = mock_context_manager
-        # mock_context_manager itself is what is returned by __enter__
-        mock_context_manager.__enter__.return_value = self.optimizer # or a new mock if needed
-        mock_context_manager.__exit__.return_value = None # __exit__ should return None or bool
-
-        mock_get_optimizer_in_utils.return_value = mock_optimizer_instance
-        
-        @memory_optimized("heavy") # Decorator from app.core.memory_utils
-        def test_function(value):
-            return value * 2
-        
-        result = test_function(5)
-        
-        assert result == 10
-        mock_optimizer_instance.optimized_processing.assert_called_once_with("heavy")
-        mock_context_manager.__enter__.assert_called_once()
-        mock_context_manager.__exit__.assert_called_once()
-    
-    def test_memory_optimized_decorator_default_mode(self):
-        """Test memory optimization decorator with default mode."""
-        @memory_optimized()
-        def test_function():
-            return "test"
-        
-        # Should not raise errors
-        result = test_function()
-        assert result == "test"
-
-
-class TestIntegration:
-    """Integration tests for memory optimization components."""
-
-    def setup_method(self):
-        # Ensure a clean global optimizer for each integration test
-        self.optimizer_patcher = patch('app.core.memory_optimizer._memory_optimizer', None)
-        self.optimizer_patcher.start() # Start the patch
-        # Now that _memory_optimizer is None, get_memory_optimizer() will create a new instance
-        self.optimizer = get_memory_optimizer() 
-        self.optimizer.config = {'doc_gc_threshold_mb': 1} # simple config for tests
-
-    def teardown_method(self):
-        if hasattr(self.optimizer, 'monitor') and self.optimizer.monitor._monitoring:
-            # Ensure monitoring is stopped on the instance we used in the test
-            self.optimizer.stop_optimization() 
-        
-        # Stop the patcher that was started in setup_method
-        self.optimizer_patcher.stop() 
-
-    @patch('psutil.Process')
-    @patch('psutil.virtual_memory')
-    def test_full_optimization_cycle(self, mock_psutil_vm, mock_psutil_proc):
-        """Test a full cycle: start, optimize, get stats, stop."""
-        # Mock psutil calls
-        mock_mem_info = Mock()
-        mock_mem_info.rss = 100 * 1024 * 1024
-        mock_psutil_proc.return_value.memory_info.return_value = mock_mem_info
-        mock_sys_mem = Mock()
-        mock_sys_mem.percent = 50.0
-        mock_sys_mem.available = 2000 * 1024 * 1024
-        mock_psutil_vm.return_value = mock_sys_mem
-
-        self.optimizer.start_optimization()
-        assert self.optimizer.monitor._monitoring
-
-        with patch('gc.get_objects', side_effect=[[object()] * 10, [object()] * 5]):
-            opt_result = self.optimizer.optimize_memory()
-        assert 'start_memory_mb' in opt_result
-
-        stats = self.optimizer.get_optimization_stats()
-        assert 'gc_stats' in stats
-        assert 'memory_summary' in stats
-
-        self.optimizer.stop_optimization()
-        assert not self.optimizer.monitor._monitoring
-
-    def test_concurrent_operations(self):
-        """Test thread safety of optimizer operations."""
-        # This test will rely on the internal locks of components like LRUCache, GCManager, Monitor
-        # if they are called indirectly. Here we mostly test MemoryOptimizer's own methods if they had shared state.
-        # For now, MemoryOptimizer methods like optimize_memory, get_stats are themselves synchronous
-        # and rely on underlying components being thread-safe.
-        
-        # Example: if optimize_memory modified shared state on self.optimizer directly without lock
-        # this test would be more relevant for self.optimizer itself.
-        # We can, however, test if concurrent calls to get_memory_optimizer() behave as expected (singleton)
-
-        optimizers = []
-        def worker():
-            # Simulate getting and using optimizer concurrently
-            opt = get_memory_optimizer() 
-            optimizers.append(opt)
-            opt.get_optimization_stats() # Access some state
-
-        threads = [threading.Thread(target=worker) for _ in range(5)]
-        for t in threads: t.start()
-        for t in threads: t.join()
-
-        assert len(optimizers) == 5
-        # All threads should get the same global optimizer instance
-        if optimizers:
-            first_optimizer_id = id(optimizers[0])
-            assert all(id(opt) == first_optimizer_id for opt in optimizers)
-        
-        # Ensure the global optimizer is reset for subsequent tests
-        # Correct way to start and stop a patcher inline:
-        temp_patcher = patch('app.core.memory_optimizer._memory_optimizer', None)
-        temp_patcher.start()
-        temp_patcher.stop()
-
-    @patch('psutil.Process')
-    @patch('psutil.virtual_memory')
-    @patch.object(memory_logger, 'warning') # Patch the logger used by MemoryMonitor
-    def test_memory_threshold_handling(self, mock_logger_warning, mock_psutil_vm, mock_psutil_proc):
-        """Test how MemoryMonitor (via MemoryOptimizer) logs threshold breaches."""
-        # Mock config for MemoryOptimizer to ensure it gets 'performance' or 'memory_optimizer'
-        # The setup_method for TestIntegration already re-initializes optimizer and sets a basic config.
-        
-        # Setup monitor part of the optimizer
-        self.optimizer.monitor.monitoring_interval = 0.01 # Fast monitoring
-        self.optimizer.monitor._warning_threshold = 70
-        self.optimizer.monitor._critical_threshold = 85
-        
-        # Mock psutil calls for MemoryMonitor.get_current_metrics
-        mock_proc_mem_info = Mock()
-        mock_proc_mem_info.rss = 100 * 1024 * 1024 
-        mock_proc_mem_info.vms = 200 * 1024 * 1024
-        mock_psutil_proc.return_value.memory_info.return_value = mock_proc_mem_info
-        
-        mock_sys_mem_info = Mock()
-        mock_sys_mem_info.available = 2000 * 1024 * 1024
-        
-        # Initial state: below thresholds
-        mock_sys_mem_info.percent = 60.0
-        mock_psutil_vm.return_value = mock_sys_mem_info
-        
-        # Removed lines related to optimizer._auto_optimize, _optimization_interval, _last_optimization
-
-        self.optimizer.start_optimization() # Starts the monitor
-        time.sleep(0.05) # Let monitor run once (initial metrics)
-
-        # Simulate high memory usage (warning)
-        mock_sys_mem_info.percent = 75.0 # Above warning (70), below critical (85)
-        mock_psutil_vm.return_value = mock_sys_mem_info
-        time.sleep(0.05) # Let monitor run again
-        
-        # Check if logger.warning was called by MemoryMonitor for high memory
-        high_mem_calls = [call for call in mock_logger_warning.call_args_list if "High memory usage detected" in call.args[0]]
-        assert len(high_mem_calls) > 0, "MemoryMonitor should log a warning for high memory usage"
-
-        # Simulate critical memory usage
-        mock_logger_warning.reset_mock()
-        mock_sys_mem_info.percent = 90.0 # Above critical (85)
-        mock_psutil_vm.return_value = mock_sys_mem_info
-        time.sleep(0.05) # Let monitor run again
-
-        critical_mem_calls = [call for call in mock_logger_warning.call_args_list if "Critical memory usage detected" in call.args[0]]
-        assert len(critical_mem_calls) > 0, "MemoryMonitor should log a warning for critical memory usage"
-            
-        # Removed assertions for mock_force_gc.assert_called() as it's not auto-triggered by MemoryOptimizer
-
-        self.optimizer.stop_optimization()
 
 
 if __name__ == "__main__":

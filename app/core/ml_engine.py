@@ -26,13 +26,13 @@ from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 
 # Import existing components
-from app.core.context_analyzer import ContextualValidator, DetectionContext, ConfidenceLevel
-from app.core.config_manager import get_config
+from app.core.context_analyzer import ContextualValidator
+from app.core.config_manager import get_config_manager, get_config
 from app.core.logging import get_logger
 if TYPE_CHECKING:
     from app.core.adaptive.coordinator import AdaptiveLearningCoordinator
 from app.core.analytics_engine import QualityAnalyzer
-from app.core.feature_engineering import FeatureExtractor
+from app.core.feature_engineering import FeatureExtractor, create_feature_extractor
 from .data_models import MLModel, MLPrediction, TrainingExample
 
 ml_logger = get_logger(__name__)
@@ -136,7 +136,12 @@ class MLConfidenceScorer:
     def __init__(self, config: Optional[Dict] = None, coordinator: Optional["AdaptiveLearningCoordinator"] = None):
         self.config = config or get_config().get('ml_engine', {})
         self.model_manager = MLModelManager()
-        self.contextual_validator = ContextualValidator()  # Fallback to Priority 2
+        
+        config_manager = get_config_manager()
+        self.contextual_validator = ContextualValidator(
+            cities=config_manager.cities,
+            brand_names=config_manager.brand_names
+        )
         
         # Integration with Adaptive Learning System
         self.coordinator = coordinator
@@ -217,23 +222,24 @@ class MLConfidenceScorer:
 
         for pattern in adaptive_patterns:
             try:
-                # Assuming pattern['regex'] is the key for the regex string
-                if re.search(pattern['regex'], detection):
-                    ml_logger.info(f"Detection matched high-confidence adaptive pattern ID: {pattern.get('pattern_id')}")
+                # The pattern is an AdaptivePattern object, not a dict. Use attribute access.
+                if re.search(pattern.regex, detection):
+                    ml_logger.info(f"Detection matched high-confidence adaptive pattern ID: {pattern.pattern_id}")
                     return MLPrediction(
-                        pii_category=pattern['pii_category'],
-                        confidence=pattern.get('confidence', 0.98), # Assign high confidence
-                        features_used=[f"adaptive_pattern:{pattern.get('pattern_id')}"],
+                        pii_category=pattern.pii_category,
+                        confidence=pattern.confidence,
+                        features_used=[f"adaptive_pattern:{pattern.pattern_id}"],
                         model_version="adaptive_pattern_override"
                     )
             except re.error as e:
-                ml_logger.warning(f"Invalid regex in adaptive pattern {pattern.get('pattern_id')}: {e}")
+                ml_logger.warning(f"Invalid regex in adaptive pattern {pattern.pattern_id}: {e}")
                 continue
         
         return None
     
     def calculate_ml_confidence(self, detection: str, context: str, 
-                              features: Dict[str, float], 
+                              features: Dict[str, float],
+                              pii_category: str, 
                               document_type: Optional[str] = None) -> MLPrediction:
         """
         Calculate confidence using trained ML model.
@@ -242,6 +248,7 @@ class MLConfidenceScorer:
             detection: The detected PII text
             context: Surrounding context
             features: Extracted features
+            pii_category: The category of the PII
             document_type: Type of document
             
         Returns:
@@ -262,11 +269,10 @@ class MLConfidenceScorer:
                     detection, 'unknown', context
                 )
                 return MLPrediction(
+                    pii_category=pii_category,
                     confidence=fallback_confidence,
-                    probability=fallback_confidence,
                     features_used=['fallback'],
-                    model_version='priority2_fallback',
-                    prediction_time=start_time
+                    model_version='priority2_fallback'
                 )
             
             # Prepare features for prediction
@@ -295,11 +301,10 @@ class MLConfidenceScorer:
                 )
             
             prediction = MLPrediction(
+                pii_category=pii_category,
                 confidence=float(confidence),
-                probability=float(probability),
                 features_used=self.feature_names,
-                model_version=self.model_version,
-                prediction_time=start_time
+                model_version=self.model_version
             )
             
             # Update performance tracking
@@ -315,11 +320,10 @@ class MLConfidenceScorer:
                 detection, 'unknown', context
             )
             return MLPrediction(
+                pii_category=pii_category,
                 confidence=fallback_confidence,
-                probability=fallback_confidence,
                 features_used=['error_fallback'],
-                model_version='priority2_fallback',
-                prediction_time=start_time
+                model_version='priority2_fallback'
             )
     
     def _prepare_feature_vector(self, features: Dict[str, float]) -> List[float]:
@@ -486,15 +490,34 @@ class MLConfidenceScorer:
 
 # Factory function for easy integration
 def create_ml_confidence_scorer(config: Optional[Dict] = None) -> MLConfidenceScorer:
-    """Factory function for MLConfidenceScorer."""
-    # This factory now needs to be aware of the adaptive learning system and analytics.
+    """
+    Factory function for MLConfidenceScorer.
+    This factory is now responsible for creating the full dependency chain for the scorer,
+    including the AdaptiveLearningCoordinator. This is a pragmatic approach to fix
+    test failures caused by module-level instantiation.
+    """
     from app.core.adaptive.coordinator import AdaptiveLearningCoordinator
-    from app.core.analytics_engine import QualityAnalyzer
-    
-    ml_logger.info("Instantiating QualityAnalyzer for MLConfidenceScorer.")
-    quality_analyzer = QualityAnalyzer()
+    from app.core.adaptive.pattern_db import create_pattern_db
+    from app.core.adaptive.ab_testing import create_ab_test_manager
+    from app.core.config_manager import get_config_manager
 
+    ml_logger.info("Instantiating dependencies for MLConfidenceScorer.")
+
+    # 1. Create ConfigManager
+    config_manager = get_config_manager()
+
+    # 2. Create database-dependent components
+    # These now manage their own connections, which is suitable for this context.
+    pattern_db = create_pattern_db()
+    ab_test_manager = create_ab_test_manager()
+
+    # 3. Create the AdaptiveLearningCoordinator with its dependencies
     ml_logger.info("Instantiating AdaptiveLearningCoordinator for MLConfidenceScorer.")
-    adaptive_coordinator = AdaptiveLearningCoordinator(quality_analyzer=quality_analyzer)
-    
+    adaptive_coordinator = AdaptiveLearningCoordinator(
+        pattern_db=pattern_db,
+        ab_test_manager=ab_test_manager,
+        config_manager=config_manager
+    )
+
+    # 4. Create the MLConfidenceScorer and inject the coordinator
     return MLConfidenceScorer(config, coordinator=adaptive_coordinator) 

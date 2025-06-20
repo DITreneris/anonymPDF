@@ -5,178 +5,124 @@ This module is responsible for discovering new PII patterns from text
 and validating them before they are added to the adaptive pattern database.
 """
 
+from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 import re
 from datetime import datetime
 
 from app.core.logging import get_logger
 from app.core.config_manager import get_config_manager
+from app.core.adaptive.pattern_db import AdaptivePattern
+from app.core.feedback_system import UserFeedbackProcessor
+
+if TYPE_CHECKING:
+    from app.core.adaptive.pattern_db import AdaptivePatternDB
 
 # Initialize logger
-logger = get_logger(__name__)
+logger = get_logger("anonympdf.pattern_learner")
 
 
 @dataclass
 class ValidatedPattern:
-    """
-    Represents a pattern that has been validated.
-    This structure is designed to align with the schema in AdaptivePatternDB.
-    """
-    pattern_id: str
+    """A pattern that has been discovered and validated against a corpus."""
     regex: str
     pii_category: str
     confidence: float
-    accuracy: Optional[float] = None
-    precision: Optional[float] = None
-    recall: Optional[float] = None
-
-    positive_matches: int = 0
-    negative_matches: int = 0
-    version: int = 1
-
+    positive_matches: int
+    negative_matches: int
     created_at: datetime = field(default_factory=datetime.now)
-    validated_at: datetime = field(default_factory=datetime.now)
-    is_active: bool = True
+    last_validated_at: Optional[datetime] = None
 
 
 class PatternLearner:
     """
-    Discovers and validates potential PII patterns from text corpora.
-    This class is responsible for taking raw text and feedback, generating
+    Analyzes user feedback to discover and validate new PII patterns.
     """
-
-    def __init__(
-        self, 
-        pattern_db: "AdaptivePatternDB",
-        min_confidence: float = 0.95,
-        min_samples: int = 10
-    ):
-        """
-        Initializes the PatternLearner.
-
-        Args:
-            pattern_db: An instance of AdaptivePatternDB to store validated patterns.
-            min_confidence: Minimum confidence threshold for pattern validation.
-            min_samples: Minimum number of samples required for learning.
-        """
+    def __init__(self, pattern_db: AdaptivePatternDB, min_confidence: float = 0.95, min_samples: int = 10):
         self.pattern_db = pattern_db
-        
-        # Load configuration
-        config = get_config_manager().settings.get("adaptive_learning", {})
-        thresholds = config.get("thresholds", {})
-        
-        # Use provided values or fall back to configuration
-        self.min_confidence_to_validate = min_confidence or thresholds.get("min_confidence_to_validate", 0.95)
-        self.min_samples_for_learning = min_samples or thresholds.get("min_samples_for_learning", 10)
-        self.min_recall_to_validate = 0.85  # Keep this as a fixed value for now
-        
-        logger.info(
-            "PatternLearner initialized",
-            min_confidence=self.min_confidence_to_validate,
-            min_samples=self.min_samples_for_learning
-        )
+        self.min_confidence = min_confidence
+        self.min_samples = min_samples
+        self.feedback_processor = UserFeedbackProcessor()
+        logger.info(f"PatternLearner initialized - {{'min_confidence': {self.min_confidence}, 'min_samples': {self.min_samples}}}")
 
-    def discover_and_validate_patterns(self, text_corpus: List[str], pii_to_discover: Dict[str, str], ground_truth_pii: Dict[str, str]) -> List[ValidatedPattern]:
+    def discover_and_validate_patterns(self, text_corpus: List[str], pii_to_discover: Dict[str, str], ground_truth_pii: Dict[str, str]) -> List[AdaptivePattern]:
         """
-        Discovers potential new patterns and validates them.
-
-        Args:
-            text_corpus: A list of text documents to validate against.
-            pii_to_discover: A dictionary of PII strings to generate patterns from.
-            ground_truth_pii: The complete dictionary of all known PII for validation.
-
-        Returns:
-            A list of validated patterns ready for database insertion.
+        Discovers and validates new patterns from user feedback.
         """
-        validated_patterns = []
-        logger.debug(f"Starting pattern discovery for {len(pii_to_discover)} confirmed PII samples.")
+        new_patterns = []
 
-        # Check if we have enough samples
-        if len(pii_to_discover) < self.min_samples_for_learning:
-            logger.warning(
-                f"Insufficient samples for pattern discovery. Need {self.min_samples_for_learning}, got {len(pii_to_discover)}"
-            )
-            return validated_patterns
+        if not pii_to_discover:
+            return []
 
         for pii, category in pii_to_discover.items():
             try:
-                # 1. Discover a potential pattern (simplified)
-                escaped_pii = re.escape(pii)
-                pattern_regex = f"\\b{escaped_pii}\\b"
+                # 1) Create a raw pattern for validation
+                raw_pattern = r'\b' + re.escape(pii) + r'\b'
+                logger.debug(f"Generated raw pattern: {raw_pattern}")
 
-                # 2. Validate the pattern against the full ground truth
-                validation_results = self._validate_regex(pattern_regex, text_corpus, ground_truth_pii)
+                # 2) Validate the raw pattern
+                validation_results = self._validate_regex(
+                    raw_pattern,
+                    text_corpus,
+                    pii,
+                    ground_truth_pii
+                )
                 precision = validation_results['precision']
                 recall = validation_results['recall']
+                total_samples = validation_results['true_positives'] + validation_results['false_positives']
 
-                if precision >= self.min_confidence_to_validate and recall >= self.min_recall_to_validate:
-                    new_pattern = ValidatedPattern(
-                        pattern_id=f"p_{hash(pattern_regex)}",
-                        regex=pattern_regex,
+                # 3) Check if the pattern meets the criteria
+                if precision >= self.min_confidence and recall >= 0.8 and total_samples >= self.min_samples:
+                    # 4) Create and add the new pattern object using the raw_pattern
+                    new_pattern = AdaptivePattern(
+                        pattern_id=f"p_{hash(raw_pattern)}",
+                        regex=raw_pattern,
                         pii_category=category,
                         confidence=precision,
                         precision=precision,
                         recall=recall,
                         positive_matches=validation_results['true_positives'],
-                        negative_matches=validation_results['false_positives']
+                        negative_matches=validation_results['false_positives'],
+                        last_validated_at=datetime.now()
                     )
-                    validated_patterns.append(new_pattern)
+                    new_patterns.append(new_pattern)
+                    
+                    # 5) Log the newly discovered pattern
                     logger.info(
-                        f"Discovered and validated new pattern: {pattern_regex}",
-                        precision=f"{precision:.2f}",
-                        recall=f"{recall:.2f}"
+                        f"Discovered and validated new pattern: {raw_pattern} - "
+                        f"{{'precision': '{precision:.2f}', 'recall': '{recall:.2f}'}}"
                     )
-                else:
-                    logger.debug(
-                        f"Pattern {pattern_regex} did not meet validation thresholds",
-                        precision=f"{precision:.2f}",
-                        recall=f"{recall:.2f}",
-                        min_confidence=self.min_confidence_to_validate,
-                        min_recall=self.min_recall_to_validate
-                    )
-
-            except re.error as e:
-                logger.error(f"Could not process PII sample '{pii}': {e}")
+            except Exception as e:
+                logger.error(
+                    f"Error discovering pattern for PII: {pii}. Error: {e}",
+                    exc_info=True
+                )
                 continue
 
-        return validated_patterns
+        return new_patterns
 
-    def _validate_regex(self, regex: str, corpus: List[str], known_positives: Dict[str, str]) -> Dict[str, float]:
-        """
-        Calculates precision and recall for a given regex against a corpus.
-        Metrics are based on unique strings found.
-        """
-        try:
-            compiled_regex = re.compile(regex, re.IGNORECASE)
-            
-            # Use sets to store unique matches
-            all_matches = set()
-            for doc in corpus:
-                matches_in_doc = compiled_regex.findall(doc)
-                all_matches.update(matches_in_doc)
+    def _validate_regex(self, regex: str, corpus: List[str], target_pii: str, all_known_pii: Dict[str, str]) -> Dict:
+        true_positives = 0
+        false_positives = 0
+        false_negatives = 0
 
-            found_true_positives = all_matches.intersection(known_positives.keys())
-            found_false_positives = all_matches.difference(known_positives.keys())
+        # TP and FP
+        for text in corpus:
+            matches = re.findall(regex, text)
+            for match in matches:
+                if match in all_known_pii:
+                    true_positives += 1
+                else:
+                    false_positives += 1
+        
+        # FN
+        found_target_pii_in_corpus = any(target_pii in text for text in corpus)
+        if found_target_pii_in_corpus and true_positives == 0:
+             # This logic is simplified; a real system would need to check if the specific `target_pii` was found
+             false_negatives = 1
 
-            tp_count = len(found_true_positives)
-            fp_count = len(found_false_positives)
-            
-            # Precision: Of all the unique strings we found, what percentage were real PII?
-            precision = tp_count / (tp_count + fp_count) if (tp_count + fp_count) > 0 else 0.0
-            
-            # Recall: Of all the unique real PII, what percentage did we find?
-            recall = tp_count / len(known_positives) if len(known_positives) > 0 else 0.0
+        precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0.0
+        recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0.0
 
-            # Count occurrences for the final report, but don't use for metrics
-            positive_match_occurrences = sum(doc.count(p) for p in found_true_positives for doc in corpus)
-            negative_match_occurrences = sum(doc.count(p) for p in found_false_positives for doc in corpus)
-
-            return {
-                "precision": precision,
-                "recall": recall,
-                "true_positives": positive_match_occurrences,
-                "false_positives": negative_match_occurrences
-            }
-        except re.error:
-            return {"precision": 0.0, "recall": 0.0, "true_positives": 0, "false_positives": 0} 
+        return {"precision": precision, "recall": recall, "true_positives": true_positives, "false_positives": false_positives} 

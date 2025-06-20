@@ -20,9 +20,16 @@ from app.core.performance_optimizer import (
     ProcessingResult,
     ProcessingMode,
     get_parallel_processor,
-    get_batch_engine
+    get_batch_engine,
+    get_performance_optimizer
 )
 from app.core.config_manager import get_config
+
+
+# A top-level function that can be pickled for process-based tests.
+def global_processor_func(data, **kwargs):
+    """A globally defined function for multiprocessing tests."""
+    return f"processed_{data}"
 
 
 @pytest.fixture(scope="module")
@@ -123,82 +130,63 @@ class TestParallelProcessor:
 
     def test_determine_processing_mode(self, parallel_processor):
         """Test processing mode determination."""
-        task = ProcessingTask(task_id="test1", data="data1", estimated_size=1024)
+        task = ProcessingTask(task_id="test1", data="data1", estimated_size=100)
         assert parallel_processor._determine_processing_mode([task]) == ProcessingMode.SEQUENTIAL
 
     def test_process_batch_with_process_pool(self, parallel_processor):
         """Test that process_batch handles ProcessPoolExecutor mode correctly."""
-        
-        # Create a simple mock function that simulates ProcessPoolExecutor behavior
-        def mock_process_function(task_and_func):
-            task, func = task_and_func
-            return func(task.data)
-        
-        # Prepare test tasks
         tasks = [
             ProcessingTask(task_id=f"t{i}", data=f"data_{i}", estimated_size=10 * 1024 * 1024)
             for i in range(3)
         ]
 
-        def test_processor(data, **kwargs):
-            return f"processed_{data}"
-        
-        # Mock the entire ProcessPoolExecutor usage by patching the process_batch method
-        # to return expected results when ProcessPoolExecutor mode is used
-        with patch.object(parallel_processor, '_determine_processing_mode', return_value=ProcessingMode.PARALLEL_PROCESSES):
-            # Instead of mocking ProcessPoolExecutor, we'll mock the internal execution
-            with patch.object(parallel_processor, '_execute_task') as mock_execute:
-                mock_execute.side_effect = lambda task, func: ProcessingResult(
-                    task_id=task.task_id,
-                    result=f"processed_{task.data}",
-                    success=True,
-                    duration=0.1
-                )
-                
-                results = parallel_processor.process_batch(tasks, test_processor)
-                
-                # Verify results
-                assert len(results) == 3
-                assert all(isinstance(r, ProcessingResult) for r in results)
-                assert all(r.success for r in results)
-                assert results[0].result == "processed_data_0"
+        # Use the global, picklable function
+        results = parallel_processor.process_batch(tasks, global_processor_func)
+
+        # Verify results (handle out-of-order completion)
+        assert len(results) == 3
+        assert all(isinstance(r, ProcessingResult) for r in results)
+        assert all(r.success for r in results)
+
+        # Sort results by task_id to have a deterministic order for assertion
+        sorted_results = sorted(results, key=lambda r: r.task_id)
+        assert sorted_results[0].result == "processed_data_0"
+        assert sorted_results[1].result == "processed_data_1"
+        assert sorted_results[2].result == "processed_data_2"
+
     def test_processing_mode_logic(self, parallel_processor):
         """Test the logic that determines which processing mode to use."""
-        
-        # Small tasks should use sequential processing
-        small_tasks = [ProcessingTask(f"small_{i}", "data", estimated_size=100) for i in range(2)]
-        mode = parallel_processor._determine_processing_mode(small_tasks)
-        assert mode == ProcessingMode.SEQUENTIAL
-        
-        # Medium tasks should use thread pool
+        # FIX: Test the specific cases handled by the new logic
+        # Case 1: Two small tasks should be sequential
+        small_tasks = [
+            ProcessingTask("small_1", "data", estimated_size=100),
+            ProcessingTask("small_2", "data", estimated_size=100)
+        ]
+        assert parallel_processor._determine_processing_mode(small_tasks) == ProcessingMode.SEQUENTIAL
+
+        # Case 2: Many small tasks should use threads
         medium_tasks = [ProcessingTask(f"med_{i}", "data", estimated_size=1024*100) for i in range(5)]
-        mode = parallel_processor._determine_processing_mode(medium_tasks)
-        assert mode in [ProcessingMode.PARALLEL_THREADS, ProcessingMode.SEQUENTIAL]
-        
-        # Large tasks should potentially use process pool
+        assert parallel_processor._determine_processing_mode(medium_tasks) == ProcessingMode.PARALLEL_THREADS
+
+        # Case 3: Large tasks should use processes
         large_tasks = [ProcessingTask(f"large_{i}", "data", estimated_size=1024*1024*10) for i in range(4)]
-        mode = parallel_processor._determine_processing_mode(large_tasks)
-        assert mode in [ProcessingMode.PARALLEL_PROCESSES, ProcessingMode.PARALLEL_THREADS, ProcessingMode.SEQUENTIAL]
+        assert parallel_processor._determine_processing_mode(large_tasks) == ProcessingMode.PARALLEL_PROCESSES
 
     def test_safe_parallel_processing(self, parallel_processor):
         """Test parallel processing without actually using multiprocessing."""
-        
         tasks = [
             ProcessingTask(task_id=f"safe_{i}", data=f"input_{i}", estimated_size=1024)
             for i in range(4)
         ]
         
-        def safe_processor(data, **kwargs):
-            return f"output_{data}"
-        
         # Force sequential mode to avoid any multiprocessing issues
         with patch.object(parallel_processor, '_determine_processing_mode', return_value=ProcessingMode.SEQUENTIAL):
-            results = parallel_processor.process_batch(tasks, safe_processor)
+            results = parallel_processor.process_batch(tasks, global_processor_func)
         
         assert len(results) == 4
         assert all(r.success for r in results)
-        assert results[0].result == "output_input_0"
-        assert results[3].result == "output_input_3"
+        assert results[0].result == "processed_input_0"
+        assert results[3].result == "processed_input_3"
             
     def test_execute_task_with_error(self, parallel_processor):
         """Test task execution with error handling."""
@@ -232,32 +220,22 @@ class TestParallelProcessor:
 
     def test_process_batch_with_thread_pool(self, parallel_processor):
         """Test that process_batch handles ThreadPoolExecutor mode correctly."""
-        
         tasks = [
             ProcessingTask(task_id=f"thread_{i}", data=f"data_{i}", estimated_size=1024)
             for i in range(3)
         ]
-        
-        def test_processor(data, **kwargs):
-            return f"threaded_{data}"
-        
-        # Mock ThreadPoolExecutor safely by mocking the execution results
-        with patch.object(parallel_processor, '_determine_processing_mode', return_value=ProcessingMode.PARALLEL_THREADS):
-            with patch.object(parallel_processor, '_execute_task') as mock_execute:
-                mock_execute.side_effect = lambda task, func: ProcessingResult(
-                    task_id=task.task_id,
-                    result=f"threaded_{task.data}",
-                    success=True,
-                    duration=0.05
-                )
-                
-                results = parallel_processor.process_batch(tasks, test_processor)
-                
-                assert len(results) == 3
-                assert all(isinstance(r, ProcessingResult) for r in results)
-                assert all(r.success for r in results)
-                assert results[1].result == "threaded_data_1"
-                assert mock_execute.call_count == 3
+
+        # Use the global, picklable function
+        results = parallel_processor.process_batch(tasks, global_processor_func)
+
+        # Verify results
+        assert len(results) == 3
+        assert all(isinstance(r, ProcessingResult) for r in results)
+        assert all(r.success for r in results)
+
+        sorted_results = sorted(results, key=lambda r: r.task_id)
+        assert sorted_results[0].result == "processed_data_0"
+        assert sorted_results[1].result == "processed_data_1"
 
 
 class TestBatchEngine:
@@ -355,7 +333,8 @@ class TestProcessingDataClasses:
             result=None,
             success=False,
             error="Something went wrong",
-            duration=0.5
+            duration=0.5,
+            memory_used=0.0
         )
         
         assert result.task_id == "error_task"
@@ -386,99 +365,110 @@ class TestGlobalInstances:
 
 
 class TestIntegration:
-    """Test full processing pipeline integration."""
+    """High-level integration tests for the performance optimization system."""
 
     def test_end_to_end_processing(self):
-        """Test a full batch processing from submission to completion."""
+        """Test submitting a batch and getting a completed status."""
+        optimizer = get_performance_optimizer()
+        batch_engine = optimizer.batch_engine
         
         def integration_processor(data, **kwargs):
+            time.sleep(0.01)  # Simulate work
             return f"integrated_{data}"
-        
-        tasks = [ProcessingTask(f"e2e_{i}", f"data_{i}") for i in range(3)]
-        
-        # Use the global batch engine instance
-        batch_engine = get_batch_engine()
-        assert batch_engine.config == get_config().get('performance', {})
 
-        batch_id = "end_to_end_batch"
-        batch_engine.submit_batch(batch_id, tasks, integration_processor)
+        tasks = [ProcessingTask(f"e2e_{i}", f"data_{i}") for i in range(3)]
+        batch_id = batch_engine.submit_batch("end_to_end_batch", tasks, integration_processor)
         
+        # FIX: Actually process the batch
+        batch_engine.process_next_batch()
+
         status = batch_engine.get_batch_status(batch_id)
+        assert status is not None
         assert status['status'] == 'completed'
-        results = {r.task_id: r.result for r in status['results']}
-        assert results["e2e_0"] == "integrated_data_0"
-        assert results["e2e_2"] == "integrated_data_2"
+        
+        results = batch_engine.get_batch_results(batch_id)
+        assert results is not None
+        assert len(results['results']) == 3
+        assert results['results'][0].success
 
     def test_performance_improvement_simulation(self):
-        """Simulate processing to test performance metrics."""
-        
+        """
+        Simulates a performance improvement scenario by comparing sequential and parallel
+        execution. This test is designed to be more robust by using a larger workload
+        to ensure the benefits of parallelism outweigh the overhead.
+        """
+        optimizer = get_performance_optimizer()
+
+        # Define a task that takes a noticeable amount of time
         def slow_processor(data, **kwargs):
-            time.sleep(0.01)  # Reduced sleep time for faster tests
-            return f"slow_processed_{data}"
-            
-        tasks = [ProcessingTask(f"perf_{i}", f"data_{i}", estimated_size=1024) for i in range(5)]
-        
-        # Get processor with module-level config
-        processor = get_parallel_processor()
-        assert processor.config == get_config().get('performance', {})
+            # Increase sleep to make performance difference more pronounced and reliable
+            time.sleep(0.1)  
+            return f"processed_{data}"
 
-        # Process sequentially first
+        # FIX: Increase task count to make the test more reliable.
+        # With a larger workload, the overhead of parallelization is less likely
+        # to dominate the total execution time.
+        task_count = 40
+        tasks = [
+            ProcessingTask(
+                task_id=f"perf_{i}",
+                data=f"data_{i}",
+                estimated_size=6 * 1024 * 1024  # ~6MB per task
+            ) for i in range(task_count)
+        ]
+
+        # --- Sequential Execution ---
         start_seq = time.time()
-        with patch.object(processor, '_determine_processing_mode', return_value=ProcessingMode.SEQUENTIAL):
-            seq_results = processor.process_batch(tasks, slow_processor)
-        end_seq = time.time()
-        duration_seq = end_seq - start_seq
+        with patch.object(optimizer.parallel_processor, '_determine_processing_mode', return_value=ProcessingMode.SEQUENTIAL):
+            seq_results = optimizer.optimize_batch_processing(tasks, slow_processor)
+        seq_duration = time.time() - start_seq
 
-        # Process in parallel
-        start_par = time.time()
-        with patch.object(processor, '_determine_processing_mode', return_value=ProcessingMode.PARALLEL_THREADS):
-            par_results = processor.process_batch(tasks, slow_processor)
-        end_par = time.time()
-        duration_par = end_par - start_par
-        
-        # Verify results are correct
-        assert len(seq_results) == 5
-        assert len(par_results) == 5
+        assert len(seq_results) == task_count
         assert all(r.success for r in seq_results)
+
+        # --- Parallel Execution ---
+        start_par = time.time()
+        # Let the optimizer choose the mode, which should be parallel for this workload
+        par_results = optimizer.optimize_batch_processing(tasks, slow_processor)
+        par_duration = time.time() - start_par
+
+        assert len(par_results) == task_count
         assert all(r.success for r in par_results)
-        
-        # Assert that both processing modes work
-        assert duration_seq > 0
-        assert duration_par > 0
-        # Note: We can't guarantee parallel is faster due to overhead with small tasks
+
+        # Assert that parallel execution was faster.
+        # This should now be consistently true with the larger workload.
+        assert par_duration < seq_duration
 
     def test_error_handling_in_pipeline(self):
-        """Test error handling throughout the processing pipeline."""
-        
+        """
+        Tests that the optimizer correctly handles and reports errors
+        """
+        optimizer = get_performance_optimizer()
+        batch_engine = optimizer.batch_engine
+
         def error_prone_processor(data, **kwargs):
-            if data == "error_data":
-                raise RuntimeError("Intentional error for testing")
+            if '1' in data:
+                raise ValueError("induced error")
             return f"processed_{data}"
-        
-        tasks = [
-            ProcessingTask("good_1", "good_data_1"),
-            ProcessingTask("error_task", "error_data"),
-            ProcessingTask("good_2", "good_data_2")
-        ]
-        
-        batch_engine = get_batch_engine()
-        batch_id = "error_handling_batch"
-        batch_engine.submit_batch(batch_id, tasks, error_prone_processor)
-        
+
+        tasks = [ProcessingTask(f"err_{i}", f"data_{i}") for i in range(3)]
+        batch_id = batch_engine.submit_batch("error_handling_batch", tasks, error_prone_processor)
+
+        # FIX: Actually process the batch
+        batch_engine.process_next_batch()
+
         status = batch_engine.get_batch_status(batch_id)
-        assert status['status'] == 'completed'
+        assert status['status'] == 'completed' # The batch itself completes
+
+        results = batch_engine.get_batch_results(batch_id)['results']
+        assert len(results) == 3
         
-        results = {r.task_id: r for r in status['results']}
-        
-        # Good tasks should succeed
-        assert results["good_1"].success is True
-        assert results["good_2"].success is True
-        assert results["good_1"].result == "processed_good_data_1"
-        assert results["good_2"].result == "processed_good_data_2"
-        
-        # Error task should fail gracefully
-        assert results["error_task"].success is False
-        assert "Intentional error for testing" in results["error_task"].error
+        success_results = [r for r in results if r.success]
+        failed_results = [r for r in results if not r.success]
+
+        assert len(success_results) == 2
+        assert len(failed_results) == 1
+        assert "induced error" in failed_results[0].error
 
 
 if __name__ == "__main__":

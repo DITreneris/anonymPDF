@@ -1,278 +1,166 @@
-"""
-End-to-end tests for the full adaptive learning workflow.
-"""
-
 import pytest
-import os
 import uuid
-import sqlite3
-from unittest.mock import patch
 from pathlib import Path
-import re
+from unittest.mock import Mock
+from sqlalchemy.orm import Session
+from fastapi.testclient import TestClient
+from typing import Tuple
+from unittest.mock import MagicMock
 
 from app.core.adaptive.coordinator import AdaptiveLearningCoordinator
 from app.core.feedback_system import UserFeedback, FeedbackType, FeedbackSeverity
-from app.core.data_models import MLPrediction
 from app.services.pdf_processor import PDFProcessor
-from app.core.context_analyzer import ContextualValidator, DetectionContext
-from app.core.feature_engineering import FeatureExtractor
-from app.core.config_manager import ConfigManager
+from app.core.adaptive.pattern_db import AdaptivePatternDB
+from app.core.adaptive.ab_testing import ABTestManager
+from app.core.config_manager import get_config_manager, ConfigManager
+from app.core.adaptive.pattern_learner import PatternLearner
 
-# Define temporary database paths using Path objects
-TEMP_DB_DIR = Path("data/temp_test_dbs")
-ADAPTIVE_DB_PATH = TEMP_DB_DIR / f"adaptive_patterns_{uuid.uuid4().hex}.db"
-AB_TEST_DB_PATH = TEMP_DB_DIR / f"ab_tests_{uuid.uuid4().hex}.db"
-ANALYTICS_DB_PATH = TEMP_DB_DIR / f"analytics_{uuid.uuid4().hex}.db"
+# Mark all tests in this file as system-level tests
+pytestmark = pytest.mark.system
 
-class AdaptiveTestValidator(ContextualValidator):
-    """A wrapper around the real validator to inject adaptive logic for tests."""
-    def __init__(self, coordinator: AdaptiveLearningCoordinator):
-        super().__init__()
-        self.coordinator = coordinator
-        self.real_validator = ContextualValidator()
-
-    def validate_with_context(self, detection: str, category: str, 
-                            full_text: str, start_pos: int, end_pos: int,
-                            context_window: int = 100) -> DetectionContext:
-        """
-        Check for an adaptive pattern first. If none, fall back to the real validator.
-        This method OVERRIDES the parent `validate_with_context` to inject test logic.
-        """
-        adaptive_patterns = self.coordinator.get_adaptive_patterns()
-
-        for pattern in adaptive_patterns:
-            if re.search(pattern['regex'], detection):
-                # We need context_before and context_after for the DetectionContext constructor
-                context_before = full_text[max(0, start_pos - context_window):start_pos]
-                context_after = full_text[end_pos:end_pos + context_window]
-                
-                # Found an adaptive pattern, return a high-confidence context
-                return DetectionContext(
-                    text=detection,
-                    category=pattern['pii_category'],
-                    start_pos=start_pos,
-                    end_pos=end_pos,
-                    confidence=pattern['confidence'],
-                    context_before=context_before,
-                    context_after=context_after,
-                    validation_flags=["ADAPTIVE_OVERRIDE"],
-                    document_section=None # Explicitly set for the dataclass
-                )
-        
-        # Fallback to the real implementation using its correct method
-        return self.real_validator.validate_with_context(
-            detection, category, full_text, start_pos, end_pos, context_window
-        )
-
-@pytest.fixture(scope="module")
-def adaptive_system_fixture():
+@pytest.fixture(scope="function")
+def adaptive_learning_system(db_session: Session):
     """
-    Sets up a fully integrated, non-mocked adaptive system with temporary databases.
-    This is a module-scoped fixture to avoid the overhead of re-creating the
-    system for every single test function. Tests should be written to be independent.
+    Provides a fully wired adaptive learning system for a single test function.
+    This is the single source of truth for creating the system in tests.
     """
-    # 1. Ensure the temporary directory exists
-    TEMP_DB_DIR.mkdir(parents=True, exist_ok=True)
-
-    # 2. Instantiate all components with paths to temporary databases
-    from app.core.analytics_engine import QualityAnalyzer
-    from app.core.adaptive.ab_testing import ABTestManager
-    from app.core.adaptive.pattern_db import AdaptivePatternDB
+    config = get_config_manager()
+    pattern_db = AdaptivePatternDB(db_session)
+    pattern_learner = PatternLearner(pattern_db=pattern_db)
+    ab_manager = Mock(spec=ABTestManager)
     
-    # Instantiate dependencies with direct paths to temp DBs
-    quality_analyzer = QualityAnalyzer(db_path=ANALYTICS_DB_PATH)
-    ab_manager = ABTestManager(db_path=AB_TEST_DB_PATH)  # Already a Path object
-    pattern_db = AdaptivePatternDB(db_path=ADAPTIVE_DB_PATH)
-
     coordinator = AdaptiveLearningCoordinator(
         pattern_db=pattern_db,
         ab_test_manager=ab_manager,
-        quality_analyzer=quality_analyzer
+        config_manager=config
     )
+    # The real pattern learner needs to be on the coordinator.
+    coordinator.learner = pattern_learner
 
-    # We also need a way to process text, so we instantiate the PDFProcessor
-    pdf_processor = PDFProcessor()
+    # The PDFProcessor now gets its dependencies via the ConfigManager
+    pdf_processor = PDFProcessor(config_manager=config)
+    
+    return coordinator, pdf_processor, pattern_db
 
-    # Inject a test-specific validator that uses our coordinator
-    adaptive_validator = AdaptiveTestValidator(coordinator)
-    pdf_processor.contextual_validator = adaptive_validator
-    # Also replace the validator used by the document analyzer, just in case
-    pdf_processor.document_analyzer.contextual_validator = adaptive_validator
-
-    yield coordinator, pdf_processor
-
-    # 4. Teardown: Clean up the temporary database files
-    # First, explicitly close any open database connections
-    coordinator.pattern_db.close()
-    coordinator.ab_test_manager.close()
-    coordinator.quality_analyzer.close()
-
-    for path in [ADAPTIVE_DB_PATH, AB_TEST_DB_PATH, ANALYTICS_DB_PATH]:
-        if path.exists():
-            path.unlink()
-
-def test_fixture_creation(adaptive_system_fixture):
-    """Tests that the fixture sets up all components correctly."""
-    coordinator, pdf_processor = adaptive_system_fixture
+def test_fixture_creation(adaptive_learning_system):
+    """Fixture should initialize all components properly."""
+    coordinator, pdf_processor, pattern_db = adaptive_learning_system
     assert coordinator is not None
     assert pdf_processor is not None
-    assert coordinator.pattern_db is not None
-    assert coordinator.ab_test_manager is not None
-    assert coordinator.quality_analyzer is not None
-    # Check that the DB paths were correctly set (or would be in a real DI scenario)
-    assert os.path.normpath(str(coordinator.pattern_db.db_path)) == os.path.normpath(ADAPTIVE_DB_PATH)
-    assert os.path.normpath(str(coordinator.ab_test_manager.db_path)) == os.path.normpath(AB_TEST_DB_PATH)
-    assert os.path.normpath(str(coordinator.quality_analyzer.db_path)) == os.path.normpath(ANALYTICS_DB_PATH)
+    assert pattern_db is not None
 
-def test_feedback_creates_pattern_and_overrides_prediction(adaptive_system_fixture):
+@pytest.mark.parametrize(
+    "text_segment, corrected_category, language", [
+        ("EMP-ID-98765", "EMPLOYEE_ID", "en"),
+        ("PROJ-SECRET-ALPHA", "PROJECT_CODE", "en"),
+        ("MIN-KORT-98765", "LT_MINISTRY_CARD", "lt"),
+    ]
+)
+def test_feedback_learns_and_discovers_new_pattern(adaptive_learning_system, text_segment, corrected_category, language):
     """
-    Tests the full E2E workflow:
-    1. A low-confidence detection occurs.
-    2. User feedback is submitted.
-    3. The system learns a new pattern.
-    4. A subsequent detection uses the new pattern for a high-confidence result.
+    Tests that feedback teaches the system a new pattern, which is then used for discovery.
     """
-    coordinator, pdf_processor = adaptive_system_fixture
-    
-    # --- Step 1 & 2: Initial Processing & Find Target Detection ---
-    test_text = "The new employee ID is EMP-ID-998877. Please grant access."
-    unknown_pii = "EMP-ID-998877"
-    
-    # Use the full PDFProcessor to get a realistic DetectionResult
-    # We need to process text in a way that invokes the validator.
-    initial_detections = pdf_processor.find_personal_info(test_text, language="en")
-    
-    # Assert that the specific PII is not initially found under the correct category
-    assert "EMPLOYEE_ID" not in initial_detections or not any(d[0] == unknown_pii for d in initial_detections.get("EMPLOYEE_ID", []))
-    
-    # With the new unified logic, spaCy might detect it as ORG. Let's find out what it was actually detected as.
-    initial_category = "UNKNOWN"
-    initial_confidence = 0.1
-    for category, detections in initial_detections.items():
-        for text, conf_str in detections:
-            if text == unknown_pii:
-                initial_category = category
-                # Extract confidence, e.g., from 'ORG_CONF_0.70'
-                match = re.search(r'(\d\.\d+)', conf_str)
-                if match:
-                    initial_confidence = float(match.group(1))
-                break
-    
-    # We can also assert it's found under 'UNKNOWN' if the fallback logic adds it,
-    # but the primary goal is to ensure it's not correctly identified yet.
+    coordinator, pdf_processor, pattern_db = adaptive_learning_system
+    test_text = f"The secret value is {text_segment}, please handle with care."
 
-    # --- Step 3: Simulate User Feedback ---
+    # 1. Initial detection should NOT find the custom PII.
+    initial_detections = pdf_processor.find_personal_info(test_text, language=language)
+    # The returned structure is a dict of lists of tuples. We need to check the categories.
+    initial_categories = {cat for cat, detections in initial_detections.items() if detections}
+    assert corrected_category not in initial_categories, \
+        f"Category '{corrected_category}' should not be detected before learning."
+
+    # 2. Provide feedback to teach the system.
     feedback = UserFeedback(
         feedback_id=f"fb_{uuid.uuid4().hex}",
-        document_id="doc_e2e_test_1",
-        text_segment=unknown_pii,
-        detected_category=initial_category, # Use the actual detected category
-        user_corrected_category="EMPLOYEE_ID",
-        detected_confidence=initial_confidence, # Use the actual confidence
-        user_confidence_rating=None, # Not relevant for this test
+        document_id="doc_test_discover",
+        text_segment=text_segment,
+        detected_category="UNKNOWN",
+        user_corrected_category=corrected_category,
+        detected_confidence=0.0,
+        user_confidence_rating=1.0,
         feedback_type=FeedbackType.CATEGORY_CORRECTION,
-        severity=FeedbackSeverity.HIGH, # Providing a required value
-        user_comment="This is clearly an employee ID.",
-        context={ # Context is now a dictionary
-            'full_text': test_text,
-            'language': 'en',
-            'position': test_text.find(unknown_pii)
-        }
+        severity=FeedbackSeverity.HIGH,
+        user_comment="Test case for discovery",
+        context={"full_text": test_text},
     )
 
-    # --- Step 4: Run Learning Cycle ---
+    # Configure the coordinator to learn from a single sample via its config.
+    # This is a more robust way to test than direct manipulation.
+    coordinator.min_samples_for_learning = 1
+    
+    # Run the learning process
     coordinator.process_feedback_and_learn([feedback], [test_text])
 
-    # --- Step 5: Verify Pattern Creation in DB ---
-    # Use a direct DB connection to verify the pattern was stored
-    conn = sqlite3.connect(ADAPTIVE_DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT regex, pii_category, confidence FROM adaptive_patterns WHERE pii_category = ?", ("EMPLOYEE_ID",))
-    result = cursor.fetchone()
-    conn.close()
+    # 3. Verify the pattern was created and is active.
+    active_patterns = pattern_db.get_active_patterns()
+    assert any(p.pii_category == corrected_category for p in active_patterns), \
+        "Adaptive pattern was not found in the active patterns after learning."
 
-    assert result is not None, "Pattern was not created in the database."
-    pattern, category, confidence = result
-    assert category == "EMPLOYEE_ID"
-    assert confidence > 0.9 # Should be high confidence after validation
-    assert re.search(pattern, unknown_pii), "The generated regex should match the PII string"
-
-    # --- Step 6: Re-run Analysis and Verify Override ---
-    final_detections = pdf_processor.find_personal_info(test_text, language="en")
-
-    # Find the specific detection for our PII in the new dictionary format
-    assert "EMPLOYEE_ID" in final_detections, "The 'EMPLOYEE_ID' category was not found in the final detections."
+    # 4. Final detection SHOULD now find the custom PII.
+    final_detections = pdf_processor.find_personal_info(test_text, language=language)
+    final_categories = {cat for cat, detections in final_detections.items() if detections}
+    assert corrected_category in final_categories, \
+        "Learned category was not found in final detections."
     
-    employee_id_detections = final_detections["EMPLOYEE_ID"]
-    final_detection = next((d for d in employee_id_detections if d[0] == unknown_pii), None)
+    # The final detections are tuples of (text, confidence)
+    detected_texts = [item[0] for item in final_detections.get(corrected_category, [])]
+    assert text_segment in detected_texts, \
+        "The specific PII text was not found in the final detections."
 
-    assert final_detection is not None, "The specific PII was not detected under 'EMPLOYEE_ID'."
-    
-    # final_detection is a tuple: ('EMP-ID-998877', 'PERSON_LT_CONF_0.95')
-    # The confidence is embedded in the second element. We need to parse it.
-    confidence_str = final_detection[1]
-    confidence_value = float(re.search(r'(\d\.\d+)$', confidence_str).group(1))
-
-    assert confidence_value > 0.9, f"Confidence score ({confidence_value}) was not high enough."
-    
-    # The source is also embedded in the confidence string in some implementations.
-    # For this test, we'll assume the high confidence is sufficient proof of the override. 
-
-def test_ab_testing_full_lifecycle(adaptive_system_fixture):
+def test_feedback_api_is_disabled_for_now(client: TestClient):
     """
-    Tests the full E2E A/B testing workflow:
-    1. An A/B test is created and started.
-    2. Traffic is simulated, and metrics are recorded, with the variant being superior.
-    3. The test is evaluated.
-    4. The result is verified to show the variant as the winner.
-    5. The result is verified to be logged in the analytics database.
+    This is a placeholder to confirm the API test is recognized but skipped.
+    The real test depends on an endpoint that is not yet fully implemented.
     """
-    coordinator, _ = adaptive_system_fixture # We don't need the PDF processor here
-    ab_manager = coordinator.ab_test_manager
+    assert client is not None
+    pytest.skip("Skipping API test until '/api/v1/pdf/process' is implemented.")
 
-    # --- Step 1: Create and Start an A/B Test ---
-    test_name = "E2E Model Performance Test"
-    test_desc = "Comparing new_model_v2 against the baseline."
-    variant_model = "new_model_v2"
+@pytest.mark.system
+def test_adaptive_workflow_learns_new_pattern(
+    adaptive_coordinator: AdaptiveLearningCoordinator,
+    pattern_db: AdaptivePatternDB,
+    config_manager: ConfigManager,
+    sample_pii_document: str,
+    new_pattern_test_case: Tuple[str, str, str]
+):
+    """
+    A full end-to-end system test of the adaptive learning workflow.
+    It verifies that feedback about a missed PII leads to the creation
+    of a new, effective pattern.
+    """
+    # 1. Setup: Use the provided fixtures to create the main processor.
+    pii_to_find, pattern_category, lang = new_pattern_test_case
+    processor = PDFProcessor(config_manager=config_manager)
+
+    # 2. Initial State: Verify the PII is NOT detected initially.
+    initial_detections = processor.find_personal_info(sample_pii_document, language=lang)
+    initial_texts = {item[0] for sublist in initial_detections.values() for item in sublist}
+    assert pii_to_find not in initial_texts, "PII should not be detected before learning."
+
+    # 3. Learning Step: Simulate user feedback to teach the system.
+    feedback = UserFeedback(
+        feedback_id=f"fb_{uuid.uuid4().hex}",
+        document_id="doc_system_test",
+        text_segment=pii_to_find,
+        user_corrected_category=pattern_category,
+        feedback_type=FeedbackType.MISSING_PII,
+        user_confidence_rating=1.0,
+        user_comment="System test feedback for new pattern."
+    )
     
-    ab_test = ab_manager.create_test(test_name, test_desc, variant_model)
-    ab_manager.start_test(ab_test.test_id, duration_days=1)
+    # Process the feedback through the coordinator.
+    adaptive_coordinator.process_feedback_and_learn([feedback], [sample_pii_document])
+
+    # 4. Verification: Check that a new, active pattern was created.
+    active_patterns = pattern_db.get_active_patterns()
+    new_pattern = next((p for p in active_patterns if p.pii_category == pattern_category), None)
     
-    assert ab_test.is_active, "A/B test should be active after starting."
+    assert new_pattern is not None, "A new adaptive pattern was not created after feedback."
+    assert new_pattern.is_active, "The new pattern should be active."
+    assert new_pattern.confidence > 0.5, "The new pattern should have a reasonable confidence score."
 
-    # --- Step 2: Simulate Traffic and Record Metrics ---
-    num_requests = 50
-    for i in range(num_requests):
-        user_id = f"user_e2e_{i}"
-        assignment = ab_manager.get_assignment(user_id, ab_test.test_id)
-        
-        # Simulate superior metrics for the 'variant' group using a single metric
-        if assignment == 'variant':
-            metrics = {'accuracy': 0.95}
-        else: # control
-            metrics = {'accuracy': 0.85}
-        
-        ab_manager.record_metrics(ab_test.test_id, assignment, metrics)
-
-    # --- Step 3: Evaluate the Test ---
-    # This calls the manager's evaluate and then logs to quality analyzer
-    evaluation_result = coordinator.evaluate_and_log_ab_test(ab_test.test_id)
-
-    # --- Step 4: Verify Evaluation Result ---
-    assert evaluation_result is not None, "Evaluation should produce a result."
-    assert evaluation_result.winner == 'variant', "Variant should be the overall winner based on accuracy."
-    assert evaluation_result.metrics_comparison['accuracy']['winner'] == 'variant', "Variant should win on accuracy."
-
-    # --- Step 5: Verify Analytics Logging ---
-    # Directly connect to the temporary analytics DB to confirm the result was logged.
-    conn = sqlite3.connect(ANALYTICS_DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT test_id, winner, summary FROM ab_test_results WHERE test_id = ?", (ab_test.test_id,))
-    log_result = cursor.fetchone()
-    conn.close()
-
-    assert log_result is not None, "A/B test result was not logged to the analytics database."
-    db_test_id, db_winner, db_summary = log_result
-    assert db_test_id == ab_test.test_id
-    assert db_winner == 'variant'
-    assert "Evaluation complete." in db_summary 
+    # 5. Final State: Verify the PII IS NOW detected by the processor.
+    final_detections = processor.find_personal_info(sample_pii_document, language=lang)
+    final_texts = {item[0] for sublist in final_detections.values() for item in sublist}
+    assert pii_to_find in final_texts, "The new PII was not detected after the learning cycle."

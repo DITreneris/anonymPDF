@@ -1,5 +1,5 @@
-import React, { useCallback, useRef, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useCallback, useRef, useState, useEffect, Suspense, lazy } from 'react';
+import apiClient from './utils/api';
 import {
   Box,
   Container,
@@ -10,6 +10,9 @@ import {
   Stack,
   Paper,
   Button,
+  Tabs,
+  Tab,
+  CircularProgress,
 } from '@mui/material';
 import {
   CheckCircle,
@@ -18,17 +21,18 @@ import { FRONTEND_VERSION } from './version';
 
 // Import our new components
 import TwoPaneLayout from './components/layout/TwoPaneLayout';
-import StatisticsPanel from './components/ui/StatisticsPanel';
 import FileUploadZone from './components/upload/FileUploadZone';
 import ErrorBoundary from './components/ErrorBoundary';
 import ErrorDialog, { type ProcessingError } from './components/ErrorDialog';
 import { 
-  handleUploadError, 
+  createProcessingError,
   logError,
   isRetryableError 
 } from './utils/errorHandler';
+import RedactionReport, { type RedactionReport as RedactionReportData } from './components/RedactionReport';
+const AnalyticsDashboard = lazy(() => import('./components/dashboard/AnalyticsDashboard'));
 
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1/upload";
+const API_BASE_URL = "/api/v1";
 const PROCESSING_TIMEOUT = 30000; // 30 seconds
 
 // Balanced theme with better contrast and visual weight
@@ -140,15 +144,6 @@ interface UploadResponse {
   error_message?: string;
 }
 
-interface RedactionReportData {
-  title: string;
-  detectedLanguage: string;
-  totalRedactions: number;
-  categories: { [key: string]: number };
-  details?: any;
-  error?: string;
-}
-
 const App: React.FC = () => {
   const [fileName, setFileName] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'processing' | 'success' | 'error'>('idle');
@@ -159,6 +154,42 @@ const App: React.FC = () => {
   const [redactionReport, setRedactionReport] = useState<RedactionReportData | null>(null);
   const processingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [backendVersion, setBackendVersion] = useState<string | null>(null);
+  const pollIntervalRef = useRef<number | null>(null);
+  const [activeTab, setActiveTab] = useState(0);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
+  const stopPolling = useCallback(() => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    // Cleanup polling on component unmount
+    return () => {
+      stopPolling();
+    };
+  }, [stopPolling]);
+
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const response = await apiClient.get('/pdf/version');
+        if (response.data && response.data.version) {
+          setBackendVersion(response.data.version);
+        }
+      } catch (error) {
+        console.error("Could not fetch backend version:", error);
+        setBackendVersion('N/A');
+      }
+    };
+
+    fetchVersion();
+  }, []);
 
   const handleError = useCallback((error: ProcessingError) => {
     setCurrentError(error);
@@ -182,56 +213,77 @@ const App: React.FC = () => {
     setRedactionReport(null);
   }, []);
 
+  const pollForProcessingStatus = useCallback(async (documentId: number) => {
+    if (pollIntervalRef.current) return; // Polling already active
+
+    pollIntervalRef.current = window.setInterval(async () => {
+      try {
+        const response = await apiClient.get(`/pdf/documents/${documentId}`);
+        const document = response.data;
+
+        if (document.status === 'completed' || document.status === 'failed') {
+          stopPolling();
+          setUploadStatus(document.status === 'completed' ? 'success' : 'error');
+          setUploadResponse(document);
+
+          if (document.status === 'completed' && document.redaction_report) {
+            try {
+              const reportData = JSON.parse(document.redaction_report);
+              setRedactionReport(reportData);
+            } catch (error) {
+              console.error('Failed to parse redaction report:', error);
+              handleError(createProcessingError({
+                message: 'Failed to parse the redaction report from the server.',
+              }));
+            }
+          } else if (document.status === 'failed') {
+            handleError(createProcessingError({
+              response: { data: { detail: { message: document.error_message || 'Processing failed without a specific error.' } } }
+            }));
+          }
+        }
+      } catch (error) {
+        stopPolling();
+        handleError(createProcessingError(error));
+      }
+    }, 2000); // Poll every 2 seconds
+  }, [handleError, stopPolling]);
+
   // File upload handler
   const handleFileAccepted = useCallback(async (file: File) => {
     setFileName(file.name);
     setUploadStatus('uploading');
     setUploadProgress(0);
+    stopPolling(); // Stop any previous polling
 
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await axios.post(BACKEND_URL, formData, {
+      // No more onUploadProgress, as the file is just being accepted
+      const response = await apiClient.post('/pdf/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(progress);
-          }
         },
         timeout: PROCESSING_TIMEOUT,
       });
 
-      if (response.status === 200) {
-        setUploadStatus('success');
-        setUploadResponse(response.data);
-        
-        // Parse redaction report if available
-        if (response.data.redaction_report) {
-          try {
-            const reportData = JSON.parse(response.data.redaction_report);
-            setRedactionReport(reportData);
-          } catch (error) {
-            console.error('Failed to parse redaction report:', error);
-            setRedactionReport({
-              title: 'Redaction Report',
-              detectedLanguage: 'unknown',
-              totalRedactions: 0,
-              categories: {},
-              error: 'Failed to parse report data'
-            });
-          }
-        }
+      // On 202 Accepted, we start polling
+      if (response.status === 202) {
+        setUploadStatus('processing');
+        const documentId = response.data.id;
+        setUploadResponse(response.data); // Store initial response
+        pollForProcessingStatus(documentId);
+      } else {
+        // This case should ideally not happen with the new backend
+        handleError(createProcessingError({
+          message: `Unexpected status code: ${response.status}`
+        }));
       }
-
-    } catch (error: any) {
-      const processedError = handleUploadError(error, file.name);
-      handleError(processedError);
+    } catch (error) {
+      handleError(createProcessingError(error));
     }
-  }, [handleError]);
+  }, [handleError, pollForProcessingStatus, stopPolling]);
 
   const handleFileRejected = useCallback((rejections: any[]) => {
     if (rejections.length > 0) {
@@ -257,13 +309,6 @@ const App: React.FC = () => {
   // Cleanup on unmount
   useEffect(() => () => {
     if (processingTimeout.current) clearTimeout(processingTimeout.current);
-  }, []);
-
-  useEffect(() => {
-    fetch('http://127.0.0.1:8000/version')
-      .then(res => res.json())
-      .then(data => setBackendVersion(data.version))
-      .catch(() => setBackendVersion(null));
   }, []);
 
   // Left Pane Content - Now with actual upload functionality
@@ -354,26 +399,18 @@ const App: React.FC = () => {
 
   // Right Pane Content - Combined Statistics and How It Works
   const rightPaneContent = (
-    <StatisticsPanel
-      redactionReport={redactionReport}
-      downloadUrl={uploadResponse?.anonymized_filename ? 
-        `http://127.0.0.1:8000/api/v1/download/${uploadResponse.anonymized_filename}` : 
-        undefined
-      }
-      onExportReport={() => {
-        // Export report as JSON
-        if (redactionReport) {
-          const dataStr = JSON.stringify(redactionReport, null, 2);
-          const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-          const exportFileDefaultName = `redaction-report-${new Date().toISOString().split('T')[0]}.json`;
-          const linkElement = document.createElement('a');
-          linkElement.setAttribute('href', dataUri);
-          linkElement.setAttribute('download', exportFileDefaultName);
-          linkElement.click();
-        }
-      }}
-      theme={theme}
-    />
+    !uploadResponse ? (
+      <Paper sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6">Welcome</Typography>
+        <Typography>Upload a document to get started.</Typography>
+      </Paper>
+    ) : (
+      <RedactionReport
+        documentId={uploadResponse.id}
+        report={redactionReport}
+        downloadUrl={uploadResponse.anonymized_filename ? `${API_BASE_URL}/pdf/download/${uploadResponse.anonymized_filename}` : undefined}
+      />
+    )
   );
 
   return (
@@ -404,12 +441,31 @@ const App: React.FC = () => {
               AnonymPDF
             </Typography>
             
-            <TwoPaneLayout
-              leftPane={leftPaneContent}
-              rightPane={rightPaneContent}
-              leftPaneWidth={45}
-              spacing={4}
-            />
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+              <Tabs value={activeTab} onChange={handleTabChange} centered>
+                <Tab label="Anonymize PDF" />
+                <Tab label="Analytics Dashboard" />
+              </Tabs>
+            </Box>
+
+            {activeTab === 0 && (
+              <TwoPaneLayout
+                leftPane={leftPaneContent}
+                rightPane={rightPaneContent}
+                leftPaneWidth={45}
+                spacing={4}
+              />
+            )}
+            {activeTab === 1 && (
+              <Suspense fallback={
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+                  <CircularProgress />
+                </Box>
+              }>
+                <AnalyticsDashboard />
+              </Suspense>
+            )}
+
           </Container>
           <Box sx={{ textAlign: 'center', color: 'text.secondary', fontSize: 13, py: 1, borderTop: '1px solid #E5E7EB', mt: 4 }}>
             AnonymPDF v{FRONTEND_VERSION} (frontend)

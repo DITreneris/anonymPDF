@@ -15,6 +15,7 @@ from pathlib import Path
 import sqlite3
 from collections import defaultdict
 from scipy.stats import ttest_ind
+import statistics
 
 from app.core.logging import get_logger
 from app.core.config_manager import get_config_manager
@@ -71,6 +72,7 @@ class ABTestResult:
     confidence: float
     summary: str
     metrics_comparison: Dict[str, Dict[str, Any]]
+    timestamp: datetime = field(default_factory=datetime.utcnow)
     
 class ABTestManager:
     """
@@ -272,53 +274,47 @@ class ABTestManager:
             metrics_by_group[row['group_name']][row['metric_name']].append(row['metric_value'])
         
         # Compare metrics between groups
-        metrics_comparison = {}
-        winner = 'inconclusive'
-        max_confidence = 0.0
-        
+        comparison = {}
         for metric_name in metrics_by_group['control'].keys():
             control_values = metrics_by_group['control'][metric_name]
             variant_values = metrics_by_group['variant'][metric_name]
             
             if not control_values or not variant_values:
+                comparison[metric_name] = {"summary": "Insufficient data for comparison."}
                 continue
                 
             # Perform t-test
             t_stat, p_value = ttest_ind(control_values, variant_values)
+            is_significant = p_value < alpha
             
-            # Calculate effect size (mean difference)
-            control_mean = sum(control_values) / len(control_values)
-            variant_mean = sum(variant_values) / len(variant_values)
-            effect_size = variant_mean - control_mean
+            # Determine winner for this specific metric
+            metric_winner = 'inconclusive'
+            if is_significant:
+                if statistics.mean(variant_values) > statistics.mean(control_values):
+                    metric_winner = 'variant'
+                else:
+                    metric_winner = 'control'
             
             # Store comparison results
-            metrics_comparison[metric_name] = {
-                'control_mean': control_mean,
-                'variant_mean': variant_mean,
-                'effect_size': effect_size,
+            comparison[metric_name] = {
+                'control_mean': statistics.mean(control_values),
+                'variant_mean': statistics.mean(variant_values),
                 'p_value': p_value,
-                'significant': p_value < alpha
+                'is_significant': bool(is_significant),
+                'winner': metric_winner
             }
             
-            # Update winner if this metric is significant
-            if p_value < alpha:
-                confidence = 1 - p_value
-                if confidence > max_confidence:
-                    max_confidence = confidence
-                    winner = 'variant' if effect_size > 0 else 'control'
-        
-        # Generate summary
-        if winner == 'inconclusive':
-            summary = "No statistically significant difference found between control and variant."
-        else:
-            summary = f"Winner: {winner} with {max_confidence:.1%} confidence."
+        # Determine overall winner based on the primary metric (e.g., 'accuracy')
+        overall_winner = comparison.get('accuracy', {}).get('winner', 'inconclusive')
+
+        summary = f"Overall Winner: {overall_winner.capitalize()} based on 'accuracy'."
             
         return ABTestResult(
             test_id=test_id,
-            winner=winner,
-            confidence=max_confidence,
+            winner=overall_winner,
+            confidence=1 - comparison.get('accuracy', {}).get('p_value', 1.0),
             summary=summary,
-            metrics_comparison=metrics_comparison
+            metrics_comparison=comparison
         )
 
     def close(self):

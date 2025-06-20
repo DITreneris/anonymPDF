@@ -21,53 +21,40 @@ export const createProcessingError = (
     const status = error.response.status;
     const data = error.response.data;
     
-    // Determine error type based on status code
+    // Default values
     let type: ProcessingError['type'] = 'system';
-    let message = 'An error occurred while processing your request';
-    let details = '';
-    let recoveryActions: string[] = [];
+    let message = 'An unexpected error occurred.';
+    let details = typeof data === 'string' ? data : JSON.stringify(data);
+    let errorCode = `HTTP_${status}`;
+    let recoveryActions: string[] = ['Please try again or contact support if the issue persists.'];
 
+    // Check for our structured error format
+    if (data && data.detail && data.detail.message) {
+      message = data.detail.message;
+      details = `Error code: ${data.detail.code || 'N/A'}`;
+      errorCode = data.detail.code || `HTTP_${status}`;
+    } else if (data && data.detail) {
+      // Fallback for older string-based detail
+      message = data.detail;
+    }
+
+    // Determine error type and recovery actions based on status code
     if (status >= 400 && status < 500) {
-      // Client errors
       type = 'validation';
-      
-      if (status === 400) {
-        message = 'Invalid request';
-        details = data?.detail || 'The request was not valid. Please check your input.';
-        recoveryActions = [
-          'Check that your file is a valid PDF',
-          'Ensure the file is not corrupted or password-protected',
-          'Try with a different file'
-        ];
-      } else if (status === 413) {
-        message = 'File too large';
-        details = 'The uploaded file exceeds the maximum size limit.';
-        recoveryActions = [
-          'Try with a smaller PDF file',
-          'Compress your PDF before uploading',
-          'Contact support for large file processing'
-        ];
-      } else if (status === 415) {
-        message = 'Unsupported file type';
-        details = 'Only PDF files are supported.';
-        recoveryActions = [
-          'Ensure your file has a .pdf extension',
-          'Convert your document to PDF format',
-          'Check that the file is not corrupted'
-        ];
-      } else {
-        message = data?.detail || 'Request validation failed';
-        details = typeof data === 'string' ? data : JSON.stringify(data);
+      recoveryActions = [
+        'Check that your file is a valid, uncorrupted PDF.',
+        'Ensure the file is not password-protected.',
+        'Try with a different file.'
+      ];
+      if (status === 413) {
+        recoveryActions.unshift('Try with a smaller PDF file.');
       }
     } else if (status >= 500) {
-      // Server errors
       type = 'system';
-      message = 'Server error occurred';
-      details = data?.detail || 'An internal server error occurred. Please try again.';
       recoveryActions = [
-        'Wait a moment and try again',
-        'Check if the service is available',
-        'Contact support if the problem persists'
+        'Please wait a moment and try again.',
+        'Check the system status page if available.',
+        'Contact support if the problem persists.'
       ];
     }
 
@@ -76,7 +63,7 @@ export const createProcessingError = (
       message,
       details,
       recoveryActions,
-      errorCode: `HTTP_${status}`,
+      errorCode,
       timestamp,
       context: {
         status,

@@ -137,7 +137,7 @@ class LithuanianLanguageEnhancer:
         # Enhanced Lithuanian patterns
         self.enhanced_lithuanian_patterns = {
             'lithuanian_name_with_title': LithuanianPattern(
-                pattern=r'(?:Ponas|Ponia|Daktaras|Dr\.|Profesorius|Prof\.)\s+([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)*)',
+                pattern=r'((?:Ponas|Ponia|Daktaras|Dr\.|Profesorius|Prof\.)\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)*)',
                 category='names',
                 confidence_modifier=0.3,
                 description='Lithuanian name with title',
@@ -150,6 +150,13 @@ class LithuanianLanguageEnhancer:
                 description='Full Lithuanian address with postal code',
                 examples=['Adresas: Paupio g. 50-136, LT-11341 Vilnius']
             ),
+            'lithuanian_address_flexible': LithuanianPattern(
+                pattern=r'([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+s?\s+(?:g\.|pr\.|al\.)\s*\d+(?:-\d+)?)',
+                category='addresses_prefixed',
+                confidence_modifier=0.15,
+                description='Flexible Lithuanian address pattern (street, number)',
+                examples=['Vilniaus g. 1', 'Gedimino pr. 25-10A']
+            ),
             'lithuanian_company_full': LithuanianPattern(
                 pattern=r'(UAB|AB|VšĮ|MB|IV)\s+"([^"]+)"',
                 category='organizations',
@@ -158,11 +165,11 @@ class LithuanianLanguageEnhancer:
                 examples=['UAB "Lietuvos Technologijos"', 'AB "Swedbank"']
             ),
             'lithuanian_personal_code_labeled': LithuanianPattern(
-                pattern=r'(?:Asmens\s+kodas|A\.K\.):\s*(\d{11})',
+                pattern=r'(?i:\(?\s*(?:asmens\s+kodas|a\.k\.?|AK)\s*:?\s*)\s*(\d{11})\s*\)?',
                 category='lithuanian_personal_codes',
                 confidence_modifier=0.3,
-                description='Lithuanian personal code with label',
-                examples=['Asmens kodas: 38901234567', 'A.K.: 49012345678']
+                description='Lithuanian personal code with label (case-insensitive)',
+                examples=['Asmens kodas: 38901234567', '(a.k. 49012345678)', 'AK: 39012345678']
             ),
             'lithuanian_phone_formatted': LithuanianPattern(
                 pattern=r'(?:Tel\.|Telefonas|Mob\.):\s*(\+370\s+\d{1,2}\s+\d{3}\s+\d{4,5})',
@@ -288,48 +295,27 @@ class LithuanianLanguageEnhancer:
         return True, confidence_modifier
     
     def find_enhanced_lithuanian_patterns(self, text: str) -> List[Dict]:
-        """
-        Find PII using enhanced Lithuanian patterns.
-        
-        Args:
-            text: Text to analyze
-            
-        Returns:
-            List of enhanced Lithuanian detections
-        """
+        """Find all enhanced Lithuanian patterns in the text."""
         detections = []
-        
-        for pattern_name, pattern_data in self.compiled_patterns.items():
-            pattern = pattern_data['pattern']
-            pattern_info = pattern_data['info']
+        for name, compiled_pattern in self.compiled_patterns.items():
+            pattern = compiled_pattern['pattern']
+            info = compiled_pattern['info']
             
-            matches = pattern.finditer(text)
-            
-            for match in matches:
-                # Extract the actual PII (usually in group 1)
-                pii_text = match.group(1) if match.groups() else match.group(0)
+            for match in pattern.finditer(text):
+                # If the pattern has a capturing group, use the group's content.
+                # Otherwise, use the full match.
+                matched_text = match.group(1) if match.groups() else match.group(0)
                 
                 detection = {
-                    'text': pii_text,
-                    'full_match': match.group(0),
-                    'start': match.start(),
-                    'end': match.end(),
-                    'pattern_name': pattern_name,
-                    'category': pattern_info.category,
-                    'confidence_modifier': pattern_info.confidence_modifier,
-                    'description': pattern_info.description,
-                    'language': 'lithuanian'
+                    'text': matched_text.strip(),
+                    'category': info.category,
+                    'start': match.start(1) if match.groups() else match.start(0),
+                    'end': match.end(1) if match.groups() else match.end(0),
+                    'confidence': info.confidence_modifier,
+                    'pattern_name': name
                 }
-                
                 detections.append(detection)
                 
-                lithuanian_logger.info(
-                    "Enhanced Lithuanian pattern detected",
-                    pattern=pattern_name,
-                    text=pii_text,
-                    confidence_modifier=pattern_info.confidence_modifier
-                )
-        
         return detections
     
     def get_lithuanian_exclusions(self) -> Dict[str, Set[str]]:
@@ -420,7 +406,7 @@ class LithuanianContextAnalyzer:
             'insurance_header': [
                 r'PRIVALOMOJO.*DRAUDIMO.*PAŽYMĖJIMAS',
                 r'DRAUDIMO.*POLISAS',
-                r'CIVILĖS.*ATSAKOMYBĖS.*DRAUDIMAS',
+                r'CIVILINĖS.*ATSAKOMYBĖS.*DRAUDIMAS',
             ],
             'personal_info_section': [
                 r'DRAUDĖJO.*DUOMENYS',

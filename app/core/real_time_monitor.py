@@ -17,16 +17,238 @@ import sqlite3
 from pathlib import Path
 from enum import Enum
 import numpy as np
+import psutil
+from logging import getLogger
 
 # Import existing components
 from app.core.ml_monitoring import MLPerformanceMonitor, MetricSnapshot, AlertThreshold
 from app.core.performance import PerformanceMonitor
 from app.core.analytics_engine import QualityAnalyzer
 from app.core.config_manager import get_config
-from app.core.logging import get_logger
 
-monitor_logger = get_logger("anonympdf.real_time_monitor")
+# Set up a specific logger for this module
+system_logger = getLogger("anonympdf.monitor")
 
+DATABASE_FILE = "data/monitoring.db"
+
+class RealTimeMonitor:
+    """
+    A thread-safe singleton monitor for collecting and storing application performance metrics.
+
+    This class provides a centralized way to track key performance indicators (KPIs)
+    such as event durations, CPU usage, and memory consumption. It uses a dedicated
+    SQLite database for persistence, making the data available for real-time
+    and historical analysis.
+
+    Attributes:
+        db_path (str): The path to the SQLite database file.
+        process (psutil.Process): The current process object for metric collection.
+    """
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            with cls._lock:
+                if not cls._instance:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, db_path: str = DATABASE_FILE):
+        """
+        Initializes the RealTimeMonitor instance.
+
+        As a singleton, this method ensures that initialization only occurs once.
+        It sets up the database connection and the psutil process handle.
+
+        Args:
+            db_path (str): The path to the monitoring database. Defaults to DATABASE_FILE.
+        """
+        if hasattr(self, 'initialized') and self.initialized:
+            return
+
+        with self._lock:
+            if hasattr(self, 'initialized') and self.initialized:
+                return
+
+            self.db_path = db_path
+            self.db_write_lock = threading.Lock()
+            # Use a short timeout to prevent blocking on a locked DB
+            self.conn = sqlite3.connect(self.db_path, timeout=5.0, check_same_thread=False)
+            self._init_db()
+            self.process = psutil.Process()
+            self.initialized = True
+            system_logger.info("RealTimeMonitor initialized with db at %s.", self.db_path)
+
+    def _init_db(self):
+        """
+        Initializes the SQLite database and creates the performance_metrics table.
+
+        This method sets up the necessary table schema if it does not already exist.
+        It is designed to be safe to call on every startup.
+        
+        Raises:
+            sqlite3.Error: If there is an issue with database initialization.
+        """
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS performance_metrics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp REAL NOT NULL,
+                event_name TEXT NOT NULL,
+                duration REAL,
+                cpu_percent REAL,
+                memory_mb REAL,
+                document_id TEXT,
+                details TEXT
+            )
+            """)
+            self.conn.commit()
+        except sqlite3.Error as e:
+            system_logger.error(f"Database initialization failed: {e}", exc_info=True)
+            raise
+
+    def close(self):
+        """Closes the database connection."""
+        if self.conn:
+            self.conn.close()
+            self.conn = None
+            system_logger.info("RealTimeMonitor database connection closed.")
+
+    def log_event(self, event_name: str, duration: float = None, document_id: str = None, details: Dict[str, Any] = None):
+        """
+        Logs a specific performance event to the database.
+
+        This is the primary method for logging performance data. It captures a snapshot
+        of the current CPU and memory usage along with the provided event details.
+
+        Args:
+            event_name (str): The name of the event (e.g., 'text_extraction_finished').
+            duration (float, optional): The duration of the event in seconds. Defaults to None.
+            document_id (str, optional): The ID of the document being processed. Defaults to None.
+            details (Dict[str, Any], optional): A dictionary for any additional context. Defaults to None.
+        """
+        timestamp = time.time()
+        cpu_percent = self.process.cpu_percent()
+        memory_mb = self.process.memory_info().rss / (1024 * 1024)
+        details_str = json.dumps(details) if details else None
+
+        try:
+            with self.db_write_lock:
+                cursor = self.conn.cursor()
+                cursor.execute(
+                    "INSERT INTO performance_metrics (timestamp, event_name, duration, cpu_percent, memory_mb, document_id, details) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (timestamp, event_name, duration, cpu_percent, memory_mb, document_id, details_str)
+                )
+                self.conn.commit()
+        except sqlite3.Error as e:
+            # This should not crash the main application
+            system_logger.error(f"Failed to log event '{event_name}': {e}", exc_info=True)
+
+    def get_latest_metrics(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Retrieves the most recent performance metrics from the database.
+
+        Args:
+            limit (int): The maximum number of metric records to retrieve.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary
+                                 represents a recorded performance event.
+        """
+        try:
+            self.conn.row_factory = sqlite3.Row
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT * FROM performance_metrics ORDER BY timestamp DESC LIMIT ?", (limit,))
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        except sqlite3.Error as e:
+            system_logger.error(f"Failed to retrieve latest metrics: {e}", exc_info=True)
+            return []
+
+    def get_summary(self) -> Dict[str, Any]:
+        """
+        Provides a summarized view of the most recent performance data.
+
+        This method calculates aggregate statistics (averages) for the last 500 events
+        to provide a high-level overview of application health.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing performance summary statistics.
+        """
+        metrics = self.get_latest_metrics(limit=500)
+        if not metrics:
+            return {"status": "No data available."}
+
+        # Filter out None values before calculating averages
+        valid_durations = [m['duration'] for m in metrics if m.get('duration') is not None]
+        valid_cpus = [m['cpu_percent'] for m in metrics if m.get('cpu_percent') is not None]
+        valid_mems = [m['memory_mb'] for m in metrics if m.get('memory_mb') is not None]
+
+        avg_duration = sum(valid_durations) / len(valid_durations) if valid_durations else 0
+        avg_cpu = sum(valid_cpus) / len(valid_cpus) if valid_cpus else 0
+        avg_mem = sum(valid_mems) / len(valid_mems) if valid_mems else 0
+        
+        latest_event = metrics[0] if metrics else {}
+
+        return {
+            "total_events": len(metrics),
+            "average_duration_ms": round(avg_duration * 1000, 2),
+            "average_cpu_percent": round(avg_cpu, 2),
+            "average_memory_mb": round(avg_mem, 2),
+            "latest_event_timestamp": time.ctime(latest_event.get('timestamp')) if latest_event else None,
+            "latest_cpu_percent": round(latest_event.get('cpu_percent', 0), 2),
+            "latest_memory_mb": round(latest_event.get('memory_mb', 0), 2),
+        }
+
+    def shutdown(self):
+        """
+        Cleanly shuts down the monitor.
+        This is primarily for testing environments to release file handles.
+        """
+        self.close()
+        system_logger.info("RealTimeMonitor shutdown signal received.")
+        # We can also reset the instance to allow for re-initialization in tests.
+        RealTimeMonitor._instance = None
+
+    @staticmethod
+    def reset_for_testing():
+        """
+        A static method to forcefully reset the singleton instance.
+        This is essential for ensuring test isolation.
+        """
+        with RealTimeMonitor._lock:
+            if RealTimeMonitor._instance:
+                # Attempt a clean shutdown first if the instance exists
+                RealTimeMonitor._instance.shutdown()
+                RealTimeMonitor._instance = None
+
+# Global variable to hold the singleton instance, initialized to None
+_monitor_lock = threading.Lock()
+
+def get_real_time_monitor(db_path: Optional[str] = None) -> RealTimeMonitor:
+    """
+    Dependency injector that creates and returns the RealTimeMonitor singleton.
+    This function ensures that the same instance of the monitor is used throughout
+    the application, including in Celery workers.
+    Args:
+        db_path (Optional[str]): Path to the database. If None, uses default.
+                                 This is mainly for tests.
+    """
+    if RealTimeMonitor._instance is None:
+        with RealTimeMonitor._lock:
+            if RealTimeMonitor._instance is None:
+                # Creates the instance only if it doesn't exist
+                # Pass db_path if provided, otherwise the default will be used.
+                if db_path:
+                    RealTimeMonitor(db_path=db_path)
+                else:
+                    RealTimeMonitor()
+    # In a multi-threaded context, the instance might have been created
+    # by another thread while this thread was waiting for the lock.
+    # So we return the class instance directly.
+    return RealTimeMonitor._instance
 
 class AnomalyType(Enum):
     """Types of anomalies that can be detected."""
@@ -101,7 +323,7 @@ class AnomalyDetector:
         self.detected_anomalies = deque(maxlen=1000)
         self._lock = threading.Lock()
         
-        monitor_logger.info(f"AnomalyDetector initialized with sensitivity: {self.sensitivity}, alert_thresholds: {len(self.alert_thresholds)}")
+        system_logger.info(f"AnomalyDetector initialized with sensitivity: {self.sensitivity}, alert_thresholds: {len(self.alert_thresholds)}")
     
     def _get_std_threshold(self) -> float:
         """Get standard deviation threshold based on sensitivity."""
@@ -305,7 +527,7 @@ class AnomalyDetector:
     def add_alert_threshold(self, threshold: AlertThreshold):
         """Add an alert threshold for monitoring."""
         self.alert_thresholds.append(threshold)
-        monitor_logger.info(f"Added alert threshold for {threshold.metric_name}")
+        system_logger.info(f"Added alert threshold for {threshold.metric_name}")
 
     def remove_alert_threshold(self, metric_name: str):
         """Remove alert thresholds for a specific metric."""
@@ -313,7 +535,7 @@ class AnomalyDetector:
         self.alert_thresholds = [th for th in self.alert_thresholds if th.metric_name != metric_name]
         removed_count = original_count - len(self.alert_thresholds)
         if removed_count > 0:
-            monitor_logger.info(f"Removed {removed_count} alert thresholds for {metric_name}")
+            system_logger.info(f"Removed {removed_count} alert thresholds for {metric_name}")
 
     def _calculate_severity(self, z_score: float) -> str:
         """Calculate severity based on z-score."""
@@ -357,7 +579,7 @@ class PerformanceAggregator:
             '1hour': deque(maxlen=3600)  # 1 hour
         }
         
-        monitor_logger.info("PerformanceAggregator initialized")
+        system_logger.info("PerformanceAggregator initialized")
     
     def add_metrics(self, metrics: Dict[str, float], timestamp: Optional[datetime] = None):
         """Add metrics for aggregation."""
@@ -438,342 +660,3 @@ class PerformanceAggregator:
             return dict(self.aggregated_metrics)
 
 
-class RealTimeMonitor:
-    """Enhanced real-time monitoring with anomaly detection and alerting."""
-    
-    def __init__(self, config: Optional[Dict] = None):
-        self.config = config or get_config().get('real_time_monitoring', {})
-        
-        # Initialize components
-        self.anomaly_detector = AnomalyDetector(self.config.get('anomaly_detection', {}))
-        self.performance_aggregator = PerformanceAggregator(
-            self.config.get('aggregation_interval', 30.0)
-        )
-        
-        # Integrate with existing monitoring
-        self.ml_monitor = None  # Will be set externally
-        self.performance_monitor = PerformanceMonitor()
-        self.quality_analyzer = None  # Will be set externally
-        
-        # Alert system
-        self.alert_callbacks = []
-        self.alert_history = deque(maxlen=1000)
-        
-        # Monitoring state
-        self.is_monitoring = False
-        self.monitoring_thread = None
-        self.last_metrics_collection = datetime.now()
-        
-        # Storage
-        self.storage_path = Path(self.config.get('storage_path', 'data/real_time_monitor.db'))
-        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-        self._init_storage()
-        
-        monitor_logger.info("RealTimeMonitor initialized")
-    
-    def _init_storage(self):
-        """Initialize storage for monitoring data."""
-        with sqlite3.connect(self.storage_path) as conn:
-            # Anomalies table
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS anomalies (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TIMESTAMP NOT NULL,
-                    anomaly_type TEXT NOT NULL,
-                    metric_name TEXT NOT NULL,
-                    current_value REAL,
-                    expected_value REAL,
-                    deviation_score REAL,
-                    severity TEXT,
-                    description TEXT,
-                    context TEXT
-                )
-            ''')
-            
-            # Real-time metrics table
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS real_time_metrics (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TIMESTAMP NOT NULL,
-                    metric_name TEXT NOT NULL,
-                    value REAL,
-                    window_type TEXT,
-                    aggregation_type TEXT
-                )
-            ''')
-            
-            # Create indices
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_anomaly_timestamp ON anomalies(timestamp)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON real_time_metrics(timestamp)')
-    
-    def set_ml_monitor(self, ml_monitor: MLPerformanceMonitor):
-        """Set the ML performance monitor for integration."""
-        self.ml_monitor = ml_monitor
-        
-        # Register as metrics callback for automatic forwarding
-        if hasattr(ml_monitor, 'add_metrics_callback'):
-            ml_monitor.add_metrics_callback(self._on_ml_metrics_received)
-            monitor_logger.info("Registered as ML metrics callback for automatic forwarding")
-
-    def _on_ml_metrics_received(self, ml_metrics: 'MetricSnapshot'):
-        """Callback for receiving ML metrics from MLPerformanceMonitor."""
-        try:
-            # Convert MetricSnapshot to metrics dict
-            metrics_dict = {
-                'ml_accuracy': ml_metrics.accuracy,
-                'ml_precision': ml_metrics.precision,
-                'ml_recall': ml_metrics.recall,
-                'ml_f1_score': ml_metrics.f1_score,
-                'ml_processing_time_ms': ml_metrics.processing_time_ms,
-                'ml_confidence_correlation': ml_metrics.confidence_correlation,
-                'ml_sample_count': ml_metrics.sample_count
-            }
-            
-            # Add to performance aggregator
-            self.performance_aggregator.add_metrics(metrics_dict)
-            
-            # Detect anomalies for ML metrics
-            anomalies = []
-            for metric_name, value in metrics_dict.items():
-                # Add to anomaly detector
-                self.anomaly_detector.add_metric_value(metric_name, value)
-                
-                # Detect anomalies
-                metric_anomalies = self.anomaly_detector.detect_anomalies(metric_name, value)
-                anomalies.extend(metric_anomalies)
-            
-            # Process any anomalies
-            if anomalies:
-                self._process_anomaly_alerts(anomalies)
-                
-            monitor_logger.debug(f"Processed ML metrics via callback: {len(metrics_dict)} metrics, {len(anomalies)} anomalies")
-                
-        except Exception as e:
-            monitor_logger.error(f"Error processing ML metrics callback: {e}")
-
-    def set_quality_analyzer(self, quality_analyzer: QualityAnalyzer):
-        """Set the quality analyzer for integration."""
-        self.quality_analyzer = quality_analyzer
-    
-    def start_monitoring(self, interval_seconds: int = 30):
-        """Start real-time monitoring."""
-        if self.is_monitoring:
-            monitor_logger.warning("Real-time monitor already running")
-            return
-        
-        self.is_monitoring = True
-        self.monitoring_interval = interval_seconds
-        
-        self.monitoring_thread = threading.Thread(
-            target=self._monitoring_loop,
-            daemon=True
-        )
-        self.monitoring_thread.start()
-        
-        monitor_logger.info(f"Real-time monitoring started (interval: {interval_seconds}s)")
-    
-    def stop_monitoring(self):
-        """Stop real-time monitoring."""
-        self.is_monitoring = False
-        
-        if self.monitoring_thread:
-            self.monitoring_thread.join(timeout=30)
-        
-        monitor_logger.info("Real-time monitoring stopped")
-    
-    def _monitoring_loop(self):
-        """Main monitoring loop."""
-        while self.is_monitoring:
-            try:
-                # Collect current metrics
-                current_metrics = self._collect_current_metrics()
-                
-                # Add to aggregator
-                self.performance_aggregator.add_metrics(current_metrics)
-                
-                # Detect anomalies
-                anomalies = self._detect_anomalies(current_metrics)
-                
-                # Process alerts
-                if anomalies:
-                    self._process_anomaly_alerts(anomalies)
-                
-                # Store metrics
-                self._store_real_time_metrics(current_metrics)
-                
-                # Update last collection time
-                self.last_metrics_collection = datetime.now()
-                
-                # Sleep until next iteration
-                time.sleep(self.monitoring_interval)
-                
-            except Exception as e:
-                monitor_logger.error(f"Real-time monitoring error: {e}")
-                time.sleep(60)  # Wait before retrying
-    
-    def _collect_current_metrics(self) -> Dict[str, float]:
-        """Collect current metrics from all sources."""
-        metrics = {}
-        
-        # System metrics from performance monitor
-        system_metrics = self.performance_monitor.get_system_metrics()
-        metrics.update({
-            'process_memory_mb': system_metrics.get('process_memory_mb', 0),
-            'process_cpu_percent': system_metrics.get('process_cpu_percent', 0),
-            'system_memory_percent': system_metrics.get('system_memory_percent', 0)
-        })
-        
-        # ML performance metrics
-        if self.ml_monitor:
-            ml_metrics = self.ml_monitor.get_current_metrics()
-            metrics.update({
-                'ml_accuracy': ml_metrics.accuracy,
-                'ml_precision': ml_metrics.precision,
-                'ml_recall': ml_metrics.recall,
-                'ml_processing_time_ms': ml_metrics.processing_time_ms,
-                'ml_confidence_correlation': ml_metrics.confidence_correlation
-            })
-        
-        # Quality analyzer metrics
-        if self.quality_analyzer:
-            quality_metrics = self.quality_analyzer.analyze_detection_quality(time_window_hours=1)
-            if quality_metrics:
-                avg_confidence = statistics.mean([m.avg_confidence for m in quality_metrics])
-                avg_processing_time = statistics.mean([m.processing_time_ms for m in quality_metrics])
-                
-                metrics.update({
-                    'quality_avg_confidence': avg_confidence,
-                    'quality_avg_processing_time_ms': avg_processing_time,
-                    'quality_categories_count': len(quality_metrics)
-                })
-        
-        return metrics
-    
-    def _detect_anomalies(self, current_metrics: Dict[str, float]) -> List[Anomaly]:
-        """Detect anomalies in current metrics."""
-        all_anomalies = []
-        
-        for metric_name, value in current_metrics.items():
-            # Add to anomaly detector
-            self.anomaly_detector.add_metric_value(metric_name, value)
-            
-            # Detect anomalies
-            anomalies = self.anomaly_detector.detect_anomalies(metric_name, value)
-            all_anomalies.extend(anomalies)
-        
-        return all_anomalies
-    
-    def _process_anomaly_alerts(self, anomalies: List[Anomaly]):
-        """Process anomaly alerts and trigger callbacks."""
-        for anomaly in anomalies:
-            # Store anomaly
-            self._store_anomaly(anomaly)
-            
-            # Add to history
-            self.alert_history.append(anomaly)
-            
-            # Log alert
-            monitor_logger.warning(
-                f"ANOMALY DETECTED: {anomaly.description}",
-                anomaly_type=anomaly.anomaly_type.value,
-                severity=anomaly.severity,
-                metric=anomaly.metric_name,
-                current_value=anomaly.current_value,
-                expected_value=anomaly.expected_value
-            )
-            
-            # Trigger callbacks
-            for callback in self.alert_callbacks:
-                try:
-                    callback(anomaly)
-                except Exception as e:
-                    monitor_logger.error(f"Alert callback failed: {e}")
-    
-    def _store_anomaly(self, anomaly: Anomaly):
-        """Store anomaly to database."""
-        with sqlite3.connect(self.storage_path) as conn:
-            conn.execute('''
-                INSERT INTO anomalies 
-                (timestamp, anomaly_type, metric_name, current_value, expected_value,
-                 deviation_score, severity, description, context)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                anomaly.timestamp.isoformat(),
-                anomaly.anomaly_type.value,
-                anomaly.metric_name,
-                anomaly.current_value,
-                anomaly.expected_value,
-                anomaly.deviation_score,
-                anomaly.severity,
-                anomaly.description,
-                json.dumps(anomaly.context)
-            ))
-    
-    def _store_real_time_metrics(self, metrics: Dict[str, float]):
-        """Store real-time metrics to database."""
-        timestamp = datetime.now()
-        
-        with sqlite3.connect(self.storage_path) as conn:
-            for metric_name, value in metrics.items():
-                conn.execute('''
-                    INSERT INTO real_time_metrics 
-                    (timestamp, metric_name, value, window_type, aggregation_type)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (
-                    timestamp.isoformat(),
-                    metric_name,
-                    value,
-                    'real_time',
-                    'current'
-                ))
-    
-    def add_alert_callback(self, callback: Callable[[Anomaly], None]):
-        """Add callback for anomaly alerts."""
-        self.alert_callbacks.append(callback)
-    
-    def get_monitoring_status(self) -> Dict[str, Any]:
-        """Get current monitoring status."""
-        return {
-            'is_monitoring': self.is_monitoring,
-            'last_metrics_collection': self.last_metrics_collection.isoformat(),
-            'monitoring_interval': getattr(self, 'monitoring_interval', 0),
-            'anomaly_detector_metrics': len(self.anomaly_detector.metric_stats),
-            'recent_anomalies_count': len(self.anomaly_detector.get_recent_anomalies(hours_back=1)),
-            'alert_callbacks_count': len(self.alert_callbacks)
-        }
-    
-    def get_dashboard_data(self) -> Dict[str, Any]:
-        """Get data for real-time dashboard."""
-        # Current aggregated metrics
-        current_metrics = self.performance_aggregator.get_all_windows()
-        
-        # Recent anomalies
-        recent_anomalies = self.anomaly_detector.get_recent_anomalies(hours_back=24)
-        
-        # Metric statistics
-        metric_stats = self.anomaly_detector.get_metric_stats()
-        
-        return {
-            'timestamp': datetime.now().isoformat(),
-            'monitoring_status': self.get_monitoring_status(),
-            'aggregated_metrics': current_metrics,
-            'recent_anomalies': [
-                {
-                    'type': a.anomaly_type.value,
-                    'metric': a.metric_name,
-                    'severity': a.severity,
-                    'description': a.description,
-                    'timestamp': a.timestamp.isoformat()
-                }
-                for a in recent_anomalies[-10:]  # Last 10 anomalies
-            ],
-            'metric_statistics': {
-                name: {
-                    'mean': stats.mean,
-                    'std': stats.std,
-                    'trend': stats.trend,
-                    'sample_count': stats.sample_count
-                }
-                for name, stats in metric_stats.items()
-            }
-        } 

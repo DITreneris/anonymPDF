@@ -135,6 +135,21 @@ class TestQualityInsightsGenerator:
         }
         mock_analyzer.get_quality_summary.return_value = summary_data
         
+        # Also mock the new call to analyze_detection_quality
+        detailed_metrics_data = {
+            "EMAIL": {
+                "category": "EMAIL", "total_detections": 5, "avg_confidence": 0.9, "confidence_std": 0.05,
+                "precision_estimate": 0.9, "recall_estimate": 0.9, "false_positive_rate": 0.1,
+                "processing_time_ms": 10.0, "pattern_diversity": 2, "timestamp": datetime.now()
+            },
+            "PHONE": {
+                "category": "PHONE", "total_detections": 5, "avg_confidence": 0.7, "confidence_std": 0.15,
+                "precision_estimate": 0.7, "recall_estimate": 0.7, "false_positive_rate": 0.3,
+                "processing_time_ms": 15.0, "pattern_diversity": 1, "timestamp": datetime.now()
+            }
+        }
+        mock_analyzer.analyze_detection_quality.return_value = detailed_metrics_data
+
         # Act
         report = insights_generator.generate_report()
 
@@ -149,7 +164,9 @@ class TestQualityInsightsGenerator:
 @pytest.fixture
 def mock_analyzer():
     """Provides a mocked QualityAnalyzer."""
-    return Mock(spec=QualityAnalyzer)
+    analyzer = Mock(spec=QualityAnalyzer)
+    analyzer.config = {}  # Add config attribute to the mock
+    return analyzer
 
 @pytest.fixture
 def insights_generator(mock_analyzer):

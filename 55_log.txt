@@ -1,0 +1,447 @@
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF> pytest
+=================================================================================== test session starts ====================================================================================
+platform win32 -- Python 3.11.9, pytest-7.4.3, pluggy-1.6.0
+rootdir: C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-3.7.1, asyncio-0.21.1, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collected 275 items
+
+tests\test_analytics_api.py .......................                                                                                                                                   [  8%]
+tests\test_analytics_engine.py ......                                                                                                                                                 [ 10%]
+tests\test_config_manager.py ...                                                                                                                                                      [ 11%]
+tests\test_feedback_system.py ....                                                                                                                                                    [ 13%]
+tests\test_intelligent_cache.py .............................                                                                                                                         [ 23%]
+tests\test_lithuanian_pii.py ..F.FFF.......                                                                                                                                           [ 28%]
+tests\test_memory_optimizer.py ......................                                                                                                                                 [ 36%]
+tests\test_ml_integration_layer.py .........                                                                                                                                          [ 40%]
+tests\test_pdf_processor.py FFFFFF                                                                                                                                                    [ 42%]
+tests\test_performance.py ........                                                                                                                                                    [ 45%]
+tests\test_performance_enhanced.py .......                                                                                                                                            [ 47%]
+tests\test_performance_optimizer.py ........................                                                                                                                          [ 56%]
+tests\test_pii_patterns.py ......                                                                                                                                                     [ 58%]
+tests\test_priority2_enhancements.py .............................                                                                                                                    [ 69%]
+tests\test_real_time_monitor.py .......                                                                                                                                               [ 71%]
+tests\test_training_data_collector.py .........                                                                                                                                       [ 74%]
+tests\test_validation_utils.py ....FFF.................                                                                                                                               [ 83%]
+tests\adaptive\test_ab_testing.py ........                                                                                                                                            [ 86%]
+tests\adaptive\test_doc_classifier.py ........                                                                                                                                        [ 89%]
+tests\adaptive\test_online_learner.py ....                                                                                                                                            [ 90%]
+tests\adaptive\test_pattern_db.py .FFF.                                                                                                                                               [ 92%]
+tests\adaptive\test_pattern_learner.py .......                                                                                                                                        [ 95%]
+tests\adaptive\test_processing_rules.py ....                                                                                                                                          [ 96%]
+tests\api\test_pdf_endpoint.py EE                                                                                                                                                     [ 97%]
+tests\system\test_adaptive_workflow.py .FFFEE                                                                                                                                         [ 99%]
+tests\system\test_real_time_monitor_integration.py F                                                                                                                                  [100%]
+
+========================================================================================== ERRORS ==========================================================================================
+__________________________________________________ ERROR at setup of TestPdfApiEndpoints.test_post_lithuanian_pdf_for_processing_success ___________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\api\test_pdf_endpoint.py, line 12
+      def test_post_lithuanian_pdf_for_processing_success(self, client: TestClient):
+E       fixture 'client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\api\test_pdf_endpoint.py:12
+_________________________________________________________ ERROR at setup of TestPdfApiEndpoints.test_post_non_pdf_file_returns_4xx _________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\api\test_pdf_endpoint.py, line 39
+      def test_post_non_pdf_file_returns_4xx(self, client: TestClient):
+E       fixture 'client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\api\test_pdf_endpoint.py:39
+_________________________________________________________________ ERROR at setup of test_feedback_api_is_disabled_for_now __________________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\system\test_adaptive_workflow.py, line 111
+  def test_feedback_api_is_disabled_for_now(client: TestClient):
+E       fixture 'client' not found
+>       available fixtures: adaptive_learning_system, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\system\test_adaptive_workflow.py:111
+_______________________________________________________________ ERROR at setup of test_adaptive_workflow_learns_new_pattern ________________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\system\test_adaptive_workflow.py, line 119
+  @pytest.mark.system
+  def test_adaptive_workflow_learns_new_pattern(
+E       fixture 'adaptive_coordinator' not found
+>       available fixtures: adaptive_learning_system, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\system\test_adaptive_workflow.py:119
+========================================================================================= FAILURES =========================================================================================
+_____________________________________________________________ TestLithuanianIntegration.test_simple_lithuanian_names_detection _____________________________________________________________
+tests\test_lithuanian_pii.py:81: in test_simple_lithuanian_names_detection
+    assert "Linas Vaitkus" in detected_names
+E   AssertionError: assert 'Linas Vaitkus' in {'Ponas Linas Vaitkus ir Rūta Vaitkienė'}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:21:48,322 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-20 08:21:48,332 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.010778188705444336, "memory_delta": 0.0}
+__________________________________________________________ TestLithuanianIntegration.test_anti_overredaction_in_technical_context __________________________________________________________
+tests\test_lithuanian_pii.py:96: in test_anti_overredaction_in_technical_context
+    assert "Vilniaus" in detected_locations
+E   AssertionError: assert 'Vilniaus' in set()
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:21:48,919 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-20 08:21:48,929 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.010152578353881836, "memory_delta": 0.01171875}
+____________________________________________________________ TestLithuanianIntegration.test_anti_overredaction_of_common_words _____________________________________________________________
+tests\test_lithuanian_pii.py:104: in test_anti_overredaction_of_common_words
+    assert "summary" in report
+E   AssertionError: assert 'summary' in {'categories': {'PERSON': 1, 'TIME': 1}, 'details': {'PERSON': [('Jonas Petraitis', 'CONF_0.50')], 'TIME': [('99999', 'CONF_0.50')]}, 'language_detected': 'lt', 'total_redactions': 2}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:21:48,943 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-20 08:21:48,952 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.008979320526123047, "memory_delta": 0.0}
+________________________________________________________________ TestLithuanianIntegration.test_redaction_report_generation ________________________________________________________________
+tests\test_lithuanian_pii.py:121: in test_redaction_report_generation
+    assert "summary" in report
+E   AssertionError: assert 'summary' in {'categories': {'PERSON': 1, 'TIME': 1}, 'details': {'PERSON': [('Jonas Petraitis', 'CONF_0.50')], 'TIME': [('99999', 'CONF_0.50')]}, 'language_detected': 'lt', 'total_redactions': 2}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:21:48,965 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-20 08:21:48,974 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.008976459503173828, "memory_delta": 0.0}
+_______________________________________________________________________ TestPDFProcessorUnit.test_find_personal_info _______________________________________________________________________
+tests\test_pdf_processor.py:79: in test_find_personal_info
+    assert "emails" in detections
+E   AssertionError: assert 'emails' in {'DATE': [('38801011234', 'CONF_0.50')]}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:21:50,446 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-20 08:21:50,458 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.011968851089477539, "memory_delta": 0.078125}
+__________________________________________________________________ TestPDFProcessorUnit.test_deduplicate_with_confidence ___________________________________________________________________
+tests\test_pdf_processor.py:110: in test_deduplicate_with_confidence
+    assert unique_detections['locations'][0][1].startswith('HIGH')
+E   AssertionError: assert False
+E    +  where False = <built-in method startswith of str object at 0x0000020E9865BAF0>('HIGH')
+E    +    where <built-in method startswith of str object at 0x0000020E9865BAF0> = 'CONF_0.80'.startswith
+___________________________________________________________________ TestPDFProcessorIntegration.test_process_pdf_success ___________________________________________________________________
+tests\test_pdf_processor.py:135: in test_process_pdf_success
+    assert result['status'] == 'success'
+E   AssertionError: assert 'failed' == 'success'
+E     - success
+E     + failed
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:21:50,527 - anonympdf.pdf - INFO - Starting PDF processing - {"filename": "C:\\Users\\tomas\\AppData\\Local\\Temp\\pytest-of-tomas\\pytest-216\\test_process_pdf_success0\\test.pdf"}
+2025-06-20 08:21:50,530 - anonympdf.pdf - ERROR - Error in process_pdf: TypeError - FileProcessingMetrics.track_file_processing() takes 3 positional arguments but 4 were given - {"filename": "test.pdf", "processing_time": 0.003008604049682617}
+Traceback (most recent call last):
+  File "C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\app\services\pdf_processor.py", line 626, in process_pdf
+    performance_tracking = file_processing_metrics.track_file_processing(
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: FileProcessingMetrics.track_file_processing() takes 3 positional arguments but 4 were given
+2025-06-20 08:21:50,532 - anonympdf.pdf - INFO - Temporary file cleaned up - {"temp_path": "temp\\test.pdf"}
+_________________________________________________________ TestPDFProcessorIntegration.test_process_pdf_failure_on_invalid_content __________________________________________________________
+tests\test_pdf_processor.py:202: in test_process_pdf_failure_on_invalid_content
+    assert not result["success"]
+E   KeyError: 'success'
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:21:50,582 - anonympdf.pdf - INFO - Starting PDF processing - {"filename": "C:\\Users\\tomas\\AppData\\Local\\Temp\\pytest-of-tomas\\pytest-216\\test_process_pdf_failure_on_in0\\test.pdf"}
+2025-06-20 08:21:50,597 - anonympdf.pdf - ERROR - Error in process_pdf: TypeError - FileProcessingMetrics.track_file_processing() takes 3 positional arguments but 4 were given - {"filename": "test.pdf", "processing_time": 0.014626502990722656}
+Traceback (most recent call last):
+  File "C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\app\services\pdf_processor.py", line 626, in process_pdf
+    performance_tracking = file_processing_metrics.track_file_processing(
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: FileProcessingMetrics.track_file_processing() takes 3 positional arguments but 4 were given
+2025-06-20 08:21:50,598 - anonympdf.pdf - INFO - Temporary file cleaned up - {"temp_path": "temp\\test.pdf"}
+________________________________________________________________ TestPDFProcessorIntegration.test_generate_redaction_report ________________________________________________________________
+tests\test_pdf_processor.py:162: in test_generate_redaction_report
+    assert "summary" in report
+E   AssertionError: assert 'summary' in {'categories': {'EMAILS': 1, 'NAMES': 1}, 'details': {'emails': [('johndoe@email.com', 'MEDIUM_0.6')], 'names': [('John Doe', 'HIGH_0.8')]}, 'language_detected': 'en', 'total_redactions': 2}
+___________________________________________________________________ TestPDFProcessorIntegration.test_anonymize_pdf_flow ____________________________________________________________________
+tests\test_pdf_processor.py:179: in test_anonymize_pdf_flow
+    assert output_pdf_path.exists()
+E   AssertionError: assert False
+E    +  where False = <bound method Path.exists of WindowsPath('C:/Users/tomas/AppData/Local/Temp/pytest-of-tomas/pytest-216/test_anonymize_pdf_flow0/anonymized_output.pdf')>()
+E    +    where <bound method Path.exists of WindowsPath('C:/Users/tomas/AppData/Local/Temp/pytest-of-tomas/pytest-216/test_anonymize_pdf_flow0/anonymized_output.pdf')> = WindowsPath('C:/Users/tomas/AppData/Local/Temp/pytest-of-tomas/pytest-216/test_anonymize_pdf_flow0/anonymized_output.pdf').exists
+_____________________________________________________________________ TestPersonNameValidation.test_length_validation ______________________________________________________________________
+tests\test_validation_utils.py:65: in test_length_validation
+    assert not validate_person_name("A"), "Single character should not be a valid name"
+E   AssertionError: Single character should not be a valid name
+E   assert not True
+E    +  where True = validate_person_name('A')
+_____________________________________________________________________ TestPersonNameValidation.test_excluded_prefixes ______________________________________________________________________
+tests\test_validation_utils.py:82: in test_excluded_prefixes
+    assert not validate_person_name(name), f"Name with excluded prefix should be filtered: {name}"
+E   AssertionError: Name with excluded prefix should be filtered: Nr. 123
+E   assert not True
+E    +  where True = validate_person_name('Nr. 123')
+______________________________________________________________________ TestPersonNameValidation.test_digit_validation ______________________________________________________________________
+tests\test_validation_utils.py:86: in test_digit_validation
+    assert not validate_person_name("John123"), "Name with digits should be invalid: John123"
+E   AssertionError: Name with digits should be invalid: John123
+E   assert not True
+E    +  where True = validate_person_name('John123')
+________________________________________________________________________ TestAdaptivePatternDB.test_update_pattern _________________________________________________________________________
+tests\adaptive\test_pattern_db.py:63: in test_update_pattern
+    updated_details = sample_pattern1.dict()
+E   AttributeError: 'AdaptivePattern' object has no attribute 'dict'
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-20 08:22:33,306 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-20 08:22:33,306 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:22:33,308 - anonympdf.adaptive_pattern_db - INFO - Skipping update for pattern with regex '\b\d{5}\b'. New confidence (0.95) is not higher than existing (0.95).
+______________________________________________________________________ TestAdaptivePatternDB.test_get_active_patterns ______________________________________________________________________
+tests\adaptive\test_pattern_db.py:90: in test_get_active_patterns
+    assert len(active_patterns) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([AdaptivePattern(pattern_id='test_pattern_1', regex='\\b\\d{5}\\b', pii_category='ZIP_CODE', confidence=0.95, positive...atetime.datetime(2025, 6, 20, 8, 22, 33, 323193), last_validated_at=datetime.datetime(2025, 6, 20, 8, 22, 33, 323193))])
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-20 08:22:33,322 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-20 08:22:33,322 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:22:33,324 - anonympdf.adaptive_pattern_db - INFO - Skipping update for pattern with regex '\b\d{5}\b'. New confidence (0.95) is not higher than existing (0.95).
+2025-06-20 08:22:33,325 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: test_pattern_2
+2025-06-20 08:22:33,326 - anonympdf.adaptive_pattern_db - INFO - Retrieved 2 active patterns from the database.
+______________________________________________________________________ TestAdaptivePatternDB.test_deactivate_pattern _______________________________________________________________________
+tests\adaptive\test_pattern_db.py:101: in test_deactivate_pattern
+    assert len(active_patterns) == 0
+E   AssertionError: assert 1 == 0
+E    +  where 1 = len([AdaptivePattern(pattern_id='test_pattern_2', regex='[A-Z]{3}-\\d{3}', pii_category='PRODUCT_CODE', confidence=0.88, p...atetime.datetime(2025, 6, 20, 8, 22, 33, 323193), last_validated_at=datetime.datetime(2025, 6, 20, 8, 22, 33, 323193))])
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-20 08:22:33,338 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-20 08:22:33,338 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:22:33,339 - anonympdf.adaptive_pattern_db - INFO - Skipping update for pattern with regex '\b\d{5}\b'. New confidence (0.95) is not higher than existing (0.95).
+2025-06-20 08:22:33,340 - anonympdf.adaptive_pattern_db - INFO - Deactivated pattern: test_pattern_1
+2025-06-20 08:22:33,341 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+_______________________________________________________ test_feedback_learns_and_discovers_new_pattern[EMP-ID-98765-EMPLOYEE_ID-en] ________________________________________________________
+tests\system\test_adaptive_workflow.py:97: in test_feedback_learns_and_discovers_new_pattern
+    assert any(p.pii_category == corrected_category for p in active_patterns), \
+E   AssertionError: Adaptive pattern was not found in the active patterns after learning.
+E   assert False
+E    +  where False = any(<generator object test_feedback_learns_and_discovers_new_pattern.<locals>.<genexpr> at 0x0000020E92BC2A40>)
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-20 08:24:00,583 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-20 08:24:00,583 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-20 08:24:08,511 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-20 08:24:08,512 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-20 08:24:08,513 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95, 'min_samples': 10}
+2025-06-20 08:24:08,562 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-20 08:24:08,563 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-20 08:24:08,563 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-20 08:24:08,606 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-20 08:24:08,607 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-20 08:24:16,175 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-20 08:24:16,175 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-20 08:24:16,175 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95, 'min_samples': 10}
+2025-06-20 08:24:16,176 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-20 08:24:16,176 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-20 08:24:16,176 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-20 08:24:16,177 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-20 08:24:16,961 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-20 08:24:17,807 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:24:17,809 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-20 08:24:17,820 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.010936498641967773, "memory_delta": 0.00390625}
+2025-06-20 08:24:17,820 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-20 08:24:17,821 - anonympdf.adaptive_learning.coordinator - INFO - No new patterns were discovered.
+2025-06-20 08:24:17,824 - anonympdf.adaptive_pattern_db - INFO - Retrieved 2 active patterns from the database.
+____________________________________________________ test_feedback_learns_and_discovers_new_pattern[PROJ-SECRET-ALPHA-PROJECT_CODE-en] _____________________________________________________
+tests\system\test_adaptive_workflow.py:97: in test_feedback_learns_and_discovers_new_pattern
+    assert any(p.pii_category == corrected_category for p in active_patterns), \
+E   AssertionError: Adaptive pattern was not found in the active patterns after learning.
+E   assert False
+E    +  where False = any(<generator object test_feedback_learns_and_discovers_new_pattern.<locals>.<genexpr> at 0x0000020E9B735A80>)
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-20 08:24:17,848 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-20 08:24:17,848 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-20 08:24:23,972 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-20 08:24:23,973 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-20 08:24:23,973 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95, 'min_samples': 10}
+2025-06-20 08:24:23,991 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-20 08:24:23,991 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-20 08:24:23,992 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-20 08:24:24,009 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-20 08:24:24,009 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-20 08:24:33,656 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-20 08:24:33,656 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-20 08:24:33,657 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95, 'min_samples': 10}
+2025-06-20 08:24:33,657 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-20 08:24:33,658 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-20 08:24:33,659 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-20 08:24:33,661 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-20 08:24:35,381 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-20 08:24:37,485 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:24:37,488 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-20 08:24:37,500 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.011968612670898438, "memory_delta": 0.1015625}
+2025-06-20 08:24:37,501 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-20 08:24:37,501 - anonympdf.adaptive_learning.coordinator - INFO - No new patterns were discovered.
+2025-06-20 08:24:37,503 - anonympdf.adaptive_pattern_db - INFO - Retrieved 2 active patterns from the database.
+____________________________________________________ test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt] ____________________________________________________
+tests\system\test_adaptive_workflow.py:97: in test_feedback_learns_and_discovers_new_pattern
+    assert any(p.pii_category == corrected_category for p in active_patterns), \
+E   AssertionError: Adaptive pattern was not found in the active patterns after learning.
+E   assert False
+E    +  where False = any(<generator object test_feedback_learns_and_discovers_new_pattern.<locals>.<genexpr> at 0x0000020EC09EEA40>)
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-20 08:24:37,532 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-20 08:24:37,533 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-20 08:24:46,778 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-20 08:24:46,778 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-20 08:24:46,778 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95, 'min_samples': 10}
+2025-06-20 08:24:46,802 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-20 08:24:46,802 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-20 08:24:46,802 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-20 08:24:46,820 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-20 08:24:46,820 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-20 08:24:54,011 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-20 08:24:54,012 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-20 08:24:54,012 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95, 'min_samples': 10}
+2025-06-20 08:24:54,012 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-20 08:24:54,012 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-20 08:24:54,012 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-20 08:24:54,014 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-20 08:24:55,086 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-20 08:24:55,974 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:24:55,976 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-20 08:24:55,989 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.013324975967407227, "memory_delta": 0.19140625}
+2025-06-20 08:24:55,989 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-20 08:24:55,990 - anonympdf.adaptive_learning.coordinator - INFO - No new patterns were discovered.
+2025-06-20 08:24:55,990 - anonympdf.adaptive_pattern_db - INFO - Retrieved 2 active patterns from the database.
+________________________________________________________________________________ test_monitoring_end_to_end ________________________________________________________________________________
+tests\system\test_real_time_monitor_integration.py:50: in test_monitoring_end_to_end
+    asyncio.run(processor_under_test.process_pdf(test_document_path))
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\asyncio\runners.py:190: in run
+    return runner.run(main)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\asyncio\runners.py:118: in run
+    return self._loop.run_until_complete(task)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\asyncio\base_events.py:654: in run_until_complete
+    return future.result()
+app\services\pdf_processor.py:609: in process_pdf
+    raise HTTPException(status_code=400, detail="File must be a PDF")
+E   fastapi.exceptions.HTTPException
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-20 08:24:56,036 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-20 08:24:56,036 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
+2025-06-20 08:24:56,037 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-20 08:24:56,852 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-20 08:24:57,776 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+2025-06-20 08:24:57,785 - anonympdf.pdf - INFO - Starting PDF processing - {"filename": "tests\\samples\\simple_pii_document.txt"}
+2025-06-20 08:24:57,785 - anonympdf.pdf - ERROR - Invalid file type for processing - {"filename": "tests\\samples\\simple_pii_document.txt"}
+===================================================================================== warnings summary =====================================================================================
+tests/test_ml_integration_layer.py::TestMLConfidenceScorerIntegration::test_adaptive_pattern_overrides_ml_model
+  C:\Users\tomas\AppData\Local\Programs\Python\Python311\Lib\pickle.py:1718: UserWarning: [08:21:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\data\../common/error_msg.h:82: If you are loading a serialized model (like pickle in Python, RDS in R) or
+  configuration generated by an older version of XGBoost, please export the model by calling
+  `Booster.save_model` from that version first, then load it back in current version. See:
+
+      https://xgboost.readthedocs.io/en/stable/tutorials/saving_model.html
+
+  for more details about differences between saving model and serializing.
+
+    setstate(state)
+
+tests/test_ml_integration_layer.py::TestMLConfidenceScorerIntegration::test_adaptive_pattern_overrides_ml_model
+  C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\sklearn\base.py:440: InconsistentVersionWarning: Trying to unpickle estimator StandardScaler from version 1.4.0 when using version 1.7.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+  https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+    warnings.warn(
+
+tests/test_ml_integration_layer.py::TestMLConfidenceScorerIntegration::test_adaptive_pattern_overrides_ml_model
+  C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\sklearn\base.py:440: InconsistentVersionWarning: Trying to unpickle estimator IsotonicRegression from version 1.4.0 when using version 1.7.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+  https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+    warnings.warn(
+
+tests/test_ml_integration_layer.py::TestMLConfidenceScorerIntegration::test_adaptive_pattern_overrides_ml_model
+  C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\sklearn\base.py:440: InconsistentVersionWarning: Trying to unpickle estimator CalibratedClassifierCV from version 1.4.0 when using version 1.7.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+  https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+    warnings.warn(
+
+tests/adaptive/test_ab_testing.py::TestABTestManager::test_record_and_evaluate_metrics_variant_wins
+  C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\scipy\stats\_axis_nan_policy.py:586: RuntimeWarning: Precision loss occurred in moment calculation due to catastrophic cancellation. This occurs when the data are nearly identical. Results may be unreliable.
+    res = hypotest_fun_out(*samples, **kwds)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform win32, python 3.11.9-final-0 -----------
+Name                                    Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------
+app\__init__.py                             0      0   100%
+app\api\__init__.py                         0      0   100%
+app\api\endpoints\__init__.py               0      0   100%
+app\api\endpoints\analytics.py            258     59    77%   32-35, 40-43, 48-51, 56-59, 192-194, 230-232, 250-252, 286-288, 304-306, 357-359, 389-391, 420-423, 446-448, 458-460, 467, 500-503, 561-566, 597, 600-603
+app\api\endpoints\feedback.py              48     26    46%   41-92
+app\api\endpoints\monitoring.py            10      2    80%   14, 21
+app\api\endpoints\pdf.py                  101     66    35%   27, 36-100, 106-107, 113-124, 130-163, 171, 176-182, 188-201
+app\core\__init__.py                        0      0   100%
+app\core\adaptive\__init__.py               0      0   100%
+app\core\adaptive\ab_testing.py           145     10    93%   92-94, 182, 219-220, 256, 329-331
+app\core\adaptive\coordinator.py          125     48    62%   25-32, 56-64, 127, 172-173, 183-187, 212-219, 226, 230-231, 235-236, 247-266, 270-273
+app\core\adaptive\doc_classifier.py        44      1    98%   84
+app\core\adaptive\online_learner.py        31      5    84%   45-46, 66-68
+app\core\adaptive\pattern_db.py           125     37    70%   47-51, 83-90, 119-121, 125-127, 199-202, 218-219, 240-245, 249, 256-262
+app\core\adaptive\pattern_learner.py       64      6    91%   20, 56, 96-101, 123
+app\core\adaptive\processing_rules.py      54      7    87%   82-89, 94
+app\core\analytics_engine.py              214     46    79%   102-104, 195-196, 222-227, 231-256, 260-275, 288-289, 318-320, 340-353, 398-401, 405, 409-411, 416
+app\core\config_manager.py                262    125    52%   60-61, 78-79, 132-138, 155-156, 162-163, 263-267, 379, 441-443, 465-467, 476-478, 482-493, 497-512, 516-540, 544-584, 588-663, 667
+app\core\context_analyzer.py              212     20    91%   56, 71, 76-78, 84, 198-204, 331-332, 445, 452, 455, 486, 488, 544-545, 549-551
+app\core\data_models.py                    45      9    80%   47-51, 56-59
+app\core\dependencies.py                  150     76    49%   29-31, 58-60, 88-90, 113-114, 116, 123, 129-151, 155-187, 201-207, 216-231, 238-243, 254-263, 269-280
+app\core\feature_engineering.py           332     80    76%   21, 70, 75, 100, 131, 138-143, 159, 200, 238-239, 243-256, 278-279, 287, 314-315, 333, 340-341, 359, 393-399, 419, 482, 496, 511-521, 527, 534-536, 540, 546, 562-576, 652-653, 657-660, 695-715, 720-729
+app\core\feedback_system.py               272    103    62%   27-28, 101-115, 131-166, 178-221, 254-258, 271-272, 281-282, 287, 290, 305, 349-358, 361, 398-400, 407-409, 414, 422-427, 433-436, 469-473, 481, 511-513, 538-556, 560-567
+app\core\intelligent_cache.py             373     31    92%   114-115, 135-141, 333-340, 359-360, 396, 413, 443, 445, 460-461, 490, 525-526, 546, 582-583, 596-600, 625-626, 670, 708
+app\core\lithuanian_enhancements.py       126     16    87%   277, 344, 362-363, 381-382, 385-386, 389-390, 415-416, 486, 524-526
+app\core\logging.py                       110     25    77%   44-55, 87, 98, 104, 106, 153-158, 196-216
+app\core\memory_optimizer.py              297     52    82%   91-97, 102, 144, 241-242, 297, 329, 337, 343, 351-356, 373-375, 421, 445, 460-476, 484-485, 525-563, 571-573, 585-586, 606-607
+app\core\memory_utils.py                   23      9    61%   15, 20, 25, 30, 42-44, 49-50
+app\core\ml_engine.py                     244    153    37%   33, 53-74, 83, 86, 89-90, 96-98, 102-130, 175-179, 183-209, 217, 221, 234-238, 265-322, 331-339, 345-356, 360-374, 386-451, 456-472, 476-481, 499-523
+app\core\ml_integration.py                202     85    58%   20, 60, 75, 114-117, 166-168, 176-177, 181-183, 190-233, 239-261, 265-269, 277, 296, 308-352, 404-426, 430-446, 458-460, 464-466, 470-471, 477
+app\core\ml_monitoring.py                 280    166    41%   39-56, 73, 114-124, 128-179, 248-251, 255-289, 293-313, 317-334, 338-386, 453-466, 470-475, 479-502, 506-507, 525-548, 552-567, 571-580, 586, 590, 594-618, 622, 626, 630-631, 635-637, 641-645, 651
+app\core\ml_training_pipeline.py          147     82    44%   65-67, 82, 89-93, 107-132, 136, 140-145, 152, 166-198, 208-213, 227-244, 251-254, 258-275, 280
+app\core\nlp_loader.py                     19     19     0%   1-36
+app\core\performance.py                   191     19    90%   93, 153, 188, 220, 271-279, 314, 329-330, 336-340, 365, 369
+app\core\performance_optimizer.py         393     98    75%   98-106, 118, 122-123, 176-177, 213, 235, 256-319, 336, 389-395, 416-417, 450-451, 486-489, 570-571, 588-589, 610-616, 632-633, 686, 708-719, 728-766, 807-837, 841-843, 847-863, 877
+app\core\real_time_monitor.py             310    174    44%   72, 108-110, 145-147, 166-168, 224-225, 239-251, 293-326, 330-336, 340-345, 349-381, 393-453, 457-525, 529-530, 534-538, 542-549, 553-556, 560-563, 571-582, 586-600, 604-641, 645-650, 654-655, 659-660
+app\core\salutation_detector.py           143    113    21%   38-40, 44, 89, 100, 117-140, 144-185, 195-231, 236-252, 256-267, 272-304, 308-333, 341-354, 361-390
+app\core\text_extraction.py               120     92    23%   50-106, 110-127, 131-166, 170-175, 180-222, 227-258, 263-282, 290-318, 322-323, 339
+app\core\training_data.py                 305    139    54%   43, 68-70, 82, 103-104, 109, 130-131, 138, 174-175, 182, 224-226, 254-271, 275-280, 292-333, 345-383, 432-452, 456-508, 513-530, 534-568, 572-620, 658-665, 704, 745-778, 784
+app\core\validation_utils.py              177     34    81%   123-127, 137, 170-171, 202, 208-213, 219-225, 241-250, 262, 285-289, 293-297, 302, 342-343, 348-349, 359-360, 472-481
+app\database.py                            12      0   100%
+app\db\migrations.py                      100     46    54%   26, 48-112, 130-131, 136-138, 160-165, 169-185, 196-197
+app\dependencies.py                        25      8    68%   20, 26, 35-36, 41-45
+app\main.py                                82     40    51%   26-27, 31-33, 39-50, 81-84, 93, 97, 102, 107, 120-153
+app\models\pdf_document.py                 21      0   100%
+app\pdf_processor.py                       19     13    32%   19-33
+app\schemas\pdf.py                         18      0   100%
+app\services\__init__.py                    0      0   100%
+app\services\pdf_processor.py             300    141    53%   76, 101-163, 178-186, 202, 306-307, 332-357, 386, 402, 434-481, 485, 489-569, 578-583, 630-678, 703, 712-714, 719, 723-737
+app\version.py                              1      0   100%
+app\worker.py                              58     38    34%   45-55, 63-115
+---------------------------------------------------------------------
+TOTAL                                    6588   2319    65%
+
+FAIL Required test coverage of 80% not reached. Total coverage: 64.80%
+=================================================================================== slowest 10 durations ===================================================================================
+26.24s setup    tests/adaptive/test_pattern_learner.py::TestDiscoverAndValidatePatterns::test_insufficient_samples
+19.64s setup    tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[PROJ-SECRET-ALPHA-PROJECT_CODE-en]
+18.45s setup    tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt]
+18.23s setup    tests/system/test_adaptive_workflow.py::test_fixture_creation
+17.23s setup    tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[EMP-ID-98765-EMPLOYEE_ID-en]
+13.70s setup    tests/adaptive/test_pattern_learner.py::TestDiscoverAndValidatePatterns::test_recall_threshold
+10.67s setup    tests/test_training_data_collector.py::TestTrainingDataCollector::test_collector_initialization
+9.68s call     tests/test_feedback_system.py::TestFeedbackSystemIntegration::test_feedback_submission_flow_is_deterministic
+7.19s setup    tests/adaptive/test_pattern_learner.py::TestValidateRegex::test_false_positives
+6.91s call     tests/test_performance_optimizer.py::TestIntegration::test_performance_improvement_simulation
+================================================================================= short test summary info ==================================================================================
+ERROR tests/api/test_pdf_endpoint.py::TestPdfApiEndpoints::test_post_lithuanian_pdf_for_processing_success
+ERROR tests/api/test_pdf_endpoint.py::TestPdfApiEndpoints::test_post_non_pdf_file_returns_4xx
+ERROR tests/system/test_adaptive_workflow.py::test_feedback_api_is_disabled_for_now
+ERROR tests/system/test_adaptive_workflow.py::test_adaptive_workflow_learns_new_pattern
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_simple_lithuanian_names_detection - AssertionError: assert 'Linas Vaitkus' in {'Ponas Linas Vaitkus ir Rūta Vaitkienė'}
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_anti_overredaction_in_technical_context - AssertionError: assert 'Vilniaus' in set()
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_anti_overredaction_of_common_words - AssertionError: assert 'summary' in {'categories': {'PERSON': 1, 'TIME': 1}, 'details': {'PERSON': [('Jonas Petraitis', 'CONF_0.50')], 'TIME': [('99999', 'CONF_0.50')]}, 'language_dete...
+FAILED tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_redaction_report_generation - AssertionError: assert 'summary' in {'categories': {'PERSON': 1, 'TIME': 1}, 'details': {'PERSON': [('Jonas Petraitis', 'CONF_0.50')], 'TIME': [('99999', 'CONF_0.50')]}, 'language_dete...
+FAILED tests/test_pdf_processor.py::TestPDFProcessorUnit::test_find_personal_info - AssertionError: assert 'emails' in {'DATE': [('38801011234', 'CONF_0.50')]}
+FAILED tests/test_pdf_processor.py::TestPDFProcessorUnit::test_deduplicate_with_confidence - AssertionError: assert False
+FAILED tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_process_pdf_success - AssertionError: assert 'failed' == 'success'
+FAILED tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_process_pdf_failure_on_invalid_content - KeyError: 'success'
+FAILED tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_generate_redaction_report - AssertionError: assert 'summary' in {'categories': {'EMAILS': 1, 'NAMES': 1}, 'details': {'emails': [('johndoe@email.com', 'MEDIUM_0.6')], 'names': [('John Doe', 'HIGH_0.8')]}, 'langua...
+FAILED tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_anonymize_pdf_flow - AssertionError: assert False
+FAILED tests/test_validation_utils.py::TestPersonNameValidation::test_length_validation - AssertionError: Single character should not be a valid name
+FAILED tests/test_validation_utils.py::TestPersonNameValidation::test_excluded_prefixes - AssertionError: Name with excluded prefix should be filtered: Nr. 123
+FAILED tests/test_validation_utils.py::TestPersonNameValidation::test_digit_validation - AssertionError: Name with digits should be invalid: John123
+FAILED tests/adaptive/test_pattern_db.py::TestAdaptivePatternDB::test_update_pattern - AttributeError: 'AdaptivePattern' object has no attribute 'dict'
+FAILED tests/adaptive/test_pattern_db.py::TestAdaptivePatternDB::test_get_active_patterns - AssertionError: assert 2 == 1
+FAILED tests/adaptive/test_pattern_db.py::TestAdaptivePatternDB::test_deactivate_pattern - AssertionError: assert 1 == 0
+FAILED tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[EMP-ID-98765-EMPLOYEE_ID-en] - AssertionError: Adaptive pattern was not found in the active patterns after learning.
+FAILED tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[PROJ-SECRET-ALPHA-PROJECT_CODE-en] - AssertionError: Adaptive pattern was not found in the active patterns after learning.
+FAILED tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt] - AssertionError: Adaptive pattern was not found in the active patterns after learning.
+FAILED tests/system/test_real_time_monitor_integration.py::test_monitoring_end_to_end - fastapi.exceptions.HTTPException
+============================================================= 20 failed, 251 passed, 5 warnings, 4 errors in 221.43s (0:03:41) =============================================================
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF>

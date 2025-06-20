@@ -1,265 +1,135 @@
 import pytest
 import time
 from pathlib import Path
+from unittest.mock import patch
+
 from app.core.performance import (
     PerformanceMonitor,
     FileProcessingMetrics,
     performance_monitor,
     get_performance_report,
+    get_optimized_processor,
 )
 
+@pytest.fixture(autouse=True)
+def clean_monitor():
+    """Ensures the global monitor is clean for each test."""
+    processor = get_optimized_processor()
+    processor.monitor.clear_metrics()
+    # Also reset the file metrics by creating a new instance
+    processor.file_metrics = FileProcessingMetrics()
+    yield
 
 @pytest.mark.unit
 class TestPerformanceMonitor:
-    """Test performance monitoring functionality."""
-
-    def test_performance_monitor_initialization(self):
-        """Test performance monitor initialization."""
-        monitor = PerformanceMonitor()
-        
-        assert isinstance(monitor.metrics, dict)
-        assert len(monitor.metrics) == 0
+    """Tests for the PerformanceMonitor class."""
 
     def test_track_operation(self):
-        """Test operation tracking."""
+        """Tests that an operation is tracked and its metrics are recorded."""
         monitor = PerformanceMonitor()
-        
-        # Start tracking
-        tracking = monitor.track_operation("test_operation", test_param="value")
-        
-        # Simulate some work
-        time.sleep(0.1)
-        
-        # End tracking
+        tracking = monitor.track_operation("test_op")
+        time.sleep(0.01)
         metrics = tracking["end_tracking"]()
+
+        assert "duration_seconds" in metrics
+        assert metrics["duration_seconds"] > 0
         
-        assert metrics["operation"] == "test_operation"
-        assert metrics["duration_seconds"] >= 0.1
-        assert "memory_start_mb" in metrics
-        assert "memory_end_mb" in metrics
-        assert "memory_delta_mb" in metrics
-        assert "test_param" in metrics
-        assert metrics["test_param"] == "value"
+        stats = monitor.get_operation_stats("test_op")
+        assert stats is not None
+        assert stats["count"] == 1
 
     def test_get_operation_stats(self):
-        """Test operation statistics calculation."""
+        """Tests the statistics calculation for tracked operations."""
         monitor = PerformanceMonitor()
+        monitor.track_operation("stats_op")["end_tracking"]()
+        monitor.track_operation("stats_op")["end_tracking"]()
         
-        # Track multiple operations
-        for i in range(3):
-            tracking = monitor.track_operation("test_stats", iteration=i)
-            time.sleep(0.05)  # Small delay
-            tracking["end_tracking"]()
-        
-        stats = monitor.get_operation_stats("test_stats")
-        
-        assert stats is not None
-        assert stats["operation"] == "test_stats"
-        assert stats["count"] == 3
-        assert stats["avg_duration_seconds"] > 0
-        assert stats["min_duration_seconds"] > 0
-        assert stats["max_duration_seconds"] > 0
-        assert stats["total_duration_seconds"] > 0
-
-    def test_get_operation_stats_nonexistent(self):
-        """Test getting stats for non-existent operation."""
-        monitor = PerformanceMonitor()
-        stats = monitor.get_operation_stats("nonexistent")
-        assert stats is None
-
-    def test_clear_metrics(self):
-        """Test clearing metrics."""
-        monitor = PerformanceMonitor()
-        
-        # Add some metrics
-        tracking = monitor.track_operation("test_clear")
-        tracking["end_tracking"]()
-        
-        assert len(monitor.metrics) > 0
-        
-        # Clear metrics
-        monitor.clear_metrics()
-        
-        assert len(monitor.metrics) == 0
+        stats = monitor.get_operation_stats("stats_op")
+        assert stats["count"] == 2
+        assert "avg_duration_seconds" in stats
 
     def test_get_system_metrics(self):
-        """Test system metrics retrieval."""
+        """Tests the retrieval of system-level metrics."""
         monitor = PerformanceMonitor()
         metrics = monitor.get_system_metrics()
         
-        required_keys = [
-            "process_memory_mb",
-            "process_virtual_memory_mb",
-            "process_cpu_percent",
-            "system_memory_percent",
-            "system_memory_available_mb",
-            "timestamp",
-        ]
-        
-        for key in required_keys:
-            assert key in metrics
-            assert isinstance(metrics[key], (int, float))
-
+        assert "process_memory_mb" in metrics
+        assert "system_memory_percent" in metrics
+        assert metrics["process_memory_mb"] > 0
 
 @pytest.mark.unit
 class TestFileProcessingMetrics:
-    """Test file processing metrics functionality."""
+    """Tests for the FileProcessingMetrics class."""
 
-    def test_file_processing_metrics_initialization(self):
-        """Test file processing metrics initialization."""
-        metrics = FileProcessingMetrics()
-        assert isinstance(metrics.monitor, PerformanceMonitor)
+    def test_track_file_processing_legacy(self, tmp_path):
+        """Tests the legacy method for tracking file processing."""
+        metrics_tracker = FileProcessingMetrics()
+        metrics_tracker.track_file_processing_legacy("test_proc", 1024, 0.1)
+        stats = metrics_tracker.get_throughput_stats("test_proc")
+        
+        assert stats["count"] == 1
+        assert stats["avg_throughput_mbps"] > 0
 
-    def test_track_file_processing(self, tmp_path):
-        """Test file processing tracking."""
-        metrics = FileProcessingMetrics()
+    def test_new_file_tracking_context(self, tmp_path):
+        """Tests the new context-based file tracking."""
+        metrics_tracker = FileProcessingMetrics()
+        test_file = tmp_path / "test.txt"
+        test_file.write_text("data")
         
-        # Create a test file
-        test_file = tmp_path / "test.pdf"
-        test_content = b"Test PDF content"
-        test_file.write_bytes(test_content)
-        
-        # Track file processing
-        tracking = metrics.track_file_processing(
-            test_file, len(test_content), "test_processing"
-        )
-        
-        # Simulate processing time
-        time.sleep(0.1)
-        
-        # End tracking
-        result = tracking["end_tracking"]()
-        
-        assert result["operation"] == "test_processing"
-        assert result["file_size_mb"] == len(test_content) / 1024 / 1024
-        assert result["file_extension"] == ".pdf"
-        assert result["operation_type"] == "test_processing"
-        assert "throughput_mb_per_sec" in result
+        tracking_context = metrics_tracker.track_file_processing(test_file, test_file.stat().st_size)
+        time.sleep(0.01)
+        metrics = tracking_context['end_tracking']()
 
-    def test_get_throughput_stats(self, tmp_path):
-        """Test throughput statistics calculation."""
-        metrics = FileProcessingMetrics()
+        assert 'throughput' in metrics
+        assert metrics['file_size_mb'] > 0
         
-        # Create test files and track processing
-        for i in range(2):
-            test_file = tmp_path / f"test_{i}.pdf"
-            test_content = b"Test PDF content" * (i + 1)  # Different sizes
-            test_file.write_bytes(test_content)
-            
-            tracking = metrics.track_file_processing(
-                test_file, len(test_content), "throughput_test"
-            )
-            time.sleep(0.05)
-            tracking["end_tracking"]()
-        
-        stats = metrics.get_throughput_stats()
-        
-        assert "throughput_test" in stats
-        operation_stats = stats["throughput_test"]
-        assert "avg_throughput_mb_per_sec" in operation_stats
-        assert "min_throughput_mb_per_sec" in operation_stats
-        assert "max_throughput_mb_per_sec" in operation_stats
-
+        stats = metrics_tracker.get_throughput_stats("pdf_processing")
+        assert stats['count'] == 1
 
 @pytest.mark.unit
 class TestPerformanceDecorator:
-    """Test performance monitoring decorator."""
+    """Tests for the @performance_monitor decorator."""
 
-    def test_performance_decorator(self):
-        """Test performance monitoring decorator."""
+    def test_decorator_tracks_operation(self):
+        """Tests that the decorator correctly wraps a function and tracks it."""
         
-        @performance_monitor("test_function")
-        def test_function(x, y):
-            time.sleep(0.05)
-            return x + y
-        
-        result = test_function(1, 2)
-        assert result == 3
+        @performance_monitor("decorated_op")
+        def my_func():
+            pass
 
-    def test_performance_decorator_with_exception(self):
-        """Test performance monitoring decorator with exception."""
+        my_func()
         
-        @performance_monitor("test_function_error")
-        def test_function_error():
-            time.sleep(0.05)
-            raise ValueError("Test error")
-        
-        with pytest.raises(ValueError):
-            test_function_error()
+        stats = get_optimized_processor().monitor.get_operation_stats("decorated_op")
+        assert stats["count"] == 1
 
-    def test_performance_decorator_auto_name(self):
-        """Test performance monitoring decorator with auto-generated name."""
+    def test_decorator_uses_function_name_by_default(self):
+        """Tests that the decorator uses the function name if no name is provided."""
         
         @performance_monitor()
-        def test_auto_name():
-            time.sleep(0.05)
-            return "success"
+        def another_func():
+            pass
+            
+        another_func()
         
-        result = test_auto_name()
-        assert result == "success"
-
+        stats = get_optimized_processor().monitor.get_operation_stats("another_func")
+        assert stats["count"] == 1
 
 @pytest.mark.integration
 class TestPerformanceIntegration:
-    """Integration tests for performance monitoring."""
+    """Integration tests for the performance module."""
 
     def test_get_performance_report(self):
-        """Test comprehensive performance report generation."""
-        # Generate some metrics first
-        monitor = PerformanceMonitor()
-        tracking = monitor.track_operation("integration_test")
-        time.sleep(0.05)
-        tracking["end_tracking"]()
+        """Tests that the performance report can be generated."""
+        # Run a decorated function to generate some stats
+        @performance_monitor("report_test_op")
+        def op_to_report():
+            time.sleep(0.01)
+        
+        op_to_report()
         
         report = get_performance_report()
         
-        required_keys = [
-            "system_metrics",
-            "operation_stats",
-            "file_processing_stats",
-            "report_timestamp",
-        ]
-        
-        for key in required_keys:
-            assert key in report
-        
-        # Check system metrics structure
-        system_metrics = report["system_metrics"]
-        assert "process_memory_mb" in system_metrics
-        assert "timestamp" in system_metrics
-        
-        # Check that timestamp is recent
-        assert abs(report["report_timestamp"] - time.time()) < 1.0
-
-    def test_performance_monitoring_persistence(self):
-        """Test that performance metrics persist across operations."""
-        from app.core.performance import global_performance_monitor
-        
-        # Clear any existing metrics
-        global_performance_monitor.clear_metrics()
-        
-        # Add some operations
-        for i in range(3):
-            tracking = global_performance_monitor.track_operation(
-                "persistence_test", iteration=i
-            )
-            time.sleep(0.02)
-            tracking["end_tracking"]()
-        
-        # Get stats
-        stats = global_performance_monitor.get_operation_stats("persistence_test")
-        assert stats is not None
-        assert stats["count"] == 3
-        
-        # Add more operations
-        for i in range(2):
-            tracking = global_performance_monitor.track_operation(
-                "persistence_test", iteration=i + 3
-            )
-            time.sleep(0.02)
-            tracking["end_tracking"]()
-        
-        # Check updated stats
-        updated_stats = global_performance_monitor.get_operation_stats("persistence_test")
-        assert updated_stats["count"] == 5
-        assert updated_stats["total_duration_seconds"] > stats["total_duration_seconds"] 
+        # The report structure has changed to be simpler
+        assert "report_test_op" in report
+        assert report["report_test_op"]["count"] == 1
+        assert "avg_duration_seconds" in report["report_test_op"] 

@@ -75,7 +75,7 @@ dependencies = [
     "python-multipart==0.0.6",
     "PyPDF2==3.0.1",
     "pdfminer.six==20221105",
-    "spacy==3.7.2",
+    "spacy==3.8.7",
     "sqlalchemy==2.0.23",
     "python-jose==3.3.0",
     "pydantic==2.5.2",
@@ -83,11 +83,21 @@ dependencies = [
     "langdetect==1.0.9",
     "pymupdf",
     "PyYAML==6.0.1",
+    "psutil==5.9.8",
+    "pandas==2.2.0",
+    "scipy==1.15.3",
+    "joblib==1.5.0",
+    "celery==5.4.0",
+    "scikit-learn==1.4.0",
+    "xgboost==2.0.3",
+    "en_core_web_sm@https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "lt_core_news_sm@https://github.com/explosion/spacy-models/releases/download/lt_core_news_sm-3.8.0/lt_core_news_sm-3.8.0-py3-none-any.whl",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest==7.4.3",
+    "pytest-cov==4.1.0",
     "pytest-asyncio==0.21.1",
     "httpx==0.25.0",
     "black==23.12.1",

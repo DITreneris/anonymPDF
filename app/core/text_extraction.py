@@ -49,8 +49,7 @@ class EnhancedTextExtractor:
         """
         extraction_logger.info(
             "Starting robust text extraction",
-            file=str(pdf_path),
-            methods=list(self.extraction_methods.keys())
+            extra={"file": str(pdf_path), "methods": list(self.extraction_methods.keys())},
         )
         
         best_text = ""

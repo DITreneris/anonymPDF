@@ -175,7 +175,8 @@ class ModelEvaluator:
                 prediction = model.calculate_ml_confidence(
                     detection=example.detection_text,
                     context=example.context,
-                    features=example.features
+                    features=example.features,
+                    pii_category=example.pii_category
                 )
                 
                 confidence_scores.append(prediction.confidence)

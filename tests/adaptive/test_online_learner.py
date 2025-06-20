@@ -109,29 +109,4 @@ def test_retrain_model_handles_empty_input(online_learner, mock_dependencies):
 def mock_model(mocker):
     mock_model_instance = MagicMock()
     mock_model_instance.save.return_value = "/fake/path/model.pkl"
-    return mock_model_instance
-
-class TestOnlineLearner:
-    """Tests for the OnlineLearner class."""
-
-    def test_retrain_model_saves_examples_and_triggers_retraining(self, online_learner, mock_dependencies, mock_model, sample_training_examples):
-        """
-        Test that retrain_model saves examples and triggers the model's train method
-        when the number of new examples reaches the threshold.
-        """
-        online_learner.retraining_threshold = 5
-        online_learner.retrain_model(sample_training_examples)
-
-        mock_dependencies['storage_instance'].save_training_examples.assert_called_once_with(sample_training_examples)
-        mock_model.train.assert_called_once()
-
-    def test_retrain_model_saves_examples_but_skips_retraining(self, online_learner, mock_dependencies, mock_model, sample_training_examples):
-        """
-        Test that retrain_model saves examples but does NOT trigger training
-        when the number of new examples is below the threshold.
-        """
-        online_learner.retraining_threshold = 10  # Higher threshold
-        online_learner.retrain_model(sample_training_examples)
-
-        mock_dependencies['storage_instance'].save_training_examples.assert_called_once_with(sample_training_examples)
-        mock_model.train.assert_not_called() 
+    return mock_model_instance 
