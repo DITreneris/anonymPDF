@@ -75,10 +75,10 @@ class PatternLearner:
                 )
                 precision = validation_results['precision']
                 recall = validation_results['recall']
-                total_samples = validation_results['true_positives'] + validation_results['false_positives']
+                true_positives = validation_results['true_positives']
 
-                # 3) Check if the pattern meets the criteria
-                if precision >= self.min_confidence and recall >= 0.8 and total_samples >= min_samples_for_learning:
+                # 3) Check if the pattern meets the criteria, including precision
+                if precision >= self.min_confidence and true_positives >= min_samples_for_learning:
                     # 4) Create and add the new pattern object using the raw_pattern
                     new_pattern = AdaptivePattern(
                         pattern_id=f"p_{hash(raw_pattern)}",
@@ -87,7 +87,7 @@ class PatternLearner:
                         confidence=precision,
                         precision=precision,
                         recall=recall,
-                        positive_matches=validation_results['true_positives'],
+                        positive_matches=true_positives,
                         negative_matches=validation_results['false_positives'],
                         last_validated_at=datetime.now()
                     )

@@ -11,8 +11,73 @@ from typing import Dict, List, Tuple, Optional, Set, Any
 from dataclasses import dataclass, field
 from enum import Enum
 from app.core.validation_utils import GEOGRAPHIC_EXCLUSIONS
+from app.core.config_manager import ConfigManager, get_config_manager
+from app.core.lithuanian_enhancements import LithuanianLanguageEnhancer
 
 context_logger = logging.getLogger(__name__)
+
+
+def select_longest_match(matches: List[Dict]) -> List[Dict]:
+    """
+    From a list of PII matches, select the longest one when overlaps occur.
+
+    Example: If we have a match for "90210" (zip) and "Beverly Hills, 90210" (address),
+    this function ensures only the latter is returned.
+    """
+    if not matches:
+        return []
+
+    # Sort by start position, then by length descending
+    matches.sort(key=lambda m: (m['start'], -m['end']))
+
+    # The list to store the final, non-overlapping matches
+    final_matches = []
+    
+    # Sentinel to track the end position of the last added match
+    last_match_end = -1
+
+    for match in matches:
+        # If the new match starts after or at the same place as the last one ended,
+        # it's a valid, non-overlapping match.
+        if match['start'] >= last_match_end:
+            final_matches.append(match)
+            last_match_end = match['end']
+        # If a new match starts *before* the last one ended, it's an overlap.
+        # Because we sorted by length descending, the one we already added
+        # is the longer one, so we just ignore this new, shorter match.
+    
+    return final_matches
+
+
+def deduplicate_by_full_match_priority(matches: List[Dict]) -> List[Dict]:
+    """
+    From a list of PII matches, select the longest one based on the full regex
+    match coordinates when overlaps occur. This correctly prioritizes patterns
+    that match more context (e.g., 'Asmens kodas: 123' over just '123').
+
+    Args:
+        matches: A list of dicts, where each dict must contain:
+                 'pii_start', 'pii_end', 'full_match_start', 'full_match_end',
+                 'text', and 'category'.
+    """
+    if not matches:
+        return []
+
+    # Sort by the start of the full match, then by the length of the full match (descending).
+    matches.sort(key=lambda m: (m['full_match_start'], -(m['full_match_end'] - m['full_match_start'])))
+
+    final_matches = []
+    last_full_match_end = -1
+
+    for match in matches:
+        # If the new full match starts after the last one ended, it's non-overlapping.
+        if match['full_match_start'] >= last_full_match_end:
+            final_matches.append(match)
+            last_full_match_end = match['full_match_end']
+        # An overlapping match is found. Because we sorted by length descending,
+        # the one already in final_matches is the longest, correct one. So we ignore this new one.
+    
+    return final_matches
 
 
 class ConfidenceLevel(Enum):
@@ -492,78 +557,76 @@ class ContextualValidator:
 
 
 class AdvancedPatternRefinement:
-    """Refines patterns using more complex, context-aware logic."""
+    """Refines PII detection using a library of advanced, context-aware patterns."""
 
     def __init__(self):
-        # Using a dictionary for explicit category mapping is more robust
-        # and avoids the errors from the previous string-matching approach.
-        self.pattern_map = {
-            # Category -> Pattern Name -> Regex
-            'emails': {
-                'email_with_label': r"(?i)(?:El\. paštas|El\. pašto adresas|Email address|Email):\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})"
-            },
-            'phones': {
-                'phone_with_label': r"(?i)(?:Tel\.|Tel\.:|Telefonas|Tel\. nr\.|Phone|Mobile):\s*((?:\+370|8)[\s\-]?(?:\d{1,3}[\s\-]?\d{2,4}[\s\-]?\d{2,4}|\d{8}))"
-            },
-            'lithuanian_personal_codes': {
-                'personal_code_with_label': r"(?i)(?:Asmens kodas|A\.k\.|Personal code):\s*([3-6]\d{10})"
-            },
-            'addresses_prefixed': {
-                'address_with_label': r"(?i)(?:Adresas|Address):\s*((?:[A-Za-zžŽčČšŠųŲūŪėĖįĮąĄ-]+\s*(?:g\.|al\.|pr\.|pl\.))\s*\d+[A-Z]?\s*(?:-\s*\d+)?,\s*(?:LT-\d{5}\s*)?[A-Za-zžŽčČšŠųŲūŪėĖįĮąĄ-]+)"
-            },
-        }
+        """
+        Initializes the AdvancedPatternRefinement, ensuring enhanced patterns
+        from the LithuanianLanguageEnhancer overwrite any base patterns
+        with the same name from the ConfigManager.
+        """
+        config_manager = get_config_manager()
+        lithuanian_enhancer = LithuanianLanguageEnhancer()
+        
+        # Final structure: Dict[str, Tuple[re.Pattern, str]] # (pattern_name -> (compiled_regex, category))
+        self.pattern_map: Dict[str, Tuple[re.Pattern, str]] = {}
 
-        # For performance, compile all regexes
-        self.compiled_patterns = {}
-        for category, patterns in self.pattern_map.items():
-            self.compiled_patterns[category] = {
-                name: re.compile(regex) for name, regex in patterns.items()
-            }
+        # 1. Load base patterns from config. The key is the category.
+        for name, pattern in config_manager.patterns.items():
+            self.pattern_map[name] = (pattern, name)
+
+        # 2. Load enhanced patterns from enhancer. This uses the info object.
+        # This will overwrite any base patterns if the `name` (the key) is the same.
+        for name, pattern_info in lithuanian_enhancer.enhanced_lithuanian_patterns.items():
+            # The enhancer patterns are designed to be compiled with IGNORECASE
+            compiled_pattern = re.compile(pattern_info.pattern, re.IGNORECASE)
+            self.pattern_map[name] = (compiled_pattern, pattern_info.category) 
+
+        context_logger.info(f"AdvancedPatternRefinement initialized with {len(self.pattern_map)} patterns.")
 
     def find_enhanced_patterns(self, text: str) -> List[Dict]:
         """
-        Finds PII using a set of enhanced, labeled regular expressions.
-
-        Args:
-            text: The text to search.
-
-        Returns:
-            A list of dictionaries, each representing a found PII.
+        Find PII using the enhanced regex patterns from the configuration. This method
+        now performs a two-stage de-duplication process to correctly prioritize
+        context-aware patterns over simpler ones.
         """
-        all_detections = []
-        for category, patterns in self.compiled_patterns.items():
-            for pattern_name, compiled_regex in patterns.items():
-                for match in compiled_regex.finditer(text):
-                    # The actual data is in group 1, as group 0 is the full match with label
-                    if len(match.groups()) > 0:
-                        matched_text = match.group(1).strip()
-                        detection = {
-                            "text": matched_text,
-                            "category": category,
-                            "pattern_name": pattern_name,
-                            "start": match.start(1),
-                            "end": match.end(1),
-                            "confidence": 0.85,  # High confidence for labeled patterns
-                        }
-                        all_detections.append(detection)
-        return all_detections
-
-    def _get_category_from_pattern(self, pattern_name: str) -> str:
-        # This method is now obsolete due to the pattern_map,
-        # but kept to avoid breaking other parts of the system if they call it.
-        # It's recommended to refactor any calls to this method.
-        # Fallback to pattern_name for safety.
-        for category, patterns in self.pattern_map.items():
-            if pattern_name in patterns:
-                return category
+        all_matches_with_context = []
+        for pattern_name, (pattern, category) in self.pattern_map.items():
+            try:
+                for match in pattern.finditer(text):
+                    # For de-duplication, we need the full match coordinates.
+                    # For the final result, we need the PII (captured group) coordinates.
+                    is_grouped = match.groups()
+                    pii_text = match.group(1) if is_grouped else match.group(0)
+                    
+                    match_data = {
+                        "text": pii_text,
+                        "category": category,
+                        "pii_start": match.start(1) if is_grouped else match.start(0),
+                        "pii_end": match.end(1) if is_grouped else match.end(0),
+                        "full_match_start": match.start(0),
+                        "full_match_end": match.end(0)
+                    }
+                    all_matches_with_context.append(match_data)
+            except re.error as e:
+                context_logger.error(f"Regex error for pattern '{pattern_name}': {e}")
         
-        # This part of the logic is flawed and should be avoided.
-        # It was the source of previous errors.
-        if "email" in pattern_name.lower(): return "emails"
-        if "phone" in pattern_name.lower(): return "phones"
-        if "asmens" in pattern_name.lower(): return "lithuanian_personal_codes"
+        # De-duplicate using the full match coordinates for prioritization.
+        unique_longest_matches = deduplicate_by_full_match_priority(all_matches_with_context)
         
-        return pattern_name # Fallback
+        # Transform the results into the final format, containing only the PII details.
+        final_detections = [
+            {
+                "text": m["text"],
+                "category": m["category"],
+                "start": m["pii_start"],
+                "end": m["pii_end"]
+            }
+            for m in unique_longest_matches
+        ]
+        
+        context_logger.debug(f"Found {len(final_detections)} unique, prioritized patterns.")
+        return final_detections
 
 
 def create_context_aware_detection(

@@ -1,119 +1,111 @@
-2025-06-21 10:07:33,812 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
-2025-06-21 10:07:33,834 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
-2025-06-21 10:07:33,836 - anonympdf.adaptive_learning.online_learner - INFO - Successfully saved 5 new training examples to persistent storage.
-2025-06-21 10:07:33,836 - anonympdf.adaptive_learning.online_learner - INFO - Threshold of 5 met. Starting online retraining with 5 examples.
-2025-06-21 10:07:33,837 - anonympdf.adaptive_learning.online_learner - INFO - Online model retraining completed successfully.
-2025-06-21 10:07:33,850 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
-2025-06-21 10:07:33,852 - anonympdf.adaptive_learning.online_learner - INFO - Successfully saved 3 new training examples to persistent storage.
-2025-06-21 10:07:33,853 - anonympdf.adaptive_learning.online_learner - INFO - Not enough new examples (3) to trigger retraining. Threshold is 5.
-2025-06-21 10:07:33,855 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
-3c5.
-2025-06-21 10:07:33,070 - anonympdf.ab_testing - INFO - Database connection to test_ab_manager.db closed.
-2025-06-21 10:07:33,077 - anonympdf.ab_testing - INFO - Loading A/B tests from database.
-2025-06-21 10:07:33,078 - anonympdf.ab_testing - INFO - Loaded 1 tests.
-2025-06-21 10:07:33,078 - anonympdf.a2025-06-21 10:07:33,676 - anonympdf.adaptive_learning.doc_classifier - INFO - 2025-06-21 10:08:12,908 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
-2025-06-21 10:08:19,021 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
-2025-06-21 10:08:25,083 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
-2025-06-21 10:08:25,085 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
-2025-06-21 10:08:29,792 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
-2025-06-21 10:08:35,870 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
-2025-06-21 10:08:35,870 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
-2025-06-21 10:08:42,068 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
-2025-06-21 10:08:47,911 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
-2025-06-21 10:08:47,913 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
-2025-06-21 10:08:53,034 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
-2025-06-21 10:08:54,519 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
-2025-06-21 10:08:54,519 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
-alized.
-2025-06-21 10:08:14,365 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
-2025-06-21 10:08:25,108 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
-2025-06-21 10:08:35,908 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
-2025-06-21 10:08:47,947 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
-08:25,084 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bEMP\-ID\-98765\b - {'precision': '1.00', 'recall': '1.00'}
-2025-06-21 10:08:29,792 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
-2025-06-21 10:08:35,870 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
-2025-06-21 10:08:35,870 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bPROJ\-SECRET\-ALPHA\b - {'precision': '1.00', 'recall': '1.00'}
-2025-06-21 10:08:42,068 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
-2025-06-21 10:08:47,911 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
-2025-06-21 10:08:47,911 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bMIN\-KORT\-98765\b - {'precision': '1.00', 'recall': '1.00'}
-2025-06-21 10:08:53,034 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
-2025-06-21 10:08:54,519 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bSUTARTIS\-12345\b - {'precision': '1.00', 'recall': '1.00'}
-rformance - INFO - Performance tracking: pii_detection - {"duration": 0.018137216567993164, "memory_delta": 0.1953125}
-2025-06-21 10:08:54,529 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.010120153427124023, "memory_delta": 0.0}
-ack_system - INFO - FeedbackAnalyzer initialized
-2025-06-21 10:08:12,908 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
-2025-06-21 10:08:19,021 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
-2025-06-21 10:08:19,021 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
-2025-06-21 10:08:25,083 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
-2025-06-21 10:08:25,083 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
-2025-06-21 10:08:29,792 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
-2025-06-21 10:08:29,792 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
-2025-06-21 10:08:35,870 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
-2025-06-21 10:08:35,870 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
-2025-06-21 10:08:42,067 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
-2025-06-21 10:08:42,067 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
-2025-06-21 10:08:47,911 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer in2025-06-21 10:08:54,581 - anonympdf.ab_testing - INFO - Database connection to C:\Users\tomas\AppData\Local\Temp\pytest-of-tomas\pytest-261\ab_test_data0\ab_tests.db closed.
-tem - INFO - FeedbackAnalyzer initialized
-2025-06-21 10:08:53,034 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
-ttern_db - INFO - AdaptivePatternDB initialized (manages session: False).
-2025-06-21 10:08:14,350 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
-2025-06-21 10:08:14,350 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
-2025-06-21 10:08:20,482 - anonympdf.adaptive_pattern_db - INFO - Retrieved 0 active patterns from the database.
-2025-06-21 10:08:25,085 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_109652091851307075
-2025-06-21 10:08:25,086 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
-2025-06-21 10:08:25,087 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
-2025-06-21 10:08:25,092 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
-2025-06-21 10:08:25,092 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
-2025-06-21 10:08:31,243 - anonympdf.adaptive_pattern_db - INFO - Retrieved 0 active patterns from the database.
-2025-06-21 10:08:35,870 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_6244261729434554530
-2025-06-21 10:08:35,870 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
-2025-06-21 10:08:35,870 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
-2025-06-21 10:08:35,892 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
-2025-06-21 10:08:35,892 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
-2025-06-21 10:08:43,636 - anonympdf.adaptive_pattern_db - INFO - Retrieved 0 active patterns from the database.
-2025-06-21 10:08:47,913 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_-1872297364866342321
-2025-06-21 10:08:47,913 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
-2025-06-21 10:08:47,913 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
-2025-06-21 10:08:47,931 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
-2025-06-21 10:08:47,931 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
-2025-06-21 10:08:54,499 - anonympdf.adaptive_pattern_db - INFO - Retrieved 0 active patterns from the database.
-2025-06-21 10:08:54,519 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_-4517701636181729313
-2025-06-21 10:08:54,519 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
-2025-06-21 10:08:54,519 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
--261\test_classify_generic_document0\test_rules.yaml
-2025-06-21 10:07:33,792 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 3 rule sets.
-2025-06-21 10:07:33,812 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 3 rule sets from C:\Users\tomas\AppData\Local\Temp\pytest-of-tomas\pytest-261\test_get_rules_for_unknown_typ0\test_rules.yaml
-2025-06-21 10:07:33,812 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 3 rule sets.
-2025-06-21 10:08:08,392 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 2 rule sets from C:\Users\tomas\AppData\Local\Temp\pytest-of-tomas\pytest-261\test_load_r2025-06-21 10:08:12,908 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
-2025-06-21 10:08:12,908 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
-2025-06-21 10:08:12,908 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
-2025-06-21 10:08:13,576 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
-2025-06-21 10:08:14,334 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
-2025-06-21 10:08:19,021 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
-2025-06-21 10:08:19,021 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
-2025-06-21 10:08:19,029 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
-2025-06-21 10:08:19,717 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
-2025-06-21 10:08:20,482 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
-2025-06-21 10:08:20,482 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
-2025-06-21 10:08:25,087 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
-2025-06-21 10:08:29,792 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
-2025-06-21 10:08:29,792 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
-2025-06-21 10:08:29,792 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
-2025-06-21 10:08:30,457 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
-2025-06-21 10:08:31,243 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
-2025-06-21 10:08:31,243 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
-2025-06-21 10:08:35,870 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
-2025-06-21 10:08:42,068 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
-2025-06-21 10:08:42,068 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
-2025-06-21 10:08:42,069 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
-2025-06-21 10:08:42,752 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
-2025-06-21 10:08:43,620 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
-2025-06-21 10:08:43,636 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
-2025-06-21 10:08:47,913 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
-2025-06-21 10:08:53,034 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
-2025-06-21 10:08:53,034 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
-2025-06-21 10:08:53,034 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
-2025-06-21 10:08:53,711 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
-2025-06-21 10:08:54,499 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
-2025-06-21 10:08:54,499 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
-2025-06-21 10:08:54,519 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-21 18:41:01,918 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
+2025-06-21 18:41:01,939 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
+2025-06-21 18:41:01,947 - anonympdf.adaptive_learning.online_learner - INFO - Successfully saved 5 new training examples to persistent storage.
+2025-06-21 18:41:01,947 - anonympdf.adaptive_learning.online_learner - INFO - Threshold of 5 met. Starting online retraining with 5 examples.
+2025-06-21 18:41:01,959 - anonympdf.adaptive_learning.online_learner - INFO - Online model retraining completed successfully.
+2025-06-21 18:41:01,978 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
+2025-06-21 18:41:01,992 - anonympdf.adaptive_learning.online_learner - INFO - Successfully saved 3 new2025-06-21 18:42:01,201 - anonympdf.database - INFO - Database create_for_processing: pdf_documents (ID: 27) - {"filename": "lithuanian_pii_document.pdf", "status": "queued"}
+shold is 5.
+2025-06-21 18:41:02,010 - anonympdf.adaptive_learning.online_learner - INFO - OnlineLearner initialized.
+649 - anonympdf.adaptive_learning.doc_cl2025-06-21 18:42:10,183 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-21 18:42:20,663 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-21 18:42:31,211 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-21 18:42:31,211 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
+2025-06-21 18:42:41,108 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-21 18:42:53,605 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-21 18:42:53,605 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
+2025-06-21 18:43:05,905 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-21 18:43:18,932 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-21 18:43:18,949 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
+2025-06-21 18:43:27,597 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-21 18:43:30,196 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-21 18:43:30,196 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
+2025-06-21 18:43:40,394 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+sifier initialized.
+2025-06-21 18:42:31,265 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-21 18:42:53,695 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-21 18:43:18,999 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-21 18:43:30,320 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+
+2025-06-21 18:42:41,108 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 18:42:53,604 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 18:42:53,605 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bPROJ\-SECRET\-ALPHA\b - {'precision': '1.00', 'recall': '1.00'}
+2025-06-21 18:43:05,905 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 18:43:18,932 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 18:43:18,948 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bMIN\-KORT\-98765\b - {'precision': '1.00', 'recall': '1.00'}
+2025-06-21 18:43:27,597 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 18:43:30,196 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bSUTARTIS\-12345\b - {'precision': '1.00', 'recall': '1.00'}
+2025-06-21 18:43:40,394 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+{"duration": 0.03246045112609863, "memory_delta": 0.0390625}
+2025-06-21 18:43:09,001 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.016687870025634766, "memory_delta": 0.1875}
+2025-06-21 18:43:18,966 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.016571044921875, "memory_delta": 0.01953125}
+2025-06-21 18:43:30,196 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.016804933547973633, "memory_delta": 0.5}
+2025-06-21 18:43:30,230 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.0176849365234375, "memory_delta": 0.0}
+2025-06-21 18:43:43,355 - anonympdf.performance - INFO - File processing completed: pdf_processing - {"file_size_mb": 0.0002422332763671875, "duration": 0.04022622108459473, "throughput": 0.006021775594028011, "memory_delta": 0.66015625}
+nonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 18:43:05,905 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 18:43:18,932 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 18:43:18,932 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 18:43:27,597 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 18:43:27,597 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 18:43:40,394 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 18:43:40,394 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+ed 0 active patterns from the database.
+2025-06-21 18:42:31,211 - anonympdf.adaptive_patt2025-06-21 18:43:43,360 - anonympdf.ab_testing - INFO - Database connection to C:\Users\tomas\AppData\Local\Temp\pytest-of-tomas\pytest-294\ab_test_data0\ab_tests.db closed.
+ from the database.
+2025-06-21 18:42:31,211 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 18:42:31,250 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-21 18:42:31,250 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-21 18:42:43,458 - anonympdf.adaptive_pattern_db - INFO - Retrieved 0 active patterns from the database.
+2025-06-21 18:42:53,605 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_-8604541973725114537
+2025-06-21 18:42:53,605 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 18:42:53,605 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 18:42:53,655 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-21 18:42:53,655 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-21 18:43:08,985 - anonympdf.adaptive_pattern_db - INFO - Retrieved 0 active patterns from the database.
+2025-06-21 18:43:18,949 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_3217961378606681456
+2025-06-21 18:43:18,949 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 18:43:18,949 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 18:43:18,982 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-21 18:43:18,982 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-21 18:43:30,179 - anonympdf.adaptive_pattern_db - INFO - Retrieved 0 active patterns from the database.
+2025-06-21 18:43:30,196 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_-5188446053172354072
+2025-06-21 18:43:30,196 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 18:43:30,213 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 18:43:30,286 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-21 18:43:30,286 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+itializing PDF processor with Priority 2 enhancements
+2025-06-21 18:42:20,663 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
+2025-06-21 18:42:20,663 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-21 18:42:22,080 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-21 18:42:23,729 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+2025-06-21 18:42:23,746 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-21 18:42:31,211 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-21 18:42:41,108 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-21 18:42:41,108 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
+2025-06-21 18:42:41,108 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-21 18:42:42,208 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-21 18:42:43,458 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+2025-06-21 18:42:43,458 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-21 18:42:53,605 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-21 18:43:05,905 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-21 18:43:05,905 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
+2025-06-21 18:43:05,919 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-21 18:43:07,568 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-21 18:43:08,985 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+2025-06-21 18:43:08,985 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-21 18:43:18,949 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-21 18:43:27,597 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-21 18:43:27,597 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
+2025-06-21 18:43:27,597 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-21 18:43:28,880 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-21 18:43:30,163 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+2025-06-21 18:43:30,179 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-21 18:43:30,215 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-21 18:43:40,394 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-21 18:43:40,394 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
+2025-06-21 18:43:40,394 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-21 18:43:41,542 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-21 18:43:43,310 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+2025-06-21 18:43:43,350 - anonympdf.pdf - ERROR - Failed to anonymize PDF - {"file": "simple_pii_document.txt", "error": "Logger._log() got an unexpected keyword argument 'error'", "exc_info": true}
+e sets.

@@ -1,65 +1,96 @@
-# GO GREEN: One-Day Test Suite Recovery Plan
+# 8-Hour "GO GREEN" Action Plan
 
-This plan is engineered for maximum impact and velocity. We will work in focused, 2-hour sprints to systematically eliminate failure clusters.
-
-## Impact & Priority Matrix
-
-| Root Cause Cluster                                 | Failure Count | Blocker Severity | Fix Complexity | Priority | Est. Time (Hours) |
-| -------------------------------------------------- | ------------- | ---------------- | -------------- | -------- | ----------------- |
-| 1. `DetectionContext` Model Mismatch (`AttributeError`) | 12            | **CRITICAL**     | Low            | **P0**   | 2.0               |
-| 2. `AdvancedPatternRefinement` Output (`KeyError`) | 2             | High             | Medium         | **P1**   | 1.5               |
-| 3. Logic/Assertion Bugs (`KeyError`, `AssertionError`) | 2             | Medium           | Medium         | **P2**   | 2.5               |
+## Mission: Full Test Suite Pass by EOD. Zero Regressions.
 
 ---
 
-## The 8-Hour War Room
+### **Impact & Priority Matrix**
 
-### **Sprint 1 (Hours 0-2): Stabilize the Core - Fix `DetectionContext`**
-*The goal is to fix the P0 `AttributeError` and turn the majority of tests from FAILED to PASSED.*
-
--   [ ] **Task 1.1:** Isolate a single failing test from Cluster 1.
-    -   **Command:** `pytest tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_comprehensive_lithuanian_document_processing -v`
--   [ ] **Task 1.2:** Analyze the `DetectionContext` object definition in `app/core/context_analyzer.py` to confirm the correct attribute names.
--   [ ] **Task 1.3:** **Refactor** `app/services/pdf_processor.py` at line `359` in `deduplicate_with_confidence` to use the correct attributes from `DetectionContext`.
--   [ ] **Task 1.4:** **Refactor** the `deduplicate_with_confidence` call in `tests/test_pdf_processor.py` at line `130` to pass the correct arguments.
--   [ ] **Task 1.5:** Run the isolated test from Task 1.1. **Validate** it passes.
--   [ ] **Task 1.6:** Run the entire `tests/test_pdf_processor.py` and `tests/test_lithuanian_pii.py` modules. **Validate** all `AttributeError` failures are resolved.
--   [ ] **Task 1.7:** Commit the fix with a clear message: `fix(core): Correct DetectionContext attribute usage in PDFProcessor`.
-
-### **Sprint 2 (Hours 2-4): Fix High-Priority Data Contracts**
-*The goal is to fix the P1 `KeyError` from the `AdvancedPatternRefinement` and harden the logic bugs from P2.*
-
--   [ ] **Task 2.1:** Isolate the failing `KeyError` test.
-    -   **Command:** `pytest tests/test_priority2_enhancements.py::TestAdvancedPatternRefinement::test_enhanced_email_detection -v`
--   [ ] **Task 2.2:** Investigate `app/core/context_analyzer.py` to find the new data structure returned by `find_enhanced_patterns`.
--   [ ] **Task 2.3:** **Refactor** the assertions in `tests/test_priority2_enhancements.py` at lines `134` and `154` to work with the new data structure.
--   [ ] **Task 2.4:** Address the `KeyError: 'NAMES'` from Cluster 3 in `tests/test_pdf_processor.py:156`. **Refactor** the assertion to use the correct key for the redaction report category.
--   [ ] **Task 2.5:** Run the full `tests/test_priority2_enhancements.py` module. **Validate** all tests pass.
--   [ ] **Task 2.6:** Commit the fixes: `fix(tests): Update tests for new AdvancedPatternRefinement and report schemas`.
-
-### **Sprint 3 (Hours 4-6): Mop-Up & Hardening**
-*The goal is to eliminate the final logic bugs and harden the suite against flakiness.*
-
--   [ ] **Task 3.1:** Tackle the final `AssertionError` in `tests/test_pdf_processor.py:224`.
--   [ ] **Task 3.2:** Debug the `anonymize_pdf_flow` to understand why the mock for `extract_text_from_pdf` is not being called. **Refactor** the test setup or the application logic to ensure the call is made under test conditions.
--   [ ] **Task 3.3:** **Audit** the fixtures in `tests/conftest.py`. Look for any shared state that could "bleed" between tests. Ensure all fixtures that create data (e.g., database entries) are function-scoped unless explicitly designed to be session-wide.
--   [ ] **Task 3.4:** Run the entire test suite locally again. **Validate** all 275 tests now pass.
--   [ ] **Task 3.5:** Commit the final fixes: `fix(tests): Correct logic in anonymize_pdf_flow test and harden fixtures`.
-
-### **Sprint 4 (Hours 6-8): Confidence Rebuild & CI Validation**
-*The goal is to prove the fix is complete, produces no regressions, and get a green build on CI.*
-
--   [ ] **Task 4.1:** Run the full test suite in parallel to check for race conditions.
-    -   **Command:** `pytest -n auto`
--   [ ] **Task 4.2:** Generate a new coverage report.
-    -   **Command:** `pytest --cov=app --cov-report=term-missing`
--   [ ] **Task 4.3:** Compare the new coverage report to the one in the log (`58_log.txt`). **Validate** that coverage has not decreased.
--   [ ] **Task 4.4:** Push the branch to the remote repository and open a pull request.
--   [ ] **Task 4.5:** **Monitor** the CI pipeline.
--   [ ] **Task 4.6:** On success, capture the "GO GREEN" screenshot and attach it to the pull request. Merge the PR.
+| Root Cause Cluster                        | Failure Count | Severity | Fix Complexity | Priority | Estimated Fix Time |
+| ----------------------------------------- | :-----------: | :------: | :------------: | :------: | :----------------: |
+| 1. Flawed Lithuanian PII Detection        |       4       | Critical |      Low       |  **P0**  |      1.5 hrs       |
+| 2. Inconsistent Redaction/Detection Logic |       2       |   High   |   Medium     |  **P1**  |      2.0 hrs       |
+| 3. Broken Advanced Pattern Matching       |       2+      |   High   |   Medium     |  **P1**  |      1.5 hrs       |
+| 4. System & Environment Instability       |       3+      | Blocker  |      High      |  **P2**  |      2.0 hrs       |
 
 ---
 
-## **Next Step**
+## **Sprint Breakdown (Hour-by-Hour)**
 
-I will begin **Sprint 1, Task 1.1** immediately. I will isolate the first failure to begin the rapid reproduction and fixing cycle. 
+### **Sprint 1: Stabilize Core PII (Hours 0-2)**
+
+-   [ ] **Task 1.1 (Repro & Isolate):**
+    -   [ ] Lock `tests/test_lithuanian_pii.py` to run exclusively.
+    -   Command: `pytest tests/test_lithuanian_pii.py --cache-clear -v`
+    -   Confirm failure `TestLithuanianIntegration.test_anti_overredaction_of_common_words` locally.
+-   [ ] **Task 1.2 (Root-Cause Fix):**
+    -   [ ] **Hypothesis:** The `LITHUANIAN_PHONE_NUMBER` regex in `config/patterns.yaml` is greedy and incorrect.
+    -   [ ] **Action:** Modify the regex to correctly capture the full international format `+370 XXX XXXXX`. The current pattern `\+370\s\d{3}\s\d{5}` seems plausible but might have issues with how it's defined in YAML or interpreted by the engine. Let's start by inspecting `patterns.yaml`.
+    -   [ ] **Action:** Correct the pattern, ensuring it's a single, non-breaking expression.
+-   [ ] **Task 1.3 (Validate Fix):**
+    -   [ ] Rerun `pytest tests/test_lithuanian_pii.py`.
+    -   [ ] **Goal:** Pass all tests in `test_lithuanian_pii.py`.
+-   [ ] **Task 1.4 (Commit):**
+    -   [ ] `git commit -m "fix(PII): Correct Lithuanian phone number regex for full match"`
+
+**Next Step:** Proceed to Sprint 2 to fix the inconsistent redaction logic.
+
+---
+
+### **Sprint 2: Fix Data Contracts & Redaction Application (Hours 2-4)**
+
+-   [ ] **Task 2.1 (Repro & Isolate - Key Mismatch):**
+    -   [ ] Run `pytest tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_process_pdf_success -v`
+    -   [ ] Confirm `AssertionError: assert None == 1`
+-   [ ] **Task 2.2 (Root-Cause Fix - Key Mismatch):**
+    -   [ ] **Hypothesis:** `AdvancedPatternRefinement` returns `email` (lowercase) as the category, but the test expects `emails`.
+    -   [ ] **Action:** Locate the `email` pattern in `config/patterns.yaml` and change its name/key to `emails` for consistency, OR change the test assertion. The [memory I have about this class][[memory:2066266056353795392]] states the pattern name should be used as the category, so changing `patterns.yaml` is the correct fix.
+-   [ ] **Task 2.3 (Repro & Isolate - No Annotations):**
+    -   [ ] Run `pytest tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_anonymize_pdf_flow -v`
+-   [ ] **Task 2.4 (Root-Cause Fix - No Annotations):**
+    -   [ ] **Hypothesis:** The redaction data from `pii_detection` is not being passed correctly to the `fitz` annotation step in `pdf_processor.py`.
+    -   [ ] **Action:** Debug `pdf_processor.py`. Trace the `detections` from the PII engine to the loop that creates `page.add_redact_annot()`. Ensure the coordinates are valid and the call is being made for every reported redaction.
+-   [ ] **Task 2.5 (Commit):**
+    -   [ ] `git commit -m "fix(Processor): Align email pattern key to 'emails'"`
+    -   [ ] `git commit -m "fix(Processor): Ensure redaction data creates PDF annotations"`
+
+**Next Step:** Harden the advanced pattern engine in Sprint 3.
+
+---
+
+### **Sprint 3: Harden Advanced Engine & System (Hours 4-6)**
+
+-   [ ] **Task 3.1 (Repro & Isolate):**
+    -   [ ] Run `pytest tests/test_priority2_enhancements.py -v`.
+-   [ ] **Task 3.2 (Root-Cause Fix):**
+    -   [ ] **Hypothesis:** A recent change to `context_analyzer.py` or the structure of `patterns.yaml` broke the `find_enhanced_patterns` method.
+    -   [ ] **Action:** Review the logic in `app/core/context_analyzer.py`. Based on memory, this class iterates a flat dictionary of patterns. Verify the patterns are being loaded correctly and the regex match is using the capturing group as intended.
+    -   [ ] **Action:** Fix the logic to ensure it correctly iterates patterns and extracts matches.
+-   [ ] **Task 3.3 (System Stability):**
+    -   [ ] **Hypothesis:** The remaining system test failures are due to Windows-specific encoding issues.
+    -   [ ] **Action:** Examine `tests/system/test_real_time_monitor_integration.py`. Add `encoding="utf-8"` to all `open()` calls within the test and any underlying file I/O in the monitor itself if it's not already present.
+-   [ ] **Task 3.4 (Commit):**
+    -   [ ] `git commit -m "fix(Engine): Repair logic in AdvancedPatternRefinement"`
+    -   [ ] `git commit -m "fix(System): Enforce UTF-8 encoding in file I/O for Windows compat"`
+
+**Next Step:** Full validation and confidence rebuild in Sprint 4.
+
+---
+
+### **Sprint 4: Confidence Rebuild & Final Validation (Hours 6-8)**
+
+-   [ ] **Task 4.1 (Full Suite Execution):**
+    -   [ ] Run the entire test suite: `pytest --cache-clear`
+    -   [ ] **Goal:** 100% pass rate.
+-   [ ] **Task 4.2 (Address Lingering Flakiness):**
+    -   [ ] If any tests fail, analyze immediately.
+    -   [ ] If it's a race condition or async timing issue, add explicit waits. **No `xfail` or `retry` without justification.**
+-   [ ] **Task 4.3 (Code Cleanup & Final Push):**
+    -   [ ] Remove any debugging statements (`print`, etc.).
+    -   [ ] `git push origin main`
+-   [ ] **Task 4.4 (Mission Complete):**
+    -   [ ] Trigger CI run.
+    -   [ ] **Deliverable:** Monitor the run and confirm an all-green pipeline.
+    -   [ ] Delete `ROOT_CAUSE_REPORT.md` and `DAY_PLAN.md` as they are ephemeral work products.
+
+**Next Step:** Begin Sprint 1. 

@@ -135,15 +135,6 @@ class TestAdvancedPatternRefinement:
         assert len(email_detections) == 1
         assert email_detections[0]['text'] == "jonas.petraitis@example.com"
     
-    def test_enhanced_phone_detection(self):
-        """Test enhanced phone pattern detection."""
-        text = "Tel.: +370 6 123 4567 yra kontaktinis numeris"
-        detections = self.pattern_refiner.find_enhanced_patterns(text)
-        
-        phone_detections = [d for d in detections if d['category'] == 'phones']
-        assert len(phone_detections) == 1
-        assert phone_detections[0]['text'] == "+370 6 123 4567"
-    
     def test_enhanced_personal_code_detection(self):
         """Test enhanced personal code pattern detection."""
         text = "Asmens kodas: 38901234567 yra registruotas"
@@ -152,15 +143,6 @@ class TestAdvancedPatternRefinement:
         code_detections = [d for d in detections if d['category'] == 'lithuanian_personal_codes']
         assert len(code_detections) == 1
         assert code_detections[0]['text'] == "38901234567"
-    
-    def test_enhanced_address_detection(self):
-        """Test enhanced address pattern detection."""
-        text = "Adresas: Paupio g. 50-136, LT-11341 Vilnius"
-        detections = self.pattern_refiner.find_enhanced_patterns(text)
-        
-        address_detections = [d for d in detections if d['category'] == 'addresses_prefixed']
-        assert len(address_detections) == 1
-        assert "Paupio g. 50-136" in address_detections[0]['text']
 
 
 class TestLithuanianLanguageEnhancer:

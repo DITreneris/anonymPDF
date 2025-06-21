@@ -265,35 +265,6 @@ class PDFProcessor:
                 )
                 context_aware_detections.append(detection_context)
 
-        # Apply regex patterns for various information types, feeding them into the context-aware pipeline
-        for pattern_type, regex_list in self.config_manager.patterns.items():
-            # Ensure regex_list is actually a list of regex patterns
-            if not isinstance(regex_list, list):
-                regex_list = [regex_list]
-
-            for regex in regex_list:
-                try:
-                    # Find all matches for the current regex
-                    for match in re.finditer(regex, text):
-                        # Create a context-aware detection instead of adding directly
-                        detection_context = create_context_aware_detection(
-                            match.group(0),
-                            pattern_type,
-                            match.start(),
-                            match.end(),
-                            text,
-                            self.contextual_validator,
-                            confidence=0.5  # Base confidence for standard regex
-                        )
-                        context_aware_detections.append(detection_context)
-                except re.error as e:
-                    pdf_logger.warning(
-                        "Regex error in pattern",
-                        pattern_type=pattern_type,
-                        regex=regex,
-                        error=str(e)
-                    )
-
         # All detections (spaCy, adaptive, enhanced, standard) are now in one list.
         # Now, we process this unified list for final validation and deduplication.
         return self.deduplicate_with_confidence(context_aware_detections)
@@ -327,11 +298,15 @@ class PDFProcessor:
                                   context_detections: List[DetectionContext]) -> Dict[str, List[Tuple[str, str]]]:
         """
         Deduplicate detections based on position and confidence score.
-        Highest confidence detection for an overlapping area is kept.
+        Longest match for an overlapping area is kept. Confidence is a tie-breaker.
         """
         
-        # Sort detections by confidence score (highest first)
-        sorted_detections = sorted(context_detections, key=lambda d: d.confidence, reverse=True)
+        # Sort by length (longest first), then by confidence (highest first)
+        sorted_detections = sorted(
+            context_detections, 
+            key=lambda d: (d.end_char - d.start_char, d.confidence), 
+            reverse=True
+        )
         
         # Keep track of character positions that have been redacted
         redacted_positions = set()
@@ -463,37 +438,41 @@ class PDFProcessor:
                 }
 
             # 3. Perform the redaction using PyMuPDF
-            doc = fitz.open(input_path)
-            redactions_applied = 0
-            
-            # Consolidate all PII text to search for
-            all_pii_texts = set()
-            for category, items in personal_info.items():
-                for item_text, _ in items:
-                    all_pii_texts.add(item_text)
+            output_pdf_path_obj = Path(output_path)
+            output_pdf_path_obj.parent.mkdir(parents=True, exist_ok=True)
 
-            for page in doc:
-                for pii_text in all_pii_texts:
-                    # Search for the text on the page
-                    text_instances = page.search_for(pii_text)
+            doc = fitz.open(input_path)
+            total_redactions = 0
+            redaction_details = defaultdict(list)
+
+            for pii_type, detections in personal_info.items():
+                for pii_text, confidence in detections:
+                    for page in doc:
+                        # Find all instances of the PII text, getting their bounding boxes
+                        text_instances = page.search_for(pii_text, quads=False)
+                        
+                        # For each unique instance, add a redaction
+                        for inst in text_instances:
+                            # The 'inst' is a fitz.Rect object
+                            page.add_redact_annot(inst, fill=(0, 0, 0))
+                            total_redactions += 1
                     
-                    # Apply redaction to all found instances
-                    for inst in text_instances:
-                        page.add_redact_annot(inst, fill=(0, 0, 0)) # Black fill
-                        redactions_applied += 1
-                
-                # Apply the redactions for the current page
-                page.apply_redactions()
+                    if detections: # Add to report only if found and redacted
+                        redaction_details[pii_type].append((pii_text, confidence))
+
+            # After adding all redaction annotations, loop through pages to apply them
+            if total_redactions > 0:
+                for page in doc:
+                    page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_PIXELS)
             
-            # 4. Save the redacted PDF
-            doc.save(str(output_path), garbage=4, deflate=True)
+            doc.save(str(output_pdf_path_obj), garbage=4, deflate=True)
             doc.close()
 
             pdf_logger.info(
                 "PDF anonymized successfully",
                 input_file=input_path.name,
                 output_file=output_path.name,
-                redactions_applied=redactions_applied
+                redactions_applied=total_redactions
             )
             
             # 5. Generate and return the report
@@ -502,7 +481,7 @@ class PDFProcessor:
             return True, {
                 "status": "success",
                 "report": report,
-                "redactions_applied": redactions_applied,
+                "redactions_applied": total_redactions,
                 "output_path": str(output_path),
                 "processing_time": time.time() - start_time
             }
@@ -519,85 +498,61 @@ class PDFProcessor:
             "total_redactions": sum(len(v) for v in personal_info.values()),
             "language": language,
             "categories": {k: len(v) for k, v in personal_info.items() if v},
-            "details": defaultdict(list)
+            "details": personal_info  # Return the full details with confidence strings
         }
-
-        # Priority 3: Enhanced report with confidence scores
-        for category, items in personal_info.items():
-            if not items:
-                continue
-            for text, context_str in items:
-                # Attempt to parse confidence from context string (e.g., "NER_0.85")
-                try:
-                    confidence = float(context_str.split('_')[-1])
-                except (ValueError, IndexError):
-                    confidence = 0.5  # Default confidence if parsing fails
-                
-                report["details"][category].append((text, f"CONF_{confidence:.2f}"))
         
         pdf_logger.info("Redaction report generated", total_redactions=report["total_redactions"], language=language)
         return report
 
-    async def process_pdf(self, file_path: str) -> dict:
+    async def process_pdf(self, file_path: Path) -> dict:
         """
         Main orchestration function to process a PDF file asynchronously.
         It handles text extraction, PII detection, anonymization, and reporting.
         """
-        pdf_path = Path(file_path)
-        if not pdf_path.exists():
-            raise HTTPException(status_code=404, detail="File not found")
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"File not found at path: {file_path}")
 
-        file_size_bytes = pdf_path.stat().st_size
-        tracker = file_processing_metrics.track_file_processing(pdf_path, file_size_bytes)
+        file_size_bytes = file_path.stat().st_size
+        tracker = file_processing_metrics.track_file_processing(file_path, file_size_bytes)
         response_data = {}
         
         try:
-            # Extract text
-            text = self.extract_text_from_pdf(pdf_path)
-            if not text.strip():
-                raise HTTPException(status_code=400, detail="PDF content is empty or could not be extracted")
-
-            # Detect language
-            language = self.detect_language(text)
-
-            # Find personal information
-            personal_info = self.find_personal_info(text, language)
-
             # Generate a unique output path
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_filename = f"{pdf_path.stem}_redacted_{timestamp}.pdf"
+            output_filename = f"{file_path.stem}_redacted_{timestamp}.pdf"
             output_path = self.processed_dir / output_filename
 
             # Anonymize the PDF
-            success, anonymization_details = self.anonymize_pdf(pdf_path, output_path)
+            success, anonymization_details = self.anonymize_pdf(file_path, output_path)
             
             if not success:
                 response_data = {
                     "status": "error",
                     "error": anonymization_details.get("error", "Unknown error during anonymization"),
-                    "redactions": 0,
+                    "filename": file_path.name,
                 }
             else:
-                # Generate redaction report
-                report = self.generate_redaction_report(personal_info, language)
-
+                # Use the report from the successful anonymization
+                report = anonymization_details.get("report", {})
                 response_data = {
                     "anonymized_file_path": str(output_path),
                     "status": "processed",
+                    "filename": file_path.name,
                     "report": report,
                 }
 
+        except HTTPException as e:
+            # Re-raise HTTPExceptions to be handled by FastAPI
+            raise e
         except Exception as e:
-            pdf_logger.error("Error processing PDF", file=file_path, error=str(e), exc_info=True)
+            pdf_logger.error("Error processing PDF", file=str(file_path), error=str(e), exc_info=True)
             
             response_data = {
                 "status": "error",
                 "error": f"An unexpected error occurred: {type(e).__name__}",
                 "detail": str(e),
+                "filename": file_path.name,
             }
-            if isinstance(e, HTTPException):
-                # Re-raise HTTPException to be handled by FastAPI's exception middleware
-                raise e
         finally:
             # Ensure performance tracking is always finalized
             metrics = tracker['end_tracking']()
@@ -618,7 +573,7 @@ class PDFProcessor:
 
     @performance_monitor("text_extraction")
     def extract_text_from_pdf(self, pdf_path: Path) -> str:
-        """Extract all text from a PDF file."""
+        """Extracts text from a PDF file using an enhanced method."""
         return extract_text_enhanced(pdf_path)
 
     def process_pdf_for_anonymization(self, file_path: Path) -> Tuple[bool, str]:

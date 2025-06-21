@@ -101,9 +101,9 @@ class TestLithuanianIntegration:
         detections = test_pdf_processor.find_personal_info(text, language="lt")
         report = test_pdf_processor.generate_redaction_report(detections, language="lt")
 
-        assert "summary" in report
+        assert "total_redactions" in report
         assert "details" in report
-        assert report["summary"]["total_redactions"] > 0
+        assert report["total_redactions"] > 0
         
         all_redacted_text = []
         for category_items in report['details'].values():
@@ -118,9 +118,9 @@ class TestLithuanianIntegration:
         detections = test_pdf_processor.find_personal_info(text, language="lt")
         report = test_pdf_processor.generate_redaction_report(detections, "lt")
 
-        assert "summary" in report
+        assert "total_redactions" in report
         assert "details" in report
-        assert report["summary"]["total_redactions"] > 0
+        assert report["total_redactions"] > 0
         
         all_redacted_text = []
         for category_items in report['details'].values():

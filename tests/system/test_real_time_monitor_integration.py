@@ -8,6 +8,7 @@ import time
 from app.services.pdf_processor import PDFProcessor
 from app.core.config_manager import ConfigManager
 from app.core.real_time_monitor import RealTimeMonitor
+from app.core.adaptive.coordinator import AdaptiveLearningCoordinator
 
 # This test file should be self-contained and rely only on fixtures
 # provided by pytest from conftest.py files.
@@ -19,7 +20,7 @@ def isolated_monitor(tmp_path: Path) -> RealTimeMonitor:
     to prevent state leakage between tests.
     """
     db_path = tmp_path / f"test_monitor_{hash(time.time())}.db"
-    monitor = RealTimeMonitor(db_path=str(db_path))
+    monitor = RealTimeMonitor(db_path=db_path)
     yield monitor
     monitor.shutdown()
 
@@ -28,7 +29,8 @@ def isolated_monitor(tmp_path: Path) -> RealTimeMonitor:
 def test_monitoring_end_to_end(
     isolated_monitor: RealTimeMonitor, 
     caplog: pytest.LogCaptureFixture, 
-    config_manager: ConfigManager
+    test_pdf_processor: PDFProcessor,
+    adaptive_coordinator: AdaptiveLearningCoordinator
 ):
     """
     A full end-to-end test of the real-time monitoring system.
@@ -37,14 +39,14 @@ def test_monitoring_end_to_end(
     """
     caplog.set_level(logging.INFO)
     
-    # 1. Setup: Create a PDFProcessor and manually inject the isolated monitor.
+    # 1. Setup: Use the fixture-provided PDFProcessor and manually inject the isolated monitor.
     # In a real application, this injection would be handled by the FastAPI dependency system.
-    processor_under_test = PDFProcessor(config_manager=config_manager)
+    processor_under_test = test_pdf_processor
     processor_under_test.monitor = isolated_monitor
 
     # 2. Action: Perform an action that triggers monitored events.
     # We use a known sample document for this system test.
-    test_document_path = str(Path("tests/samples/simple_pii_document.txt"))
+    test_document_path = Path("tests/samples/simple_pii_document.txt")
     
     # The process_pdf method is the main entry point we need to test.
     asyncio.run(processor_under_test.process_pdf(test_document_path))

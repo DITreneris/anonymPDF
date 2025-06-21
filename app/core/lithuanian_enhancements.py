@@ -137,22 +137,36 @@ class LithuanianLanguageEnhancer:
         # Enhanced Lithuanian patterns
         self.enhanced_lithuanian_patterns = {
             'lithuanian_name_with_title': LithuanianPattern(
-                pattern=r'((?:Ponas|Ponia|Daktaras|Dr\.|Profesorius|Prof\.)\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)*)',
+                pattern=r'((?:Ponas|Ponia|Dr\.?|Prof\.?)\s+(?:[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)?)',
                 category='names',
-                confidence_modifier=0.3,
-                description='Lithuanian name with title',
+                confidence_modifier=0.35,
+                description='Lithuanian name with title (non-greedy, full match).',
                 examples=['Ponas Jonas Petraitis', 'Ponia Žaneta Stankevičienė', 'Dr. Antanas Mockus']
             ),
+            'lithuanian_name_simple': LithuanianPattern(
+                pattern=r'\b([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:as|is|us|ė|ienė))\s+([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:as|is|us|ys|ė|ienė))\b',
+                category='names',
+                confidence_modifier=0.3,
+                description='A simple Lithuanian name (First Last) with common endings.',
+                examples=['Linas Vaitkus', 'Rūta Vaitkienė']
+            ),
             'lithuanian_address_full': LithuanianPattern(
-                pattern=r'(?:Adresas|Gyvenamoji vieta):\s*([A-ZĄČĘĖĮŠŲŪŽ][^,\n]+(?:,\s*[^,\n]+)*,\s*LT-\d{5})',
+                pattern=r'(?:Adresas|Gyv\.\s*vieta|Adresas korespondencijai):\s*([A-ZĄČĘĖĮŠŲŪŽ][^,\n]+?,\s*LT-\d{5})',
                 category='addresses_prefixed',
                 confidence_modifier=0.25,
-                description='Full Lithuanian address with postal code',
+                description='Lithuanian address (street and number up to postal code), non-greedy.',
                 examples=['Adresas: Paupio g. 50-136, LT-11341 Vilnius']
+            ),
+            'lithuanian_city_generic': LithuanianPattern(
+                pattern=r'\b(Vilni(us|aus|uje|ų)|Kaun(as|o|e|ą)|Klaipėd(a|os|oje|ą)|Šiauli(ai|ų|uose|us)|Panevėž(ys|io|yje|į))\b',
+                category='locations',
+                confidence_modifier=0.9,
+                description='Common Lithuanian city names with grammatical cases.',
+                examples=['Vilniaus', 'Kaune', 'Klaipėdos', 'Šiaulius', 'Panevėžyje']
             ),
             'lithuanian_address_flexible': LithuanianPattern(
                 pattern=r'([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+s?\s+(?:g\.|pr\.|al\.)\s*\d+(?:-\d+)?)',
-                category='addresses_prefixed',
+                category='addresses_street',
                 confidence_modifier=0.15,
                 description='Flexible Lithuanian address pattern (street, number)',
                 examples=['Vilniaus g. 1', 'Gedimino pr. 25-10A']

@@ -100,14 +100,6 @@ def test_feedback_learns_and_discovers_new_pattern(
         "The specific PII text was not found in the final detections."
 
 
-def test_feedback_api_is_disabled_for_now(client: TestClient):
-    """
-    This is a placeholder to confirm the API test is recognized but skipped.
-    The real test depends on an endpoint that is not yet fully implemented.
-    """
-    assert client is not None
-    pytest.skip("Skipping API test until '/api/v1/pdf/process' is implemented.")
-
 @pytest.mark.system
 def test_adaptive_workflow_learns_new_pattern(
     adaptive_coordinator: AdaptiveLearningCoordinator,
