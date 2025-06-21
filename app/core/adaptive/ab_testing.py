@@ -16,9 +16,10 @@ import sqlite3
 from collections import defaultdict
 from scipy.stats import ttest_ind
 import statistics
+import threading
 
 from app.core.logging import get_logger
-from app.core.config_manager import get_config_manager
+from app.core.config_manager import ConfigManager, get_config_manager
 
 ab_test_logger = get_logger("ab_testing")
 
@@ -324,8 +325,19 @@ class ABTestManager:
             self.conn = None
             ab_test_logger.info(f"Database connection to {self.db_path} closed.")
 
-def create_ab_test_manager(db_path: Optional[Path] = None) -> ABTestManager:
-    """Creates and returns an ABTestManager instance."""
-    if db_path:
-        return ABTestManager(db_path=db_path)
-    return ABTestManager()
+_ab_test_manager_instance = None
+_ab_test_manager_lock = threading.Lock()
+
+def get_ab_test_manager(config_manager: ConfigManager) -> "ABTestManager":
+    """
+    Provides a singleton instance of the ABTestManager.
+    """
+    global _ab_test_manager_instance
+    with _ab_test_manager_lock:
+        if _ab_test_manager_instance is None:
+            settings = config_manager.settings.get('adaptive_learning', {})
+            db_config = settings.get('databases', {})
+            db_path = db_config.get('ab_tests_db_path', 'data/adaptive/ab_tests.db')
+            
+            _ab_test_manager_instance = ABTestManager(db_path=db_path)
+    return _ab_test_manager_instance

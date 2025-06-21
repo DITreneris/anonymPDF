@@ -14,7 +14,7 @@ def mock_db():
 def pattern_learner(mock_db):
     """Fixture for a PatternLearner instance with a mock DB."""
     # The mock_db isn't used directly in tests since learner returns patterns without DB calls
-    return PatternLearner(pattern_db=mock_db, min_confidence=0.8, min_samples=3)
+    return PatternLearner(pattern_db=mock_db, min_confidence=0.8)
 
 class TestValidateRegex:
     def test_perfect_match(self, pattern_learner):
@@ -110,4 +110,10 @@ class TestDiscoverAndValidatePatterns:
         patterns = pattern_learner.discover_and_validate_patterns(corpus, pii_to_discover, ground_truth)
         # Even though TP>=min_samples, recall ok, precision ok, so pattern created
         assert len(patterns) == 1
+        
+        # Test case for when min_samples is NOT met
+        patterns_not_enough_samples = pattern_learner.discover_and_validate_patterns(
+            corpus, pii_to_discover, ground_truth, min_samples_for_learning=2
+        )
+        assert len(patterns_not_enough_samples) == 0
 

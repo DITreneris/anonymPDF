@@ -1,0 +1,245 @@
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF> pytest tests/system/test_adaptive_workflow.py -v
+=================================================================================== test session starts ====================================================================================
+platform win32 -- Python 3.11.9, pytest-7.4.3, pluggy-1.6.0 -- C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF
+configfile: pytest.ini
+plugins: anyio-3.7.1, asyncio-0.21.1, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collected 6 items
+
+tests/system/test_adaptive_workflow.py::test_fixture_creation PASSED                                                                                                                  [ 16%]
+tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[EMP-ID-98765-EMPLOYEE_ID-en] FAILED                                                            [ 33%]
+tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[PROJ-SECRET-ALPHA-PROJECT_CODE-en] FAILED                                                      [ 50%]
+tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt] FAILED                                                     [ 66%]
+tests/system/test_adaptive_workflow.py::test_feedback_api_is_disabled_for_now SKIPPED (Skipping API test until '/api/v1/pdf/process' is implemented.)                                 [ 83%]
+tests/system/test_adaptive_workflow.py::test_adaptive_workflow_learns_new_pattern[\n            Vardas: Jonas Petraitis\n            Asmens kodas: 38901234567\n            El. pa\u0161tas: jonas.petraitis@example.com\n            Naujas sutarties numeris yra SUTARTIS-12345.\n            Telefonas: +370 600 12345\n            Adresas: Gedimino pr. 25, LT-01103, Vilnius\n            -new_pattern_test_case0] FAILED [100%]
+
+========================================================================================= FAILURES =========================================================================================
+_______________________________________________________ test_feedback_learns_and_discovers_new_pattern[EMP-ID-98765-EMPLOYEE_ID-en] ________________________________________________________
+tests\system\test_adaptive_workflow.py:103: in test_feedback_learns_and_discovers_new_pattern
+    assert corrected_category in final_categories, \
+E   AssertionError: Learned category was not found in final detections.
+E   assert 'EMPLOYEE_ID' in {'PRODUCT'}
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-21 09:17:04,795 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-21 09:17:04,795 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-21 09:17:09,755 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 09:17:09,755 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 09:17:09,755 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 09:17:09,773 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-21 09:17:09,773 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-21 09:17:09,773 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-21 09:17:09,786 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-21 09:17:09,786 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-21 09:17:14,204 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 09:17:14,204 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 09:17:14,204 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 09:17:14,204 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-21 09:17:14,204 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-21 09:17:14,204 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-21 09:17:14,204 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-21 09:17:14,863 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-21 09:17:15,610 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-21 09:17:15,618 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-21 09:17:15,628 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.01005864143371582, "memory_delta": 1.12890625}
+2025-06-21 09:17:15,628 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-21 09:17:15,628 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bEMP\-ID\-98765\b - {'precision': '1.00', 'recall': '1.00'}
+2025-06-21 09:17:15,630 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_-142400644674386448
+2025-06-21 09:17:15,630 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
+2025-06-21 09:17:15,630 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 09:17:15,630 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-21 09:17:15,640 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.010092496871948242, "memory_delta": 0.0}
+____________________________________________________ test_feedback_learns_and_discovers_new_pattern[PROJ-SECRET-ALPHA-PROJECT_CODE-en] _____________________________________________________
+tests\system\test_adaptive_workflow.py:103: in test_feedback_learns_and_discovers_new_pattern
+    assert corrected_category in final_categories, \
+E   AssertionError: Learned category was not found in final detections.
+E   assert 'PROJECT_CODE' in set()
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-21 09:17:16,103 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-21 09:17:16,103 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-21 09:17:20,573 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 09:17:20,573 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 09:17:20,573 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 09:17:20,588 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-21 09:17:20,588 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-21 09:17:20,588 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-21 09:17:20,604 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-21 09:17:20,604 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-21 09:17:26,151 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 09:17:26,151 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 09:17:26,151 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 09:17:26,151 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-21 09:17:26,151 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-21 09:17:26,151 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-21 09:17:26,153 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-21 09:17:26,985 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-21 09:17:27,755 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-21 09:17:27,755 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-21 09:17:27,771 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.015586376190185547, "memory_delta": 0.046875}
+2025-06-21 09:17:27,771 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-21 09:17:27,771 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bPROJ\-SECRET\-ALPHA\b - {'precision': '1.00', 'recall': '1.00'}
+2025-06-21 09:17:27,771 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_3416959904791160252
+2025-06-21 09:17:27,771 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
+2025-06-21 09:17:27,771 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 09:17:27,771 - anonympdf.pdf - INFO - Using English NLP model for processing - {"language": "en"}
+2025-06-21 09:17:27,787 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.015621423721313477, "memory_delta": 0.0}
+____________________________________________________ test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt] ____________________________________________________
+tests\system\test_adaptive_workflow.py:103: in test_feedback_learns_and_discovers_new_pattern
+    assert corrected_category in final_categories, \
+E   AssertionError: Learned category was not found in final detections.
+E   assert 'LT_MINISTRY_CARD' in set()
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-21 09:17:27,802 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-21 09:17:27,802 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-21 09:17:32,030 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 09:17:32,030 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 09:17:32,030 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 09:17:32,040 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-21 09:17:32,040 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-21 09:17:32,040 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-21 09:17:32,060 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-21 09:17:32,060 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-21 09:17:36,718 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 09:17:36,718 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 09:17:36,718 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 09:17:36,718 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+2025-06-21 09:17:36,749 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-21 09:17:36,749 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 37, "cities_count": 79}
+2025-06-21 09:17:36,749 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-21 09:17:37,583 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-21 09:17:38,436 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-21 09:17:38,452 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-21 09:17:38,452 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.0, "memory_delta": 0.13671875}
+2025-06-21 09:17:38,452 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-21 09:17:38,452 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bMIN\-KORT\-98765\b - {'precision': '1.00', 'recall': '1.00'}
+2025-06-21 09:17:38,452 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_8739453400042024704
+2025-06-21 09:17:38,452 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
+2025-06-21 09:17:38,452 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 09:17:38,452 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-21 09:17:38,474 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.022164344787597656, "memory_delta": 0.0}
+_ test_adaptive_workflow_learns_new_pattern[\n            Vardas: Jonas Petraitis\n            Asmens kodas: 38901234567\n            El. pa\u0161tas: jonas.petraitis@example.com\n            Naujas sutarties numeris yra SUTARTIS-12345.\n            Telefonas: +370 600 12345\n            Adresas: Gedimino pr. 25, LT-01103, Vilnius\n            -new_pattern_test_case0] _
+tests\system\test_adaptive_workflow.py:186: in test_adaptive_workflow_learns_new_pattern
+    assert pii_to_find in final_texts, "The new PII was not detected after the learning cycle."
+E   AssertionError: The new PII was not detected after the learning cycle.
+E   assert 'SUTARTIS-12345' in {'+370 600 12345', '38901234567', 'Gedimino pr. 25, LT-', 'Jonas Petraitis', 'Vilnius', 'jonas.petraitis@example.com'}
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2025-06-21 09:17:38,521 - config_manager - INFO - Loading default patterns because file was not found or failed to load.
+2025-06-21 09:17:38,552 - config_manager - INFO - Patterns saved successfully - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpyuvnbrcm\\test_config\\patterns.yaml"}
+2025-06-21 09:17:38,552 - config_manager - INFO - Cities file not found, creating default - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpyuvnbrcm\\test_config\\cities.yaml"}
+2025-06-21 09:17:38,568 - config_manager - INFO - Cities saved successfully - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpyuvnbrcm\\test_config\\cities.yaml", "cities_count": 81}
+2025-06-21 09:17:38,568 - config_manager - INFO - Settings loaded from file - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpyuvnbrcm\\test_config\\settings.yaml"}
+2025-06-21 09:17:38,568 - config_manager - INFO - Brand names file not found, creating default - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpyuvnbrcm\\test_config\\brand_names.yaml"}
+2025-06-21 09:17:38,574 - config_manager - INFO - Saved brand names to file - {"file": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpyuvnbrcm\\test_config\\brand_names.yaml"}
+2025-06-21 09:17:38,574 - config_manager - INFO - Configuration manager initialized - {"config_dir": "C:\\Users\\tomas\\AppData\\Local\\Temp\\tmpyuvnbrcm\\test_config", "patterns_count": 38, "cities_count": 81}
+2025-06-21 09:17:38,590 - anonympdf.ab_testing - INFO - Loading A/B tests from database.
+2025-06-21 09:17:38,590 - anonympdf.ab_testing - INFO - Loaded 0 tests.
+2025-06-21 09:17:38,590 - anonympdf.ab_testing - INFO - ABTestManager initialized with database at C:\Users\tomas\AppData\Local\Temp\pytest-of-tomas\pytest-253\ab_test_data0\ab_tests.db.
+2025-06-21 09:17:38,606 - anonympdf.adaptive_pattern_db - INFO - Table 'adaptive_patterns' is ready.
+2025-06-21 09:17:38,606 - anonympdf.adaptive_pattern_db - INFO - AdaptivePatternDB initialized (manages session: False).
+2025-06-21 09:17:38,621 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-21 09:17:38,621 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-21 09:17:38,621 - anonympdf.adaptive_learning.doc_classifier - INFO - DocumentClassifier initialized.
+2025-06-21 09:17:38,637 - anonympdf.adaptive_learning.processing_rules - INFO - Successfully loaded 4 rule sets from config\processing_rules.yaml
+2025-06-21 09:17:38,637 - anonympdf.adaptive_learning.processing_rules - INFO - ProcessingRuleManager initialized with 4 rule sets.
+2025-06-21 09:17:42,903 - anonympdf.anonympdf.feedback_system - INFO - FeedbackAnalyzer initialized
+2025-06-21 09:17:42,903 - anonympdf.anonympdf.feedback_system - INFO - UserFeedbackProcessor initialized
+2025-06-21 09:17:42,903 - anonympdf.anonympdf.pattern_learner - INFO - PatternLearner initialized - {'min_confidence': 0.95}
+2025-06-21 09:17:42,903 - anonympdf.adaptive_learning.coordinator - INFO - AdaptiveLearningCoordinator initialized.
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-21 09:17:42,903 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-21 09:17:42,903 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 38, "cities_count": 81}
+2025-06-21 09:17:42,903 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-21 09:17:43,576 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 6, "method": "standard"}
+2025-06-21 09:17:44,331 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded successfully - {"model": "lt_core_news_sm", "components": 7, "method": "standard"}
+2025-06-21 09:17:44,331 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-21 09:17:44,347 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.015622615814208984, "memory_delta": 0.10546875}
+2025-06-21 09:17:44,347 - anonympdf.adaptive_learning.coordinator - INFO - Starting pattern discovery for 1 new PII instances.
+2025-06-21 09:17:44,347 - anonympdf.anonympdf.pattern_learner - INFO - Discovered and validated new pattern: \bSUTARTIS\-12345\b - {'precision': '1.00', 'recall': '1.00'}
+2025-06-21 09:17:44,347 - anonympdf.adaptive_pattern_db - INFO - Successfully added/updated pattern with ID: p_-3863676014897917300
+2025-06-21 09:17:44,347 - anonympdf.adaptive_learning.coordinator - INFO - Successfully learned and stored 1 new patterns.
+2025-06-21 09:17:44,347 - anonympdf.adaptive_pattern_db - INFO - Retrieved 1 active patterns from the database.
+2025-06-21 09:17:44,347 - anonympdf.pdf - INFO - Using Lithuanian NLP model for processing
+2025-06-21 09:17:44,363 - anonympdf.performance - INFO - Performance tracking: pii_detection - {"duration": 0.015623092651367188, "memory_delta": 0.0078125}
+--------------------------------------------------------------------------------- Captured stderr teardown ---------------------------------------------------------------------------------
+2025-06-21 09:17:44,378 - anonympdf.ab_testing - INFO - Database connection to C:\Users\tomas\AppData\Local\Temp\pytest-of-tomas\pytest-253\ab_test_data0\ab_tests.db closed.
+
+---------- coverage: platform win32, python 3.11.9-final-0 -----------
+Name                                    Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------
+app\__init__.py                             0      0   100%
+app\api\__init__.py                         0      0   100%
+app\api\endpoints\__init__.py               0      0   100%
+app\api\endpoints\analytics.py            258    216    16%   32-35, 40-43, 48-51, 56-59, 69-138, 149-194, 202-232, 242-252, 258-288, 294-306, 312-359, 365-391, 398-425, 439-462, 466-505, 514-537, 547-568, 582-605
+app\api\endpoints\feedback.py              48     26    46%   41-92
+app\api\endpoints\monitoring.py            10      2    80%   14, 21
+app\api\endpoints\pdf.py                  101     66    35%   27, 36-100, 106-107, 113-124, 130-163, 171, 176-182, 188-201
+app\core\__init__.py                        0      0   100%
+app\core\adaptive\__init__.py               0      0   100%
+app\core\adaptive\ab_testing.py           145     74    49%   40, 55, 92-94, 142-143, 148-153, 168-177, 181-189, 202-214, 218-241, 255-312, 329-331
+app\core\adaptive\coordinator.py          125     45    64%   25-32, 56-64, 127, 176-177, 194, 217-224, 231, 235-236, 240-241, 252-271, 275-278
+app\core\adaptive\doc_classifier.py        44     23    48%   42-72, 78-79, 84
+app\core\adaptive\online_learner.py        31     31     0%   5-68
+app\core\adaptive\pattern_db.py           125     51    59%   47-51, 83-90, 119-121, 125-127, 141-157, 201-204, 220-221, 234-247, 251, 258-264
+app\core\adaptive\pattern_learner.py       63      7    89%   20, 61, 101-106, 122, 128
+app\core\adaptive\processing_rules.py      54     13    76%   46-47, 64-65, 71, 75, 82-89, 94
+app\core\analytics_engine.py              214    137    36%   86-94, 98-104, 108-122, 126, 130-131, 135-196, 200-227, 231-256, 260-275, 282-336, 340-353, 359, 363-372, 376-392, 398-401, 405, 409-411, 416
+app\core\config_manager.py                262    134    49%   60-61, 78-79, 109-113, 125-138, 151-152, 155-156, 162-163, 263-267, 379, 441-443, 465-467, 476-478, 482-493, 497-512, 516-540, 544-584, 588-663, 667
+app\core\context_analyzer.py              207    125    40%   56, 70-78, 84, 148-207, 211-224, 295-389, 393-401, 421-471, 486, 488, 556-566
+app\core\data_models.py                    45     10    78%   22, 47-51, 56-59
+app\core\dependencies.py                  150     76    49%   29-31, 58-60, 88-90, 113-114, 116, 123, 129-151, 155-187, 201-207, 216-231, 238-243, 254-263, 269-280
+app\core\feature_engineering.py           332    256    23%   21, 44-50, 69-155, 159, 197-271, 275-283, 287, 314-315, 330-401, 405-415, 419, 479-507, 511-521, 525-528, 532-541, 545-558, 562-576, 615-660, 671-691, 695-715, 720-729
+app\core\feedback_system.py               272    176    35%   27-28, 101-115, 119-166, 178-221, 254-258, 262, 270-277, 281-282, 286-292, 296-330, 339-400, 405-429, 433-436, 450-475, 479-487, 508-513, 517-518, 538-556, 560-567, 571
+app\core\intelligent_cache.py             373    272    27%   47-49, 53-54, 61-64, 73-97, 101-141, 145-150, 158-163, 167-170, 174-178, 186-203, 210-212, 217-219, 223-238, 242-243, 251-260, 267-269, 273, 277-288, 293-296, 305-315, 324-340, 359-360, 384-387, 396, 409-422, 437-466, 470-476, 487-498, 510-529, 543-554, 567-586, 596-600, 604-619, 623-626, 630-646, 656-683, 708, 714, 719, 724, 729, 738-752
+app\core\lithuanian_enhancements.py       124     78    37%   221-222, 226-227, 231-232, 245-295, 323, 340-395, 449-465, 481-507
+app\core\logging.py                       110     37    66%   44-55, 59-71, 87, 98, 104, 106, 154-156, 162-167, 172-174, 196-216
+app\core\memory_optimizer.py              297    233    22%   39, 46-51, 55-97, 101-115, 123-128, 132-133, 142-158, 165-179, 183-186, 193-234, 238-242, 246-247, 251-267, 279-291, 295-306, 310-316, 320-356, 360-375, 383-386, 393-423, 441-449, 460-476, 484-485, 493-494, 504-514, 525-563, 571-573, 585-586, 593-616, 623-628, 634-636, 642-643, 653-657
+app\core\memory_utils.py                   23      9    61%   15, 20, 25, 30, 42-44, 49-50
+app\core\ml_engine.py                     244    244     0%   8-523
+app\core\ml_integration.py                202    140    31%   20, 59-60, 75, 82-110, 114-117, 137-183, 190-233, 239-261, 265-269, 273-285, 291-296, 308-352, 359-394, 404-426, 430-446, 458-460, 464-466, 470-471, 477
+app\core\ml_monitoring.py                 280    203    28%   39-56, 73, 100-101, 109-110, 114-124, 128-179, 195-202, 206-215, 229-251, 255-289, 293-313, 317-334, 338-386, 393-417, 421-428, 432-447, 453-466, 470-475, 479-502, 506-507, 525-548, 552-567, 571-580, 586, 590, 594-618, 622, 626, 630-631, 635-637, 641-645, 651
+app\core\ml_training_pipeline.py          147    147     0%   8-280
+app\core\nlp_loader.py                     19     19     0%   1-36
+app\core\performance.py                   191     95    50%   42, 46-50, 92-97, 104-105, 109-110, 114-115, 127-137, 141-147, 151-159, 187-253, 257-259, 263-267, 271-279, 314, 320-331, 336-340, 362-365, 369
+app\core\performance_optimizer.py         393    393     0%   7-877
+app\core\real_time_monitor.py             310    229    26%   51-55, 67-81, 93-110, 114-117, 132-147, 160-168, 180-195, 210-213, 221-225, 239-251, 293-326, 330-336, 340-345, 349-381, 393-453, 457-525, 529-530, 534-538, 542-549, 553-556, 560-563, 571-582, 586-600, 604-641, 645-650, 654-655, 659-660
+app\core\salutation_detector.py           143    113    21%   38-40, 44, 89, 100, 117-140, 144-185, 195-231, 236-252, 256-267, 272-304, 308-333, 341-354, 361-390
+app\core\text_extraction.py               120     92    23%   50-106, 110-127, 131-166, 170-175, 180-222, 227-258, 263-282, 290-318, 322-323, 339
+app\core\training_data.py                 305    221    28%   43, 68-70, 74-77, 82, 103-104, 108-131, 137-177, 181-226, 254-271, 275-280, 292-333, 345-383, 432-452, 456-508, 513-530, 534-568, 572-620, 646-668, 682-733, 745-778, 784
+app\core\validation_utils.py              188    161    14%   123-127, 134-173, 185-227, 241-250, 258-323, 335-380, 394-417, 431-516, 531-567
+app\database.py                            12      0   100%
+app\db\migrations.py                      100     46    54%   26, 48-112, 130-131, 136-138, 160-165, 169-185, 196-197
+app\dependencies.py                        25      8    68%   20, 26, 35-36, 41-45
+app\main.py                                82     42    49%   26-27, 31-33, 39-50, 81-84, 90-91, 97, 102, 107, 112, 120-153
+app\models\pdf_document.py                 21      0   100%
+app\pdf_processor.py                       19     13    32%   19-33
+app\schemas\pdf.py                         18      0   100%
+app\services\__init__.py                    0      0   100%
+app\services\pdf_processor.py             291    175    40%   77, 102-164, 179-187, 203, 292-293, 321-339, 365-369, 387-396, 405-438, 444-448, 456-528, 534-555, 562-623, 627-631, 638, 645-653, 665-669
+app\version.py                              1      0   100%
+app\worker.py                              58     38    34%   45-55, 63-115
+---------------------------------------------------------------------
+TOTAL                                    6582   4476    32%
+
+FAIL Required test coverage of 80% not reached. Total coverage: 32.00%
+=================================================================================== slowest 10 durations ===================================================================================
+11.70s setup    tests/system/test_adaptive_workflow.py::test_fixture_creation
+11.66s setup    tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[PROJ-SECRET-ALPHA-PROJECT_CODE-en]
+10.82s setup    tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[EMP-ID-98765-EMPLOYEE_ID-en]
+10.64s setup    tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt]
+4.39s setup    tests/system/test_adaptive_workflow.py::test_adaptive_workflow_learns_new_pattern[\n            Vardas: Jonas Petraitis\n            Asmens kodas: 38901234567\n            El. pa\u0161tas: jonas.petraitis@example.com\n            Naujas sutarties numeris yra SUTARTIS-12345.\n            Telefonas: +370 600 12345\n            Adresas: Gedimino pr. 25, LT-01103, Vilnius\n            -new_pattern_test_case0]
+1.46s call     tests/system/test_adaptive_workflow.py::test_adaptive_workflow_learns_new_pattern[\n            Vardas: Jonas Petraitis\n            Asmens kodas: 38901234567\n            El. pa\u0161tas: jonas.petraitis@example.com\n            Naujas sutarties numeris yra SUTARTIS-12345.\n            Telefonas: +370 600 12345\n            Adresas: Gedimino pr. 25, LT-01103, Vilnius\n            -new_pattern_test_case0]
+0.03s call     tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[EMP-ID-98765-EMPLOYEE_ID-en]
+0.02s call     tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt]
+0.02s call     tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[PROJ-SECRET-ALPHA-PROJECT_CODE-en]
+0.02s setup    tests/system/test_adaptive_workflow.py::test_feedback_api_is_disabled_for_now
+================================================================================= short test summary info ==================================================================================
+SKIPPED [1] tests\system\test_adaptive_workflow.py:117: Skipping API test until '/api/v1/pdf/process' is implemented.
+FAILED tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[EMP-ID-98765-EMPLOYEE_ID-en] - AssertionError: Learned category was not found in final detections.
+FAILED tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[PROJ-SECRET-ALPHA-PROJECT_CODE-en] - AssertionError: Learned category was not found in final detections.
+FAILED tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt] - AssertionError: Learned category was not found in final detections.
+FAILED tests/system/test_adaptive_workflow.py::test_adaptive_workflow_learns_new_pattern[\n            Vardas: Jonas Petraitis\n            Asmens kodas: 38901234567\n            El. pa\u0161tas: jonas.petraitis@example.com\n            Naujas sutarties numeris yra SUTARTIS-12345.\n            Telefonas: +370 600 12345\n            Adresas: Gedimino pr. 25, LT-01103, Vilnius\n            -new_pattern_test_case0] - AssertionError: The new PII was not detected after the learning cycle.
+========================================================================= 4 failed, 1 passed, 1 skipped in 52.74s ==========================================================================

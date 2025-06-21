@@ -23,6 +23,8 @@ from app.core.config_manager import get_config_manager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import threading
+
 db_logger = get_logger("adaptive_pattern_db")
 
 @dataclass
@@ -261,4 +263,21 @@ def create_pattern_db(db_path: Optional[Path] = None) -> AdaptivePatternDB:
         db_path = Path(db_path_str)
     
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    return AdaptivePatternDB(db_path=db_path) 
+    return AdaptivePatternDB(db_path=db_path)
+
+_pattern_db_instance = None
+_pattern_db_lock = threading.Lock()
+
+def get_pattern_db(config_manager: ConfigManager) -> "AdaptivePatternDB":
+    """
+    Provides a singleton instance of the AdaptivePatternDB.
+    """
+    global _pattern_db_instance
+    with _pattern_db_lock:
+        if _pattern_db_instance is None:
+            settings = config_manager.settings.get('adaptive_learning', {})
+            db_config = settings.get('databases', {})
+            db_path = db_config.get('patterns_db_path', 'data/adaptive/patterns.db')
+            
+            _pattern_db_instance = AdaptivePatternDB(db_path=db_path)
+    return _pattern_db_instance 

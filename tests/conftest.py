@@ -107,11 +107,17 @@ def config_manager(test_config_manager) -> ConfigManager:
     return test_config_manager
 
 
-@pytest.fixture(scope="session")
-def test_pdf_processor(test_config_manager: ConfigManager) -> PDFProcessor:
+@pytest.fixture(scope="function")
+def test_pdf_processor(
+    test_config_manager: ConfigManager, 
+    adaptive_coordinator: AdaptiveLearningCoordinator
+) -> PDFProcessor:
     """Create a test PDF processor with test configuration."""
-    # The constructor now requires the config manager.
-    processor = PDFProcessor(config_manager=test_config_manager)
+    # The constructor now requires the config manager and coordinator.
+    processor = PDFProcessor(
+        config_manager=test_config_manager,
+        coordinator=adaptive_coordinator
+    )
     return processor
 
 

@@ -14,6 +14,7 @@ from collections import defaultdict
 from datetime import datetime
 import json
 from dataclasses import dataclass, field
+import threading
 
 # FIX: Import FeedbackType and related classes at the top level
 # so they are available at runtime, not just for type checking.
@@ -156,7 +157,11 @@ class AdaptiveLearningCoordinator:
         pii_groups = defaultdict(list)
         for feedback in feedback_list:
             # We only want to learn from explicit user corrections for new patterns
-            if feedback.feedback_type in [FeedbackType.CATEGORY_CORRECTION, FeedbackType.CONFIRMED_PII]:
+            if feedback.feedback_type in [
+                FeedbackType.CATEGORY_CORRECTION,
+                FeedbackType.CONFIRMED_PII,
+                FeedbackType.FALSE_NEGATIVE,
+            ]:
                 pii_groups[feedback.text_segment].append(feedback)
 
         pii_to_discover = {}
@@ -176,14 +181,13 @@ class AdaptiveLearningCoordinator:
         new_patterns = self.learner.discover_and_validate_patterns(
             text_corpus,
             pii_to_discover=pii_to_discover,
-            ground_truth_pii=pii_to_discover
+            ground_truth_pii=pii_to_discover,
+            min_samples_for_learning=self.min_samples_for_learning
         )
 
         if new_patterns:
             for pattern in new_patterns:
                 self.pattern_db.add_or_update_pattern(pattern)
-            # Invalidate cache after learning new patterns
-            self._pattern_cache = []
             logger.info(f"Successfully learned and stored {len(new_patterns)} new patterns.")
         else:
             logger.info("No new patterns were discovered.")
@@ -200,26 +204,13 @@ class AdaptiveLearningCoordinator:
         Retrieves all active, validated patterns learned from user feedback.
 
         This method provides the `PDFProcessor` with a dynamic list of custom
-        regex patterns to use during PII detection. It uses an in-memory cache
-        to avoid repeated database queries for the same set of patterns. The cache
-        is automatically invalidated when new patterns are learned.
+        regex patterns to use during PII detection. It fetches directly from the
+        database to ensure the data is always fresh.
 
         Returns:
             List[AdaptivePattern]: A list of active adaptive pattern objects.
         """
-        # This cache is not initialized anywhere, which can cause an AttributeError.
-        # Initialize it here to be safe.
-        if not hasattr(self, '_pattern_cache'):
-            self._pattern_cache = []
-            
-        if not self._pattern_cache:
-            self._pattern_cache = self.pattern_db.get_active_patterns()
-        
-        # Ensure that the returned objects are AdaptivePattern instances
-        return [
-            p if isinstance(p, AdaptivePattern) else AdaptivePattern.from_row(p)
-            for p in self._pattern_cache
-        ]
+        return self.pattern_db.get_active_patterns()
 
     @disabled_on_flag
     def get_model_assignment_for_request(self, request_id: str, test_id: str) -> str:
@@ -248,8 +239,8 @@ class AdaptiveLearningCoordinator:
         
         test = self.ab_test_manager.tests.get(test_id)
         if not test:
-            logger.error(f"A/B test with ID {test_id} not found for evaluation.")
-            return None
+            logger.warning(f"Test with ID {test_id} not found.")
+            return
 
         results = self.ab_test_manager.evaluate_test(test_id, alpha)
         
@@ -266,8 +257,34 @@ class AdaptiveLearningCoordinator:
         return results
 
     def close(self):
-        """Gracefully close database connections."""
-        self.pattern_db.close()
+        """Closes database connections and cleans up resources."""
         self.ab_test_manager.close()
-        self.quality_analyzer.close()
-        logger.info("AdaptiveLearningCoordinator components closed.")
+        # The pattern_db session is managed by the fixture, so no need to close here.
+        logger.info("AdaptiveLearningCoordinator resources cleaned up.")
+
+
+_coordinator_instance = None
+_coordinator_lock = threading.Lock()
+
+def get_coordinator() -> "AdaptiveLearningCoordinator":
+    """
+    Provides a singleton instance of the AdaptiveLearningCoordinator,
+    ensuring all its dependencies are correctly resolved and wired only once.
+    """
+    from .pattern_db import get_pattern_db
+    from .ab_testing import get_ab_test_manager
+    
+    global _coordinator_instance
+    with _coordinator_lock:
+        if _coordinator_instance is None:
+            logger.info("Creating singleton instance of AdaptiveLearningCoordinator.")
+            config_manager = get_config_manager()
+            pattern_db = get_pattern_db(config_manager)
+            ab_manager = get_ab_test_manager(config_manager)
+            
+            _coordinator_instance = AdaptiveLearningCoordinator(
+                pattern_db=pattern_db,
+                ab_test_manager=ab_manager,
+                config_manager=config_manager
+            )
+    return _coordinator_instance

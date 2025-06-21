@@ -16,7 +16,7 @@ from app.core.performance import get_performance_report
 from app.version import __version__
 from app.worker import process_pdf_task
 from app.core.intelligent_cache import cache_manager
-from app.dependencies import get_pdf_processor
+from app.core.factory import get_pdf_processor
 
 router = APIRouter()
 

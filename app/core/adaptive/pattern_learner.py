@@ -39,14 +39,19 @@ class PatternLearner:
     """
     Analyzes user feedback to discover and validate new PII patterns.
     """
-    def __init__(self, pattern_db: AdaptivePatternDB, min_confidence: float = 0.95, min_samples: int = 10):
+    def __init__(self, pattern_db: AdaptivePatternDB, min_confidence: float = 0.95):
         self.pattern_db = pattern_db
         self.min_confidence = min_confidence
-        self.min_samples = min_samples
         self.feedback_processor = UserFeedbackProcessor()
-        logger.info(f"PatternLearner initialized - {{'min_confidence': {self.min_confidence}, 'min_samples': {self.min_samples}}}")
+        logger.info(f"PatternLearner initialized - {{'min_confidence': {self.min_confidence}}}")
 
-    def discover_and_validate_patterns(self, text_corpus: List[str], pii_to_discover: Dict[str, str], ground_truth_pii: Dict[str, str]) -> List[AdaptivePattern]:
+    def discover_and_validate_patterns(
+        self,
+        text_corpus: List[str],
+        pii_to_discover: Dict[str, str],
+        ground_truth_pii: Dict[str, str],
+        min_samples_for_learning: int = 1,
+    ) -> List[AdaptivePattern]:
         """
         Discovers and validates new patterns from user feedback.
         """
@@ -73,7 +78,7 @@ class PatternLearner:
                 total_samples = validation_results['true_positives'] + validation_results['false_positives']
 
                 # 3) Check if the pattern meets the criteria
-                if precision >= self.min_confidence and recall >= 0.8 and total_samples >= self.min_samples:
+                if precision >= self.min_confidence and recall >= 0.8 and total_samples >= min_samples_for_learning:
                     # 4) Create and add the new pattern object using the raw_pattern
                     new_pattern = AdaptivePattern(
                         pattern_id=f"p_{hash(raw_pattern)}",

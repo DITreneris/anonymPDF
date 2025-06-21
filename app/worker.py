@@ -1,5 +1,4 @@
 from celery import Celery
-from app.services.pdf_processor import PDFProcessor
 from app.core.logging import worker_logger
 import os
 import json
@@ -7,8 +6,7 @@ from pathlib import Path
 from app.database import SessionLocal
 from app.models.pdf_document import PDFDocument, PDFStatus
 from app.core.logging import db_logger
-from app.core.real_time_monitor import get_real_time_monitor, RealTimeMonitor
-from app.core.config_manager import ConfigManager, get_config_manager
+from app.core.factory import get_pdf_processor
 import asyncio
 
 # Configure Celery
@@ -34,8 +32,8 @@ celery_app.conf.update(
 
 # Create a global PDFProcessor instance for the worker
 # This is recommended for performance to avoid re-initializing on every task.
-# Dependencies are managed manually here.
-pdf_processor_instance = PDFProcessor(config_manager=get_config_manager())
+# Use the new central factory to get the singleton instance.
+pdf_processor_instance = get_pdf_processor()
 
 def get_pdf_processor():
     """

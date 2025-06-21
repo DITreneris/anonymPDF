@@ -43,13 +43,15 @@ from app.core.lithuanian_enhancements import (
 )
 from app.core.text_extraction import extract_text_enhanced
 from app.core.salutation_detector import detect_lithuanian_salutations
+from app.core.adaptive.coordinator import AdaptiveLearningCoordinator
 
 class PDFProcessor:
-    def __init__(self, config_manager: ConfigManager):
+    def __init__(self, config_manager: ConfigManager, coordinator: AdaptiveLearningCoordinator):
         pdf_logger.info("Initializing PDF processor with Priority 2 enhancements")
 
         # Initialize configuration manager
         self.config_manager = config_manager
+        self.coordinator = coordinator
         pdf_logger.info(
             "Configuration manager loaded",
             patterns_count=len(self.config_manager.patterns),
@@ -194,6 +196,24 @@ class PDFProcessor:
         Uses language-specific NLP model if available.
         Priority 2: Enhanced with context-aware detection and confidence scoring.
         """
+        personal_info = {}  # This will be populated by the final, deduplicated results.
+        context_aware_detections = []
+
+        # Get the latest adaptive patterns for this run and process them first
+        adaptive_patterns = self.coordinator.get_adaptive_patterns()
+        for pattern in adaptive_patterns:
+            for match in re.finditer(pattern.regex, text):
+                # Create a context-aware detection for the adaptive pattern
+                detection_context = create_context_aware_detection(
+                    match.group(0),
+                    pattern.pii_category,
+                    match.start(),
+                    match.end(),
+                    text,
+                    self.contextual_validator,
+                    confidence=pattern.confidence
+                )
+                context_aware_detections.append(detection_context)
 
         nlp_to_use = self.nlp_en  # Default to English
         if language == "lt" and self.nlp_lt:
@@ -207,32 +227,8 @@ class PDFProcessor:
             pdf_logger.info("Using English NLP model for processing", language=language)
 
         doc = nlp_to_use(text)
-        personal_info = {
-            "names": [],
-            "locations": [],  # SpaCy GPE can also find locations/cities
-            "organizations": [],
-            "emails": [],
-            "phones": [],  # For generic phone numbers
-            "phones_international": [],  # For international phone numbers
-            "mobile_phones_prefixed": [],  # For Tel. nr.: ...
-            "lithuanian_phones_generic": [],  # For +370 XXX XXXXX format
-            "lithuanian_phones_compact": [],  # For +370XXXXXXXX format
-            "addresses_prefixed": [],  # For Adresas: ...
-            "lithuanian_personal_codes": [],
-            "lithuanian_vat_codes": [],  # Added for VAT codes
-            "identity_documents": [],  # Passports, driver licenses
-            "healthcare_medical": [],  # Health insurance, blood groups, medical records
-            "automotive": [],  # Car plates
-            "financial_enhanced": [],  # SWIFT/BIC, enhanced credit cards, IBANs
-            "legal_entities": [],  # Legal entity codes
-            "eleven_digit_numerics": [],
-            "dates_yyyy_mm_dd": [],
-            "ssns": [],
-            "credit_cards": [],
-        }
-
-        # Priority 2: Store context-aware detections for advanced processing
-        context_aware_detections = []
+        
+        # Priority 2: Store context-aware detections for advanced processing (list is already created)
 
         # Extract entities using spaCy (PERSON, GPE, ORG) with enhanced validation
         for ent in doc.ents:
@@ -269,7 +265,7 @@ class PDFProcessor:
                 )
                 context_aware_detections.append(detection_context)
 
-        # Apply regex patterns for various information types
+        # Apply regex patterns for various information types, feeding them into the context-aware pipeline
         for pattern_type, regex_list in self.config_manager.patterns.items():
             # Ensure regex_list is actually a list of regex patterns
             if not isinstance(regex_list, list):
@@ -279,16 +275,17 @@ class PDFProcessor:
                 try:
                     # Find all matches for the current regex
                     for match in re.finditer(regex, text):
-                        matched_text = match.group(0)
-                        
-                        # Use helper to add detection
-                        self._add_detection(
-                            personal_info,
+                        # Create a context-aware detection instead of adding directly
+                        detection_context = create_context_aware_detection(
+                            match.group(0),
                             pattern_type,
-                            matched_text,
-                            "REGEX",
-                            0.5 # Base confidence for regex, can be improved
+                            match.start(),
+                            match.end(),
+                            text,
+                            self.contextual_validator,
+                            confidence=0.5  # Base confidence for standard regex
                         )
+                        context_aware_detections.append(detection_context)
                 except re.error as e:
                     pdf_logger.warning(
                         "Regex error in pattern",
@@ -297,21 +294,9 @@ class PDFProcessor:
                         error=str(e)
                     )
 
-        # Process context-aware detections for final validation
-        for detection in context_aware_detections:
-            # Final validation before adding to the list
-            if detection.confidence >= 0.4:  # Confidence threshold
-                # Use helper to add validated detection
-                self._add_detection(
-                    personal_info,
-                    detection.category,
-                    detection.text,
-                    "CONTEXT_VALIDATED",
-                    detection.confidence
-                )
-
-        # Deduplicate and refine results
-        return self.deduplicate_with_confidence(personal_info, context_aware_detections)
+        # All detections (spaCy, adaptive, enhanced, standard) are now in one list.
+        # Now, we process this unified list for final validation and deduplication.
+        return self.deduplicate_with_confidence(context_aware_detections)
 
     def detect_lithuanian_cities_enhanced(self, text: str, language: str) -> List[Tuple[str, str]]:
         """
@@ -339,7 +324,6 @@ class PDFProcessor:
         return detected_cities
 
     def deduplicate_with_confidence(self,
-                                  personal_info: Dict[str, List[Tuple[str, str]]],
                                   context_detections: List[DetectionContext]) -> Dict[str, List[Tuple[str, str]]]:
         """
         Deduplicate detections based on position and confidence score.
@@ -651,19 +635,3 @@ class PDFProcessor:
             return True, str(output_path)
         else:
             return False, details.get("error", "Anonymization failed")
-
-# Singleton instance of the processor
-_pdf_processor_instance = None
-_pdf_processor_lock = threading.Lock()
-
-def get_pdf_processor() -> PDFProcessor:
-    """
-    Get a singleton instance of the PDFProcessor.
-    This is thread-safe and ensures that spaCy models are loaded only once.
-    """
-    global _pdf_processor_instance
-    with _pdf_processor_lock:
-        if _pdf_processor_instance is None:
-            config_manager = get_config_manager()
-            _pdf_processor_instance = PDFProcessor(config_manager=config_manager)
-    return _pdf_processor_instance
