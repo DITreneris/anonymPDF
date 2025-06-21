@@ -45,7 +45,7 @@ def client() -> Generator[TestClient, None, None]:
         yield c
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def adaptive_pattern_db(db_session: Session) -> Generator[AdaptivePatternDB, None, None]:
     """Fixture for the adaptive pattern database, using the test session."""
     pattern_db = AdaptivePatternDB(db_session=db_session)
@@ -61,7 +61,7 @@ def ab_test_manager(tmp_path_factory: pytest.TempPathFactory) -> Generator[ABTes
     manager.close()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def adaptive_coordinator(
     adaptive_pattern_db: AdaptivePatternDB,
     ab_test_manager: ABTestManager,

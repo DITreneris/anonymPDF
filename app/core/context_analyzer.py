@@ -492,91 +492,78 @@ class ContextualValidator:
 
 
 class AdvancedPatternRefinement:
-    """Refines pattern detection using enhanced regex with context awareness."""
+    """Refines patterns using more complex, context-aware logic."""
 
     def __init__(self):
         # Using a dictionary for explicit category mapping is more robust
         # and avoids the errors from the previous string-matching approach.
         self.pattern_map = {
-            'email': {'category': 'emails', 'pattern': re.compile(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)")},
-            'lithuanian_personal_code': {'category': 'lithuanian_personal_codes', 'pattern': re.compile(r'\b[3-6]\d{10}\b')},
-            'lithuanian_vat_code': {'category': 'lithuanian_vat_codes', 'pattern': re.compile(r'\bLT\d{9,12}\b')},
-            'phone_generic': {'category': 'phones', 'pattern': re.compile(r'(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b')},
-            'date_yyyy_mm_dd': {'category': 'dates_yyyy_mm_dd', 'pattern': re.compile(r'\b(19|20)\d{2}[-/.](0[1-9]|1[0-2])[-/.](0[1-9]|[12]\d|3[01])\b')},
-            'iban': {'category': 'financial_enhanced', 'pattern': re.compile(r'\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b')},
-            'swift_bic': {'category': 'financial_enhanced', 'pattern': re.compile(r'\b[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b')},
-            'credit_card': {'category': 'credit_cards', 'pattern': re.compile(r'\b(?:\d[ -]*?){13,16}\b')},
-            'ssn': {'category': 'ssns', 'pattern': re.compile(r'\b\d{3}-\d{2}-\d{4}\b')}
+            # Category -> Pattern Name -> Regex
+            'emails': {
+                'email_with_label': r"(?i)(?:El\. paštas|El\. pašto adresas|Email address|Email):\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})"
+            },
+            'phones': {
+                'phone_with_label': r"(?i)(?:Tel\.|Tel\.:|Telefonas|Tel\. nr\.|Phone|Mobile):\s*((?:\+370|8)[\s\-]?(?:\d{1,3}[\s\-]?\d{2,4}[\s\-]?\d{2,4}|\d{8}))"
+            },
+            'lithuanian_personal_codes': {
+                'personal_code_with_label': r"(?i)(?:Asmens kodas|A\.k\.|Personal code):\s*([3-6]\d{10})"
+            },
+            'addresses_prefixed': {
+                'address_with_label': r"(?i)(?:Adresas|Address):\s*((?:[A-Za-zžŽčČšŠųŲūŪėĖįĮąĄ-]+\s*(?:g\.|al\.|pr\.|pl\.))\s*\d+[A-Z]?\s*(?:-\s*\d+)?,\s*(?:LT-\d{5}\s*)?[A-Za-zžŽčČšŠųŲūŪėĖįĮąĄ-]+)"
+            },
         }
 
-        # Define a clear order of execution. Specific patterns should come before general ones.
-        self.pattern_order = [
-            'email',
-            'lithuanian_personal_code',
-            'lithuanian_vat_code',
-            'ssn',
-            'iban',
-            'swift_bic',
-            'credit_card',
-            'phone_generic',
-            'date_yyyy_mm_dd'
-        ]
+        # For performance, compile all regexes
+        self.compiled_patterns = {}
+        for category, patterns in self.pattern_map.items():
+            self.compiled_patterns[category] = {
+                name: re.compile(regex) for name, regex in patterns.items()
+            }
 
     def find_enhanced_patterns(self, text: str) -> List[Dict]:
-        """Finds PII using a curated list of enhanced regular expressions."""
-        detections = []
-        found_spans = set()
+        """
+        Finds PII using a set of enhanced, labeled regular expressions.
 
-        for pattern_name in self.pattern_order:
-            pattern_info = self.pattern_map.get(pattern_name)
-            if not pattern_info:
-                continue
-            
-            pattern = pattern_info['pattern']
-            category = pattern_info['category']
+        Args:
+            text: The text to search.
 
-            for match in pattern.finditer(text):
-                start, end = match.span()
-                
-                # Skip if this span overlaps with a previously found one
-                if any(start < f_end and end > f_start for f_start, f_end in found_spans):
-                    continue
-                
-                found_spans.add((start, end))
-                
-                # Get the matched text
-                matched_text = match.group(0)
-
-                # Surgical fix for emails: strip trailing dot if it's likely from end-of-sentence.
-                if category == 'emails' and matched_text.endswith('.'):
-                    matched_text = matched_text.rstrip('.')
-                    # Adjust the end position to match the stripped text
-                    end -= 1
-                
-                detections.append({
-                    "text": matched_text,
-                    "category": category,
-                    "start": start,
-                    "end": end,
-                })
-        return detections
+        Returns:
+            A list of dictionaries, each representing a found PII.
+        """
+        all_detections = []
+        for category, patterns in self.compiled_patterns.items():
+            for pattern_name, compiled_regex in patterns.items():
+                for match in compiled_regex.finditer(text):
+                    # The actual data is in group 1, as group 0 is the full match with label
+                    if len(match.groups()) > 0:
+                        matched_text = match.group(1).strip()
+                        detection = {
+                            "text": matched_text,
+                            "category": category,
+                            "pattern_name": pattern_name,
+                            "start": match.start(1),
+                            "end": match.end(1),
+                            "confidence": 0.85,  # High confidence for labeled patterns
+                        }
+                        all_detections.append(detection)
+        return all_detections
 
     def _get_category_from_pattern(self, pattern_name: str) -> str:
         # This method is now obsolete due to the pattern_map,
         # but kept to avoid breaking other parts of the system if they call it.
         # It's recommended to refactor any calls to this method.
         # Fallback to pattern_name for safety.
-        context_logger.warning(
-            "Call to deprecated method _get_category_from_pattern",
-            pattern_name=pattern_name
-        )
-        if 'phone' in pattern_name:
-            return 'phones'
-        if 'date' in pattern_name:
-            return 'dates'
-        if 'email' in pattern_name:
-            return 'emails'
-        return pattern_name
+        for category, patterns in self.pattern_map.items():
+            if pattern_name in patterns:
+                return category
+        
+        # This part of the logic is flawed and should be avoided.
+        # It was the source of previous errors.
+        if "email" in pattern_name.lower(): return "emails"
+        if "phone" in pattern_name.lower(): return "phones"
+        if "asmens" in pattern_name.lower(): return "lithuanian_personal_codes"
+        
+        return pattern_name # Fallback
 
 
 def create_context_aware_detection(

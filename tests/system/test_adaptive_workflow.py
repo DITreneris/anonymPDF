@@ -116,10 +116,26 @@ def test_feedback_api_is_disabled_for_now(client: TestClient):
     assert client is not None
     pytest.skip("Skipping API test until '/api/v1/pdf/process' is implemented.")
 
+@pytest.mark.parametrize(
+    "sample_pii_document, new_pattern_test_case",
+    [
+        (
+            """
+            Vardas: Jonas Petraitis
+            Asmens kodas: 38901234567
+            El. paštas: jonas.petraitis@example.com
+            Naujas sutarties numeris yra SUTARTIS-12345.
+            Telefonas: +370 600 12345
+            Adresas: Gedimino pr. 25, LT-01103, Vilnius
+            """,
+            ("SUTARTIS-12345", "CONTRACT_ID", "lt")
+        )
+    ]
+)
 @pytest.mark.system
 def test_adaptive_workflow_learns_new_pattern(
     adaptive_coordinator: AdaptiveLearningCoordinator,
-    pattern_db: AdaptivePatternDB,
+    adaptive_pattern_db: AdaptivePatternDB,
     config_manager: ConfigManager,
     sample_pii_document: str,
     new_pattern_test_case: Tuple[str, str, str]
@@ -143,7 +159,9 @@ def test_adaptive_workflow_learns_new_pattern(
         feedback_id=f"fb_{uuid.uuid4().hex}",
         document_id="doc_system_test",
         text_segment=pii_to_find,
+        detected_category=None,
         user_corrected_category=pattern_category,
+        detected_confidence=None,
         feedback_type=FeedbackType.MISSING_PII,
         user_confidence_rating=1.0,
         user_comment="System test feedback for new pattern."
@@ -153,7 +171,7 @@ def test_adaptive_workflow_learns_new_pattern(
     adaptive_coordinator.process_feedback_and_learn([feedback], [sample_pii_document])
 
     # 4. Verification: Check that a new, active pattern was created.
-    active_patterns = pattern_db.get_active_patterns()
+    active_patterns = adaptive_pattern_db.get_active_patterns()
     new_pattern = next((p for p in active_patterns if p.pii_category == pattern_category), None)
     
     assert new_pattern is not None, "A new adaptive pattern was not created after feedback."

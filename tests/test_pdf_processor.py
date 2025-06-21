@@ -58,9 +58,9 @@ def pdf_processor(mock_config_manager):
                 return detections
             
             instance.find_enhanced_patterns.side_effect = find_mock_patterns
-            
-            processor = PDFProcessor(config_manager=mock_config_manager)
-            yield processor
+        
+        processor = PDFProcessor(config_manager=mock_config_manager)
+        yield processor
 
 @pytest.fixture(scope="function")
 def pdf_processor(test_pdf_processor: PDFProcessor):
@@ -153,8 +153,8 @@ class TestPDFProcessorUnit:
         assert "details" in report
         
         assert report["total_redactions"] == 2
-        assert report["categories"]["NAMES"] == 1
-        assert report["categories"]["EMAILS"] == 1
+        assert report["categories"]["names"] == 1
+        assert report["categories"]["emails"] == 1
         
         # Details are now a list of tuples
         assert ("johndoe@email.com", f"MEDIUM_{ConfidenceLevel.MEDIUM.value}") in report['details']['emails']

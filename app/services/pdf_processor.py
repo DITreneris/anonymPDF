@@ -65,13 +65,13 @@ class PDFProcessor:
         self.document_analyzer = DocumentStructureAnalyzer()
         self.lithuanian_enhancer = LithuanianLanguageEnhancer()
         self.lithuanian_analyzer = LithuanianContextAnalyzer()
-        
+
         pdf_logger.info("Priority 2 context-aware components initialized")
 
         # Load spaCy models with PyInstaller compatibility
         self.nlp_en = self._load_spacy_model_safe("en_core_web_sm", "English")
         self.nlp_lt = self._load_spacy_model_safe("lt_core_news_sm", "Lithuanian")
-        
+
         # Ensure at least one model is available
         if not self.nlp_en and not self.nlp_lt:
             raise RuntimeError("No spaCy models available - at least English model is required")
@@ -353,10 +353,10 @@ class PDFProcessor:
         redacted_positions = set()
         
         final_detections = defaultdict(list)
-        
+
         for detection in sorted_detections:
             # Check if this detection's range overlaps with an already claimed range
-            detection_range = set(range(detection.start, detection.end))
+            detection_range = set(range(detection.start_char, detection.end_char))
             if not detection_range.intersection(redacted_positions):
                 
                 # Check for document term exclusion, unless it's a high-confidence pattern
@@ -369,8 +369,8 @@ class PDFProcessor:
                     continue
 
                 # Add to final list
-                final_detections[detection.pii_type].append(
-                    (detection.text, f"{detection.source.name}_{detection.confidence:.2f}")
+                final_detections[detection.category].append(
+                    (detection.text, f"CONTEXT_{detection.confidence:.2f}")
                 )
                 
                 # Claim this character range
@@ -463,7 +463,7 @@ class PDFProcessor:
 
             language = self.detect_language(text)
             personal_info = self.find_personal_info(text, language)
-
+            
             # 2. Check if there is anything to redact
             total_redactions = sum(len(v) for v in personal_info.values())
             if total_redactions == 0:
@@ -500,7 +500,7 @@ class PDFProcessor:
                 
                 # Apply the redactions for the current page
                 page.apply_redactions()
-
+            
             # 4. Save the redacted PDF
             doc.save(str(output_path), garbage=4, deflate=True)
             doc.close()
