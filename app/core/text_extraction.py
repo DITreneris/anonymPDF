@@ -19,7 +19,8 @@ import unicodedata
 from app.core.intelligent_cache import cache_result
 
 # Setup logging
-extraction_logger = logging.getLogger(__name__)
+from app.core.logging import StructuredLogger
+extraction_logger = StructuredLogger("anonympdf.text_extraction")
 
 class EnhancedTextExtractor:
     """

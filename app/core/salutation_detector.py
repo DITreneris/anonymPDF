@@ -13,7 +13,8 @@ from app.core.context_analyzer import DetectionContext, create_context_aware_det
 from app.core.config_manager import get_config_manager
 
 # Setup logging
-salutation_logger = logging.getLogger(__name__)
+from app.core.logging import StructuredLogger
+salutation_logger = StructuredLogger("anonympdf.salutation")
 
 @dataclass
 class SalutationDetection:

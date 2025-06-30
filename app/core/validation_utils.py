@@ -11,8 +11,9 @@ import yaml
 from pathlib import Path
 from typing import List, Set, Dict, Any
 
-# Use standard logging instead of structlog for broader compatibility
-validation_logger = logging.getLogger(__name__)
+# Use StructuredLogger for consistent logging
+from app.core.logging import StructuredLogger
+validation_logger = StructuredLogger("anonympdf.validation")
 
 # Geographic terms that should not be classified as personal names
 GEOGRAPHIC_EXCLUSIONS = {
@@ -452,7 +453,7 @@ def deduplicate_detections(detections: Dict[str, List[tuple]]) -> Dict[str, List
         "locations": 25,
         "names": 26,
         "organizations": 20,
-        "eleven_digit_numerics": 10,
+        "eleven_digit_numeric": 10,
         "ssns": 5,
     }
     

@@ -485,7 +485,7 @@ class ParallelProcessor:
                     results.append(res)
                 except Exception as e:
                     task = futures[future]
-                    optimizer_logger.error("Task failed in process pool", task_id=task.task_id, error=str(e))
+                    optimizer_logger.error(f"Task failed in process pool - Task ID: {task.task_id}, Error: {str(e)}")
                     results.append(ProcessingResult(
                         task_id=task.task_id,
                         result=None,
@@ -520,7 +520,7 @@ class ParallelProcessor:
             success = True
             error_str = None
         except Exception as e:
-            optimizer_logger.error("Task execution failed", task_id=task.task_id, error=str(e))
+            optimizer_logger.error(f"Task execution failed - Task ID: {task.task_id}, Error: {str(e)}")
             result_data = None
             success = False
             error_str = str(e)
@@ -608,7 +608,7 @@ class BatchEngine:
             return batch_id
 
         except Exception as e:
-            optimizer_logger.error("Batch processing failed", batch_id=batch_id, error=str(e))
+            optimizer_logger.error(f"Batch processing failed - Batch ID: {batch_id}, Error: {str(e)}")
             with self._lock:
                 status = self._batch_statuses.get(batch_id, {})
                 status["status"] = "failed"
@@ -859,7 +859,7 @@ class PerformanceOptimizer:
                 )
             }
         except Exception as e:
-            optimizer_logger.error("Failed to get memory usage", error=str(e))
+            optimizer_logger.error(f"Failed to get memory usage: {str(e)}")
             return {}
 
 def get_performance_optimizer() -> 'PerformanceOptimizer':

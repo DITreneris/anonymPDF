@@ -371,7 +371,7 @@ class MemoryMonitor:
                 process_count=len(gc.get_objects())
             )
         except Exception as e:
-            memory_logger.error("Failed to get memory metrics", error=str(e))
+            memory_logger.error(f"Failed to get memory metrics: {str(e)}")
             return MemoryMetrics(
                 timestamp=time.time(),
                 rss_mb=0, vms_mb=0, percent=0,

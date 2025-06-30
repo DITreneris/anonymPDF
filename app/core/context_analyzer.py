@@ -14,7 +14,8 @@ from app.core.validation_utils import GEOGRAPHIC_EXCLUSIONS
 from app.core.config_manager import ConfigManager, get_config_manager
 from app.core.lithuanian_enhancements import LithuanianLanguageEnhancer
 
-context_logger = logging.getLogger(__name__)
+from app.core.logging import StructuredLogger
+context_logger = StructuredLogger("anonympdf.context")
 
 
 def select_longest_match(matches: List[Dict]) -> List[Dict]:
@@ -570,6 +571,30 @@ class AdvancedPatternRefinement:
         
         # Final structure: Dict[str, Tuple[re.Pattern, str]] # (pattern_name -> (compiled_regex, category))
         self.pattern_map: Dict[str, Tuple[re.Pattern, str]] = {}
+        
+        # Define pattern specificity scores (higher = more specific/reliable)
+        self.specificity_scores = {
+            "lithuanian_personal_codes": 100,
+            "lithuanian_personal_code_contextual": 95,
+            "lithuanian_vat_codes": 90,
+            "emails": 85,
+            "lithuanian_phones_compact": 80,
+            "lithuanian_phones_generic": 75,
+            "phones": 70,
+            "financial_enhanced": 65,
+            "credit_cards": 60,
+            "dates_yyyy_mm_dd": 55,
+            "healthcare_medical": 50,
+            "identity_documents": 45,
+            "automotive": 40,
+            "legal_entities": 35,
+            "addresses_prefixed": 30,
+            "locations": 25,
+            "names": 26,
+            "organizations": 20,
+            "eleven_digit_numeric": 10,  # Low priority - very generic
+            "ssns": 5,
+        }
 
         # 1. Load base patterns from config. The key is the category.
         for name, pattern in config_manager.patterns.items():
@@ -600,12 +625,18 @@ class AdvancedPatternRefinement:
                     
                     # Get the confidence from the pattern info if it exists
                     # Note: base patterns from config won't have this, so we default.
-                    confidence = getattr(self.pattern_map[pattern_name][0], 'confidence_modifier', 0.5)
+                    base_confidence = getattr(self.pattern_map[pattern_name][0], 'confidence_modifier', 0.5)
+                    
+                    # Boost confidence based on pattern specificity
+                    specificity_score = self.specificity_scores.get(pattern_name, 50)
+                    confidence_boost = min(0.4, specificity_score / 250.0)  # Max boost of 0.4
+                    final_confidence = min(1.0, base_confidence + confidence_boost)
 
                     match_data = {
                         "text": pii_text,
                         "category": category,
-                        "confidence": confidence,
+                        "confidence": final_confidence,
+                        "specificity_score": specificity_score,
                         "pii_start": match.start(1) if is_grouped else match.start(0),
                         "pii_end": match.end(1) if is_grouped else match.end(0),
                         "full_match_start": match.start(0),
@@ -614,6 +645,12 @@ class AdvancedPatternRefinement:
                     all_matches_with_context.append(match_data)
             except re.error as e:
                 context_logger.error(f"Regex error for pattern '{pattern_name}': {e}")
+        
+        # Sort by specificity score first, then by full match length
+        all_matches_with_context.sort(
+            key=lambda m: (m.get('specificity_score', 50), m['full_match_end'] - m['full_match_start']), 
+            reverse=True
+        )
         
         # De-duplicate using the full match coordinates for prioritization.
         unique_longest_matches = deduplicate_by_full_match_priority(all_matches_with_context)

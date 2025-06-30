@@ -10,7 +10,8 @@ import logging
 from typing import Dict, List, Set, Tuple, Optional
 from dataclasses import dataclass
 
-lithuanian_logger = logging.getLogger(__name__)
+from app.core.logging import StructuredLogger
+lithuanian_logger = StructuredLogger("anonympdf.lithuanian")
 
 
 @dataclass

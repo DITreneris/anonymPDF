@@ -87,7 +87,9 @@ class TestDiscoverAndValidatePatterns:
 
         # For this corpus, one true positive and zero false positives
         pattern_learner.min_confidence = 0.9
-        patterns = pattern_learner.discover_and_validate_patterns(corpus, pii_to_discover, ground_truth)
+        patterns = pattern_learner.discover_and_validate_patterns(
+            corpus, pii_to_discover, ground_truth, min_samples_for_learning=3
+        )
         # Precision = 1.0 but true positives = 1 < min_samples(3)
         assert patterns == []
 
@@ -97,7 +99,9 @@ class TestDiscoverAndValidatePatterns:
         ground_truth = {"999-0000": "PHONE"}
 
         # Only 2 samples but min_samples is 3
-        patterns = pattern_learner.discover_and_validate_patterns(corpus, pii_to_discover, ground_truth)
+        patterns = pattern_learner.discover_and_validate_patterns(
+            corpus, pii_to_discover, ground_truth, min_samples_for_learning=3
+        )
         assert patterns == []
 
     def test_recall_threshold(self, pattern_learner):

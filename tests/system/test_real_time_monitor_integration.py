@@ -45,11 +45,41 @@ def test_monitoring_end_to_end(
     processor_under_test.monitor = isolated_monitor
 
     # 2. Action: Perform an action that triggers monitored events.
-    # We use a known sample document for this system test.
-    test_document_path = Path("tests/samples/simple_pii_document.txt")
+    # Create a temporary PDF for this system test.
+    import tempfile
+    import fitz
+    import time
     
-    # The process_pdf method is the main entry point we need to test.
-    asyncio.run(processor_under_test.process_pdf(test_document_path))
+    # Create temporary directory and file manually for better control
+    temp_dir = Path(tempfile.mkdtemp())
+    test_document_path = temp_dir / "test_monitor.pdf"
+    
+    # Create a simple PDF with PII content
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((50, 72), "This is a test PDF with the name John Doe. Email: john.doe@test.com")
+    doc.save(test_document_path)
+    doc.close()
+    
+    try:
+        # The process_pdf method is the main entry point we need to test.
+        result = asyncio.run(processor_under_test.process_pdf(test_document_path))
+        
+        # Brief pause to ensure all file handles are released
+        time.sleep(0.1)
+    finally:
+        # Robust cleanup with retry logic for Windows
+        import shutil
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                if temp_dir.exists():
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                break
+            except (PermissionError, OSError) as e:
+                if attempt < max_attempts - 1:
+                    time.sleep(0.2)  # Wait before retry
+                # On final attempt, just ignore the error to not fail the test
 
     # 3. Verification: Check the database via the monitor to ensure events were logged.
     logged_metrics = isolated_monitor.get_latest_metrics(limit=20)
@@ -69,7 +99,7 @@ def test_monitoring_end_to_end(
     assert pii_log_entry is not None, "The 'pii_detection_completed' event was not found."
     assert "details" in pii_log_entry
     assert "duration_ms" in pii_log_entry["details"]
-    assert pii_log_entry["details"]["document_id"] is not None
+    assert pii_log_entry["document_id"] is not None  # document_id is a separate column, not in details
     
     # 5. Summary Verification: Check that the monitor's summary function works.
     summary = isolated_monitor.get_summary()

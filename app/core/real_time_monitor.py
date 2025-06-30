@@ -162,7 +162,20 @@ class RealTimeMonitor:
             cursor = self.conn.cursor()
             cursor.execute("SELECT * FROM performance_metrics ORDER BY timestamp DESC LIMIT ?", (limit,))
             rows = cursor.fetchall()
-            return [dict(row) for row in rows]
+            
+            # Parse JSON strings back to dictionaries
+            metrics = []
+            for row in rows:
+                metric = dict(row)
+                if metric.get('details'):
+                    try:
+                        metric['details'] = json.loads(metric['details'])
+                    except (json.JSONDecodeError, TypeError):
+                        # If JSON parsing fails, keep as string
+                        pass
+                metrics.append(metric)
+            
+            return metrics
         except sqlite3.Error as e:
             system_logger.error(f"Failed to retrieve latest metrics: {e}", exc_info=True)
             return []

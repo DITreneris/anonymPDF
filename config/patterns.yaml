@@ -23,7 +23,7 @@ pii_patterns:
   LITHUANIAN_PHONE_NUMBER: '(?:\+370|8)[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{3}|\+370[\s-]?\d{3}[\s-]?\d{5}'
   lithuanian_mobile_prefixed: 'Tel\.\s*(?:nr\.\s*:?\s*)?((?:\+370|8)[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{3}|\+370[\s-]?\d{3}[\s-]?\d{5})\b'
   lithuanian_passport: \b[A-Z]{2}\d{7}\b
-  lithuanian_personal_code: \b[3-6]\d{10}\b
+  lithuanian_personal_codes: \b[3-6]\d{10}\b
   lithuanian_phone_compact: \+370\d{8}\b
   lithuanian_phone_generic: '((?:\+370|8)[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{3}|\+370[\s-]?\d{3}[\s-]?\d{5,})\b'
   lithuanian_postal_code: \bLT-\d{5}\b

@@ -238,7 +238,8 @@ class Priority2DataCollector:
             cities=config_manager.cities,
             brand_names=config_manager.brand_names
         )
-        self.logger = logging.getLogger(__name__)
+        from app.core.logging import StructuredLogger
+        self.logger = StructuredLogger("anonympdf.training")
         self.feature_extractor = create_feature_extractor()
         
     def collect_from_priority2_logs(self, log_dir: str = "logs") -> List[TrainingExample]:

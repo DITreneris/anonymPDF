@@ -169,4 +169,4 @@ class TestPDFProcessorIntegration:
 
         with fitz.open(output_pdf_path) as doc:
             page = doc[0]
-            assert len(list(page.annots(types=[fitz.PDF_ANNOT_SQUARE]))) > 0, "No redaction annotations found."
+            assert len(list(page.annots(types=[fitz.PDF_ANNOT_REDACT]))) > 0, "No redaction annotations found."
