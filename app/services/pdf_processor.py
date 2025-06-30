@@ -243,27 +243,15 @@ class PDFProcessor:
         for detection in enhanced_detections:
             # Create context-aware detection for enhanced patterns
             detection_context = create_context_aware_detection(
-                detection['text'], detection['category'], 
-                detection['start'], detection['end'], 
-                text, self.contextual_validator,
+                detection['text'], 
+                detection['category'], 
+                detection['start'], 
+                detection['end'], 
+                text, 
+                self.contextual_validator,
                 confidence=detection.get('confidence', 0.5)
             )
             context_aware_detections.append(detection_context)
-
-        # Priority 2: Apply Lithuanian-specific enhancements if language is 'lt'
-        if language == "lt":
-            lithuanian_detections = self.lithuanian_enhancer.find_enhanced_lithuanian_patterns(text)
-            for detection in lithuanian_detections:
-                detection_context = create_context_aware_detection(
-                    detection['text'],
-                    detection['category'],
-                    detection['start'],
-                    detection['end'],
-                    text,
-                    self.contextual_validator,
-                    confidence=detection.get('confidence', 0.5)
-                )
-                context_aware_detections.append(detection_context)
 
         # All detections (spaCy, adaptive, enhanced, standard) are now in one list.
         # Now, we process this unified list for final validation and deduplication.
@@ -367,29 +355,25 @@ class PDFProcessor:
             try:
                 # Use finditer to get match objects with positions
                 for match in re.finditer(pattern, text):
-                    matched_text = match.group(0)
-                    
-                    # Create a context-aware detection object
-                    context_detection = create_context_aware_detection(
-                        matched_text,
-                        pii_type,
-                        match.start(),
-                        match.end(),
-                        text,
-                        self.contextual_validator,
-                    )
+                    # Extract captured group if it exists, otherwise use full match
+                    matched_text = match.group(1) if match.groups() else match.group(0)
+                    start_pos = match.start(1) if match.groups() else match.start(0)
+                    end_pos = match.end(1) if match.groups() else match.end(0)
                     
                     # Validate the context-aware detection
-                    is_valid, reason = self.contextual_validator.validate_with_context(context_detection)
+                    validated_detection = self.contextual_validator.validate_with_context(
+                        matched_text, pii_type, text, start_pos, end_pos
+                    )
                     
-                    if is_valid:
-                        detections.append(context_detection)
+                    if validated_detection.confidence >= 0.3:  # Minimum confidence threshold
+                        detections.append(validated_detection)
                     else:
                         pdf_logger.info(
-                            "Pattern detection skipped due to context",
+                            "Pattern detection skipped due to low confidence",
                             text=matched_text,
                             pattern=pii_type,
-                            reason=reason,
+                            confidence=validated_detection.confidence,
+                            validation_result=validated_detection.validation_result,
                         )
             except re.error as e:
                 pdf_logger.error("Invalid regex pattern", pattern=pattern, pii_type=pii_type, error=str(e))

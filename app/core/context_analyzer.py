@@ -587,8 +587,7 @@ class AdvancedPatternRefinement:
     def find_enhanced_patterns(self, text: str) -> List[Dict]:
         """
         Find PII using the enhanced regex patterns from the configuration. This method
-        now performs a two-stage de-duplication process to correctly prioritize
-        context-aware patterns over simpler ones.
+        now performs a two-stage de-duplication process and propagates confidence scores.
         """
         all_matches_with_context = []
         for pattern_name, (pattern, category) in self.pattern_map.items():
@@ -596,12 +595,17 @@ class AdvancedPatternRefinement:
                 for match in pattern.finditer(text):
                     # For de-duplication, we need the full match coordinates.
                     # For the final result, we need the PII (captured group) coordinates.
-                    is_grouped = match.groups()
+                    is_grouped = bool(match.groups())
                     pii_text = match.group(1) if is_grouped else match.group(0)
                     
+                    # Get the confidence from the pattern info if it exists
+                    # Note: base patterns from config won't have this, so we default.
+                    confidence = getattr(self.pattern_map[pattern_name][0], 'confidence_modifier', 0.5)
+
                     match_data = {
                         "text": pii_text,
                         "category": category,
+                        "confidence": confidence,
                         "pii_start": match.start(1) if is_grouped else match.start(0),
                         "pii_end": match.end(1) if is_grouped else match.end(0),
                         "full_match_start": match.start(0),
@@ -619,6 +623,7 @@ class AdvancedPatternRefinement:
             {
                 "text": m["text"],
                 "category": m["category"],
+                "confidence": m["confidence"],
                 "start": m["pii_start"],
                 "end": m["pii_end"]
             }

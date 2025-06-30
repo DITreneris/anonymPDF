@@ -177,7 +177,7 @@ class TestLithuanianPiiPatterns:
         assert "38901234567" in detected_texts
         assert "LT123456789" in detected_texts
         assert "LT123456789012345678" in detected_texts
-        assert "Ponas Jonas Petraitis" in detected_texts
+        assert "Jonas Petraitis" in detected_texts
         assert any("Gedimino pr. 25" in d['text'] for d in detections)
 
 

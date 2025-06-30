@@ -232,6 +232,8 @@ class ConfigManager:
             "lithuanian_address_flexible": r"\b([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]{3,}(?:io|ės)?\s*(?:g\.|gatvė|pr\.|prospektas|al\.|alėja)?(?:\s*\d+(?:[A-Za-z]?(?:-\d+)?)?))",
             # Morning Session 5 Improvements - Enhanced personal code with context
             "lithuanian_personal_code_contextual": r"(?:asmens\s+kodas|asmens/įmonės\s+kodas|A\.K\.)[:–-]?\s*(\d{11})\b",
+            # Lithuanian cities and locations
+            "locations": r"\b(Vilni(?:us|aus|uje|ų)|Kaun(?:as|o|e|ą)|Klaipėd(?:a|os|oje|ą)|Šiauli(?:ai|ų|uose|us)|Panevėž(?:ys|io|yje|į))\b",
             # A generic pattern to catch potential unknown IDs for the adaptive system
             "UNKNOWN_ID": r"\b[A-Z]{2,5}(?:-|\s)?\d{4,}\b"
         }

@@ -1,63 +1,153 @@
-# Root Cause Analysis Report
-
-## 1. Executive Summary
-
-The test suite is experiencing multiple, systemic failures across PII detection, PDF processing, and adaptive learning modules. The root causes are not isolated bugs but point to deeper architectural issues: inconsistent data models, flawed regular expressions, and broken state management in integration tests. This report details the four primary failure clusters and provides a high-priority action plan.
-
----
-
-## 2. Failure Clusters & Deep Diagnostics
-
-### Cluster 1: Flawed Lithuanian PII Detection
-
--   **Severity:** Critical
--   **Impact:** Core redaction functionality for Lithuanian documents is non-operational. Fails to detect names, locations, and correctly redact phone numbers.
--   **Evidence:**
-    -   `tests/test_lithuanian_pii.py:81` in `TestLithuanianIntegration.test_simple_lithuanian_names_detection`
-        -   **Log:** `AssertionError: assert 'Linas Vaitkus' in set()`
-        -   **Analysis:** The detection logic returns an empty set, indicating a complete failure to identify a basic Lithuanian name.
-    -   `tests/test_lithuanian_pii.py:96` in `TestLithuanianIntegration.test_anti_overredaction_in_technical_context`
-        -   **Log:** `AssertionError: assert 'Vilniaus' in set()`
-        -   **Analysis:** Location detection is failing.
-    -   `tests/test_lithuanian_pii.py:113` in `TestLithuanianIntegration.test_anti_overredaction_of_common_words`
-        -   **Log:** `AssertionError: assert '+370 699 99999' in ['Jonas Petraitis', '99999']`
-        -   **Analysis:** The phone number pattern is incorrect. It only matches and redacts the last part of the number, not the full string.
-
-### Cluster 2: Inconsistent Redaction/Detection Logic
-
--   **Severity:** High
--   **Impact:** Breaks the main PDF processing flow. The system reports redactions but fails to apply them, and data contracts between components are violated.
--   **Evidence:**
-    -   `tests/test_pdf_processor.py:152` in `TestPDFProcessorIntegration.test_process_pdf_success`
-        -   **Log:** `AssertionError: assert None == 1` because `{'email': 1}.get('emails')` is `None`.
-        -   **Analysis:** A clear data contract violation. The redaction report uses the key `'email'` (lowercase), but the test asset expects `'emails'` (plural). This indicates a lack of schema enforcement.
-    -   `tests/test_pdf_processor.py:195` in `TestPDFProcessorIntegration.test_anonymize_pdf_flow`
-        -   **Log:** `AssertionError: No redaction annotations found.` (`assert 0 > 0`)
-        -   **Analysis:** The system *thinks* it applied redactions (log shows `"redactions_applied": 3`), but no actual `fitz.PDF_ANNOT_SQUARE` annotations were written to the output file. The PII detection result is not being correctly translated into a physical redaction.
-
-### Cluster 3: Broken Advanced Pattern Matching
-
--   **Severity:** High
--   **Impact:** The `AdvancedPatternRefinement` engine, a key feature, is completely non-functional.
--   **Evidence:**
-    -   `tests/test_priority2_enhancements.py:135` in `TestAdvancedPatternRefinement.test_enhanced_email_detection`
-        -   **Log:** `assert 0 == 1`
-        -   **Analysis:** The refinement engine failed to find a standard email address. This strongly suggests a regression in the `context_analyzer.py` logic or its associated patterns from `patterns.yaml`.
-    -   `tests/test_priority2_enhancements.py:144` in `TestAdvancedPatternRefinement.test_enhanced_personal_code_detection`
-        -   **Log:** `assert 0 == 1`
-        -   **Analysis:** Same as above. The engine is not detecting personal codes as expected.
-
-### Cluster 4: System & Environment Instability
-
--   **Severity:** Blocker
--   **Impact:** Prevents reliable test runs, especially on developer machines and CI. Causes non-deterministic failures that mask other issues.
--   **Evidence:**
-    -   `tests/adaptive/test_pattern_learner.py` shows `FF` (2 failures).
-    -   `tests/system/test_real_time_monitor_integration.py` shows `F` (1 failure).
-    -   **Analysis:** These failures, combined with knowledge of previous `UnicodeEncodeError` issues on Windows, point to environment-specific problems. The `test_real_time_monitor_integration` failure is particularly concerning as it indicates a breakdown between services, likely due to file handle or encoding issues when writing logs or temporary files on Windows.
+# ROOT CAUSE REPORT - TEST SUITE FAILURES
+**Date:** 2025-06-30  
+**Analysis Time:** 08:50-09:15 UTC  
+**Test Execution Log:** 64_log.txt  
+**Total Failures:** 15 out of 272 tests (5.5% failure rate)
 
 ---
 
-## 3. Next Step
+## EXECUTIVE SUMMARY
 
-With the root causes identified and documented, the immediate next step is to formulate a precise, hour-by-hour coding plan to remediate these issues. We will create `DAY_PLAN.md` to structure our 8-hour session. 
+Critical code bug in `context_analyzer.py` is causing **8 test failures** (53% of all failures). This single fix will immediately resolve over half the suite failures. Additional issues in Lithuanian pattern matching, PDF processing, and adaptive learning need targeted fixes.
+
+---
+
+## ROOT CAUSE BREAKDOWN
+
+### 1. CRITICAL: UnboundLocalError in Context Analyzer
+**Impact:** 8/15 failures (53.3%)  
+**Severity:** BLOCKER  
+**Fix Time:** 15 minutes  
+
+**Evidence:**
+```
+File: app/core/context_analyzer.py:362
+Error: UnboundLocalError: cannot access local variable 'confidence' where it is not associated with a value
+```
+
+**Affected Tests:**
+- `tests/test_priority2_enhancements.py::TestContextualValidator::test_confidence_calculation_person_name`
+- `tests/test_priority2_enhancements.py::TestContextualValidator::test_confidence_calculation_false_positive`
+- `tests/test_priority2_enhancements.py::TestContextualValidator::test_document_section_adjustment`
+- `tests/test_priority2_enhancements.py::TestContextualValidator::test_validate_with_context`
+- `tests/test_priority2_enhancements.py::TestIntegrationScenarios::test_comprehensive_lithuanian_document_analysis`
+- `tests/test_priority2_enhancements.py::TestIntegrationScenarios::test_false_positive_filtering`
+- `tests/test_priority2_enhancements.py::TestIntegrationScenarios::test_confidence_based_prioritization`
+
+**Technical Analysis:**  
+Method `calculate_confidence()` references undefined variable `confidence` at line 362. The method signature shows it should CALCULATE confidence from input parameters, not validate a pre-existing value.
+
+**Code Evidence:**
+```python
+# Line 346: Method signature
+def calculate_confidence(self, detection: str, category: str, context: str, 
+                       document_section: Optional[str] = None) -> float:
+...
+# Line 362: BUG - undefined 'confidence' variable
+if confidence >= 0.9:
+```
+
+---
+
+### 2. HIGH: Lithuanian Pattern Detection Issues  
+**Impact:** 3/15 failures (20%)  
+**Severity:** HIGH  
+**Fix Time:** 45 minutes  
+
+**Affected Tests:**
+- `tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_anti_overredaction_in_technical_context`
+- `tests/test_lithuanian_pii.py::TestLithuanianPiiPatterns::test_lithuanian_car_plate_pattern`  
+- `tests/test_priority2_enhancements.py::TestLithuanianLanguageEnhancer::test_enhanced_lithuanian_patterns`
+
+**Evidence:**
+```
+AssertionError: assert 'Vilniaus' in set()
+AssertionError: assert 1 == 0  # Car plate detection
+AssertionError: assert 'lithuanian_address_full' in pattern_names
+```
+
+**Analysis:** Mismatch between test expectations and actual pattern implementations.
+
+---
+
+### 3. MEDIUM: PDF Processing/Redaction Failures
+**Impact:** 2/15 failures (13.3%)  
+**Severity:** MEDIUM  
+**Fix Time:** 30 minutes  
+
+**Affected Tests:**
+- `tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_process_pdf_success`
+- `tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_anonymize_pdf_flow`
+
+**Evidence:**
+```
+AssertionError: assert None == 1  # Missing lithuanian_personal_codes
+AssertionError: No redaction annotations found.
+```
+
+---
+
+### 4. MEDIUM: Adaptive Pattern Learning Logic  
+**Impact:** 2/15 failures (13.3%)  
+**Severity:** MEDIUM  
+**Fix Time:** 30 minutes  
+
+**Affected Tests:**
+- `tests/adaptive/test_pattern_learner.py::TestDiscoverAndValidatePatterns::test_low_precision_filtered`
+- `tests/adaptive/test_pattern_learner.py::TestDiscoverAndValidatePatterns::test_insufficient_samples`
+
+**Evidence:**
+```
+AssertionError: assert [AdaptivePattern(...)] == []
+```
+
+**Analysis:** Pattern learner creating patterns when tests expect filtering due to insufficient precision/samples.
+
+---
+
+### 5. LOW: Real-time Monitoring Integration
+**Impact:** 1/15 failures (6.7%)  
+**Severity:** LOW  
+**Fix Time:** 20 minutes  
+
+**Affected Test:**
+- `tests/system/test_real_time_monitor_integration.py::test_monitoring_end_to_end`
+
+**Evidence:**
+```
+AssertionError: No metrics were logged to the real-time monitor database.
+```
+
+---
+
+## PRIORITY MATRIX
+
+| Root Cause | Frequency | Severity | Complexity | Fix Time | Priority |
+|------------|-----------|----------|------------|----------|----------|
+| Context Analyzer Bug | 8 tests | BLOCKER | TRIVIAL | 15 min | **P0** |
+| Lithuanian Patterns | 3 tests | HIGH | MEDIUM | 45 min | **P1** |
+| PDF Processing | 2 tests | MEDIUM | MEDIUM | 30 min | **P2** |
+| Pattern Learning | 2 tests | MEDIUM | MEDIUM | 30 min | **P2** |
+| Real-time Monitor | 1 test | LOW | LOW | 20 min | **P3** |
+
+**Total Estimated Fix Time:** 2 hours 20 minutes
+
+---
+
+## NEXT STEPS
+
+1. **IMMEDIATE (Sprint 1):** Fix context_analyzer.py UnboundLocalError → Resolves 8/15 failures
+2. **HIGH (Sprint 2):** Address Lithuanian pattern mismatches → Resolves 11/15 failures  
+3. **MEDIUM (Sprint 3):** Fix PDF processing and pattern learning → Resolves 15/15 failures
+4. **VERIFICATION (Sprint 4):** Full test suite validation and CI pipeline confirmation
+
+**SUCCESS METRICS:**
+- Sprint 1: 46% failure reduction (15→7 failures)
+- Sprint 2: 73% failure reduction (15→4 failures)  
+- Sprint 3: 100% test suite green
+- Final: CI pipeline passes with >80% coverage
+
+---
+
+**Report Generated:** 2025-06-30 09:15 UTC  
+**Analyst:** Senior Test Automation Architect 

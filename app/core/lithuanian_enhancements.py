@@ -71,6 +71,13 @@ class LithuanianLanguageEnhancer:
             'Ataskaita', 'Ataskaitos', 'Ataskaitų',
             'Pareiškimas', 'Pareiškimai', 'Pareiškimo', 'Pareiškimų',
             
+            # Automotive and technical terms
+            'Automobilis', 'Automobiliai', 'Automobilio', 'Automobilių',
+            'Numeris', 'Numeriai', 'Numerio', 'Numerių',
+            'Valstybinis', 'Valstybiniai', 'Valstybinio', 'Valstybinių',
+            'Variklis', 'Varikliai', 'Variklio', 'Variklių',
+            'Transportas', 'Transportai', 'Transporto', 'Transportų',
+            
             # Insurance terms
             'Draudimas', 'Draudimai', 'Draudimo', 'Draudimų',
             'Draudėjas', 'Draudėjai', 'Draudėjo', 'Draudėjų',
@@ -137,25 +144,25 @@ class LithuanianLanguageEnhancer:
         # Enhanced Lithuanian patterns
         self.enhanced_lithuanian_patterns = {
             'lithuanian_name_with_title': LithuanianPattern(
-                pattern=r'((?:Ponas|Ponia|Dr\.?|Prof\.?)\s+(?:[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)?)',
+                pattern=r'(?i)(?:Ponas|Ponia|Dr\.?|Prof\.?)\s+((?:[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)?)',
                 category='names',
-                confidence_modifier=0.35,
-                description='Lithuanian name with title (non-greedy, full match).',
-                examples=['Ponas Jonas Petraitis', 'Ponia Žaneta Stankevičienė', 'Dr. Antanas Mockus']
+                confidence_modifier=0.4,
+                description='Lithuanian name with title (captures name only).',
+                examples=['Ponas Jonas Petraitis', 'Ponia Žaneta Stankevičienė']
             ),
             'lithuanian_name_simple': LithuanianPattern(
-                pattern=r'\b([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:as|is|us|ė|ienė))\s+([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:as|is|us|ys|ė|ienė))\b',
+                pattern=r'\b(([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]{3,})\s+([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]{3,}(?:ienė|aitė|ytė|utė|ūtė|as|is|ys|us|ius|ė|a)))\b(?!\s*\d)',
                 category='names',
                 confidence_modifier=0.3,
-                description='A simple Lithuanian name (First Last) with common endings.',
+                description='A simple Lithuanian name (First Last), excluding patterns followed by numbers.',
                 examples=['Linas Vaitkus', 'Rūta Vaitkienė']
             ),
-            'lithuanian_address_full': LithuanianPattern(
-                pattern=r'(?:Adresas|Gyv\.\s*vieta|Adresas korespondencijai):\s*([A-ZĄČĘĖĮŠŲŪŽ][^,\n]+?,\s*LT-\d{5})',
+            'lithuanian_address_prefixed': LithuanianPattern(
+                pattern=r'(?i)(?:Adresas|Gyv\.\s*vieta|Adresas korespondencijai):\s*([A-ZĄČĘĖĮŠŲŪŽ][^,\n]+?g\.\s*\d+[^,]*)',
                 category='addresses_prefixed',
                 confidence_modifier=0.25,
-                description='Lithuanian address (street and number up to postal code), non-greedy.',
-                examples=['Adresas: Paupio g. 50-136, LT-11341 Vilnius']
+                description='Lithuanian address (street and number only), non-greedy. Overwrites base pattern.',
+                examples=['Adresas: Vilniaus g. 1,']
             ),
             'lithuanian_city_generic': LithuanianPattern(
                 pattern=r'\b(Vilni(us|aus|uje|ų)|Kaun(as|o|e|ą)|Klaipėd(a|os|oje|ą)|Šiauli(ai|ų|uose|us)|Panevėž(ys|io|yje|į))\b',
@@ -164,12 +171,26 @@ class LithuanianLanguageEnhancer:
                 description='Common Lithuanian city names with grammatical cases.',
                 examples=['Vilniaus', 'Kaune', 'Klaipėdos', 'Šiaulius', 'Panevėžyje']
             ),
+            'lithuanian_standalone_city': LithuanianPattern(
+                pattern=r'\b(Vilnius|Kaunas|Klaipėda|Šiauliai|Panevėžys)\b',
+                category='locations',
+                confidence_modifier=0.95, # VERY HIGH confidence for standalone nominative case
+                description='Standalone Lithuanian city names in nominative case.',
+                examples=['Vilnius', 'Kaunas']
+            ),
             'lithuanian_address_flexible': LithuanianPattern(
                 pattern=r'([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+s?\s+(?:g\.|pr\.|al\.)\s*\d+(?:-\d+)?)',
                 category='addresses_street',
                 confidence_modifier=0.15,
                 description='Flexible Lithuanian address pattern (street, number)',
                 examples=['Vilniaus g. 1', 'Gedimino pr. 25-10A']
+            ),
+            'lithuanian_address_full': LithuanianPattern(
+                pattern=r'([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+s?\s+(?:g\.|pr\.|al\.)\s*\d+(?:-\d+)?,\s*LT-\d{5},?\s*[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)',
+                category='addresses_full',
+                confidence_modifier=0.25,
+                description='Full Lithuanian address with postal code and city',
+                examples=['Paupio g. 50-136, LT-11341 Vilnius', 'Gedimino pr. 25, LT-01103, Vilnius']
             ),
             'lithuanian_company_full': LithuanianPattern(
                 pattern=r'(UAB|AB|VšĮ|MB|IV)\s+"([^"]+)"',
@@ -222,6 +243,10 @@ class LithuanianLanguageEnhancer:
             )
         }
         
+        # Explicitly remove the old, flawed pattern to avoid ambiguity.
+        if 'lithuanian_address_street_only' in self.enhanced_lithuanian_patterns:
+            del self.enhanced_lithuanian_patterns['lithuanian_address_street_only']
+
         # Compile patterns for performance
         self.compiled_patterns = {}
         for name, pattern_info in self.enhanced_lithuanian_patterns.items():
@@ -319,6 +344,14 @@ class LithuanianLanguageEnhancer:
                 # If the pattern has a capturing group, use the group's content.
                 # Otherwise, use the full match.
                 matched_text = match.group(1) if match.groups() else match.group(0)
+                
+                # Filter out document/common terms for name patterns
+                if info.category == 'names':
+                    # Check if any part of the matched text is a document term
+                    words = matched_text.split()
+                    if any(self.is_lithuanian_document_term(word) or 
+                           self.is_lithuanian_common_word(word) for word in words):
+                        continue
                 
                 detection = {
                     'text': matched_text.strip(),
