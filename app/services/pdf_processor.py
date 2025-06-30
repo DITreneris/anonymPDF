@@ -192,6 +192,37 @@ class PDFProcessor:
         
         return label_mapping.get(spacy_label, spacy_label.lower())
 
+    def _extract_core_city_name(self, location_text: str) -> str:
+        """
+        Extract core city name from Lithuanian location phrases.
+        
+        Args:
+            location_text: Full location text from spaCy (e.g., "Vilniaus mieste")
+            
+        Returns:
+            Core city name (e.g., "Vilniaus")
+        """
+        # Lithuanian location suffixes to remove
+        lithuanian_suffixes = [
+            " mieste",    # in the city
+            " miestas",   # city
+            " rajone",    # in the district
+            " rajonas",   # district
+            " apskrityje", # in the county
+            " apskritis",  # county
+            " seniūnijoje", # in the eldership
+            " seniūnija"   # eldership
+        ]
+        
+        # Remove suffixes to get core city name
+        core_name = location_text
+        for suffix in lithuanian_suffixes:
+            if core_name.endswith(suffix):
+                core_name = core_name[:-len(suffix)]
+                break
+        
+        return core_name.strip()
+
     def _add_detection(self, personal_info: Dict, category: str, text: str, context: str, confidence: float):
         """Helper to standardize adding detections."""
         if category in personal_info:
@@ -277,9 +308,15 @@ class PDFProcessor:
         for ent in doc.ents:
             # Map spaCy label to user-friendly category name
             mapped_category = self._map_spacy_label_to_category(ent.label_)
+            
+            # Extract core city name from Lithuanian location phrases
+            entity_text = ent.text
+            if mapped_category == "locations" and language == "lt":
+                entity_text = self._extract_core_city_name(ent.text)
+            
             # Give spaCy lower confidence so patterns win deduplication
             detection_context = create_context_aware_detection(
-                ent.text, mapped_category, ent.start_char, ent.end_char, text, self.contextual_validator,
+                entity_text, mapped_category, ent.start_char, ent.end_char, text, self.contextual_validator,
                 confidence=0.6  # Lower confidence than patterns
             )
             context_aware_detections.append(detection_context)
@@ -362,14 +399,18 @@ class PDFProcessor:
             if not detection_range.intersection(redacted_positions):
                 
                 # Check for document term exclusion, unless it's a high-confidence pattern
+                confidence_level = detection.get_confidence_level()
+                
                 if (detection.text.lower() in DOCUMENT_TERMS and 
-                    detection.confidence in [ConfidenceLevel.LOW, ConfidenceLevel.MEDIUM]):
+                    confidence_level in [ConfidenceLevel.LOW, ConfidenceLevel.MEDIUM]):
                     pdf_logger.info(
                         "Skipping common document term with low/medium confidence",
-                        term=detection.text
+                        term=detection.text,
+                        confidence=detection.confidence,
+                        confidence_level=confidence_level.name
                     )
                     continue
-
+                
                 # Add to final list
                 final_detections[detection.category].append(
                     (detection.text, f"CONTEXT_{detection.confidence:.2f}")

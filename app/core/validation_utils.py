@@ -59,7 +59,7 @@ DOCUMENT_TERMS = {
     "Biuras", "Agentūra", "Ministerija", "Valdžia", "Tarnyba", "Centras",
     "Padalinys", "Filialas", "Privalomojo", "Draudimo", "Civile", "Atsakomybe",
     "Transporto", "Priemone", "Numeris", "When", "Where", "What", "Which", "Who",
-    "Pavadinimas", "Liudijimas", "Arba", "Metų", "Mėnesio",
+    "Pavadinimas", "Liudijimas", "Arba", "Metų", "Mėnesio", "Statyba", "Statybos", "statyba", "statybos",
     
     # Insurance specific terms
     "Insurance", "Insurer", "Insured", "Coverage", "Premium", "Claim", "Liability",

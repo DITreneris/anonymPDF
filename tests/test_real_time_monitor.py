@@ -57,7 +57,7 @@ class TestRealTimeMonitor:
         assert event['event_name'] == "test_event"
         assert event['duration'] == 0.5
         assert event['document_id'] == "doc1"
-        assert '"status": "success"' in event['details']
+        assert event['details']['status'] == "success"  # Check parsed dictionary, not JSON string
 
     def test_get_summary_with_data(self):
         """Test the summary generation logic with multiple events."""
