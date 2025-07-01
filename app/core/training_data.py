@@ -404,7 +404,7 @@ class SyntheticDataGenerator:
                 {'template': '{company_name} Ltd.', 'confidence': 0.8},
                 {'template': '{company_name} Corporation', 'confidence': 0.75},
             ],
-            'email': [
+            'emails': [
                 {'template': '{name}@{domain}.com', 'confidence': 0.95},
                 {'template': '{name}.{surname}@{company}.lt', 'confidence': 0.9},
             ],
@@ -545,7 +545,7 @@ class SyntheticDataGenerator:
                 f"Partneris {text} teikia",
                 f"Bendrovė {text} garantuoja"
             ],
-            'email': [
+            'emails': [
                 f"El. paštas: {text}",
                 f"Kreiptis: {text}",
                 f"Atsiųsti į {text}",

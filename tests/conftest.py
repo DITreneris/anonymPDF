@@ -156,8 +156,8 @@ def sample_english_text() -> str:
 def test_patterns() -> dict:
     """Test PII patterns for validation."""
     return {
-        "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
-        "lithuanian_personal_code": r"\b[3-6]\d{10}\b",
+        "emails": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+        "lithuanian_personal_codes": r"\b[3-6]\d{10}\b",
         "lithuanian_phone_generic": r"\+370\s+\d{3}\s+\d{5}\b",
         "lithuanian_vat_code": r"\bLT\d{9,12}\b",
         "date_yyyy_mm_dd": r"\b\d{4}-\d{2}-\d{2}\b",

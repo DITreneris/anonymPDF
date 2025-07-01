@@ -356,13 +356,13 @@ class TestIntegrationScenarios:
         # High confidence detection with explicit label
         high_conf_text = "Asmens kodas: 38901234567"
         high_conf_context = self.validator.validate_with_context(
-            "38901234567", "lithuanian_personal_code", high_conf_text, 13, 24
+            "38901234567", "lithuanian_personal_codes", high_conf_text, 13, 24
         )
         
         # Low confidence detection (number that looks like a code)
         low_conf_text = "The winning lottery number is 38901234567"
         low_conf_context = self.validator.validate_with_context(
-            "38901234567", "lithuanian_personal_code", low_conf_text, 29, 40
+            "38901234567", "lithuanian_personal_codes", low_conf_text, 29, 40
         )
         
         assert high_conf_context.confidence > low_conf_context.confidence

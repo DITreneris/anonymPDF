@@ -173,7 +173,7 @@ class ConfigManager:
         """Return default PII patterns as compiled regex objects."""
         raw_patterns = {
             # Contact Information
-            "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+            "emails": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
             "phone": r"\b(?:\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b",
             "phone_international": r"\+\d{1,3}\s+\d{3}\s+\d{5,6}\b",
             # Lithuanian Phone Numbers
@@ -187,7 +187,7 @@ class ConfigManager:
             "lithuanian_business_cert": r"\bAF\d{6}-\d\b",
             "lithuanian_business_cert_alt": r"\b\d{9}\b",
             # Lithuanian Personal Information
-            "lithuanian_personal_code": r"\b[3-6]\d{10}\b",
+            "lithuanian_personal_codes": r"\b[3-6]\d{10}\b",
             "lithuanian_passport": r"\b[A-Z]{2}\d{7}\b",
             "lithuanian_driver_license": r"\b[A-Z]{1,2}\d{6,7}[A-Z]?\b",
             # Lithuanian Addresses
@@ -225,7 +225,7 @@ class ConfigManager:
             "credit_card": r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b",
             # Morning Session 5 Improvements - Enhanced Lithuanian name detection
             "lithuanian_name_all_caps": r"\b([A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A)\s+[A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))|\b([A-ZČĘĖĮŠŲŪŽ]{2,}\s+[A-ZČĘĖĮŠŲŪŽ]{2,}(?:IENĖ|AITĖ|YTĖ|UTĖ|ŪTĖ|AS|IS|YS|US|IUS|Ė|A))\b",
-            "lithuanian_name_contextual": r"(?:Draudėjas|Vardas|Pavardė|Sutartį\s+sudarė)[:–-]?\s*([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)+)",
+            "lithuanian_name_contextual": r"(?:Draudėjas|Vardas|Pavardė|Sutartį\s+sudarė)[:–-]?\s*([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+)*?)(?=\s*\n|\s*$|\s*,|\s*\.|asmens\s+kodas|tel\.|phone|email)",
             "lithuanian_name_simple": r"\b([A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+\s+[A-ZĄČĘĖĮŠŲŪŽ][a-ząčęėįšųūž]+(?:ienė|aitė|ytė|utė|ūtė|as|is|ys|us|ius|ė|a)?)\b",
             "lithuanian_name_contextual_caps": r"(?:Draudėjas|DRAUDĖJAS|Vardas|VARDAS)[:–-]?\s*([A-ZČĘĖĮŠŲŪŽ]{3,}\s+[A-ZČĘĖĮŠŲŪŽ]{3,})\b",
             # Morning Session 5 Improvements - Enhanced address detection
@@ -428,6 +428,24 @@ class ConfigManager:
                     "track_pattern_usage": True,
                     "alert_on_anomalies": True
                 }
+            },
+            "performance": {
+                "cache_size": 1000,
+                "cache_ttl_seconds": 3600,
+                "max_workers": 4,
+                "parallel_processing": {
+                    "max_workers": 4,
+                    "chunk_size": 100
+                },
+                "batch_engine": {
+                    "max_batch_size": 100,
+                    "batch_timeout_seconds": 10
+                }
+            },
+            "feedback_system": {
+                "storage_path": "data/user_feedback.db",
+                "min_feedback_for_retraining": 50,
+                "auto_retrain_enabled": True
             }
         }
 

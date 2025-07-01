@@ -10,7 +10,7 @@ class TestPIIPatterns:
 
     def test_email_pattern(self, test_config_manager: ConfigManager):
         """Test email pattern detection."""
-        pattern = test_config_manager.patterns["email"]
+        pattern = test_config_manager.patterns["emails"]
 
         # Valid emails
         valid_emails = [
@@ -111,7 +111,7 @@ class TestPIIPatternIntegration:
         """Test comprehensive PII detection in English text."""
 
         expected_counts = {
-            "email": 1,
+            "emails": 1,
             "phone": 1,
             "ssn": 1,
             "credit_card": 1,
