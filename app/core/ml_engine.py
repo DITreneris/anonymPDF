@@ -498,7 +498,7 @@ def create_ml_confidence_scorer(config: Optional[Dict] = None) -> MLConfidenceSc
     """
     from app.core.adaptive.coordinator import AdaptiveLearningCoordinator
     from app.core.adaptive.pattern_db import create_pattern_db
-    from app.core.adaptive.ab_testing import create_ab_test_manager
+    from app.core.adaptive.ab_testing import get_ab_test_manager
     from app.core.config_manager import get_config_manager
 
     ml_logger.info("Instantiating dependencies for MLConfidenceScorer.")
@@ -509,7 +509,7 @@ def create_ml_confidence_scorer(config: Optional[Dict] = None) -> MLConfidenceSc
     # 2. Create database-dependent components
     # These now manage their own connections, which is suitable for this context.
     pattern_db = create_pattern_db()
-    ab_test_manager = create_ab_test_manager()
+    ab_test_manager = get_ab_test_manager(config_manager)
 
     # 3. Create the AdaptiveLearningCoordinator with its dependencies
     ml_logger.info("Instantiating AdaptiveLearningCoordinator for MLConfidenceScorer.")

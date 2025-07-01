@@ -42,6 +42,7 @@ def get_pdf_processor():
     """
     from app.core.real_time_monitor import get_real_time_monitor
     from app.core.adaptive.pattern_db import AdaptivePatternDB
+    from app.services.pdf_processor import PDFProcessor
     
     # In a real scenario, you might get the db session from a pool
     # For now, we create it as needed, which is acceptable for the worker

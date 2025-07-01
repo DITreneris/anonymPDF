@@ -1,0 +1,748 @@
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF> python -m pytest tests/test_services_pdf_processor.py tests/test_ml_engine.py tests/test_real_time_monitor.py -v --tb=short
+=================================================================================== test session starts ====================================================================================
+platform win32 -- Python 3.11.9, pytest-7.4.3, pluggy-1.6.0 -- C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF
+configfile: pytest.ini
+plugins: anyio-3.7.1, asyncio-0.21.1, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collected 78 items
+
+tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_initialization_success_both_models PASSED                                                                  [  1%]
+tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_initialization_english_only FAILED                                                                         [  2%]
+tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_initialization_no_models_raises_error FAILED                                                               [  3%]
+tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_pyinstaller_bundle_model_loading FAILED                                                                    [  5%]
+tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_environment_variable_model_loading FAILED                                                                  [  6%]
+tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_import_module_model_loading FAILED                                                                         [  7%]
+tests/test_services_pdf_processor.py::TestLanguageDetection::test_detect_language_success ERROR                                                                                       [  8%]
+tests/test_services_pdf_processor.py::TestLanguageDetection::test_detect_language_long_text_sampling ERROR                                                                            [ 10%]
+tests/test_services_pdf_processor.py::TestLanguageDetection::test_detect_language_exception_handling ERROR                                                                            [ 11%]
+tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_english_model_used ERROR                                                                              [ 12%]
+tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_lithuanian_model_used ERROR                                                                           [ 14%]
+tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_lithuanian_fallback_to_english ERROR                                                                  [ 15%]
+tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_with_monitor_logging ERROR                                                                            [ 16%]
+tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_monitor_logging_exception ERROR                                                                       [ 17%]
+tests/test_services_pdf_processor.py::TestPIIDetection::test_extract_core_city_name_lithuanian ERROR                                                                                  [ 19%]
+tests/test_services_pdf_processor.py::TestDeduplication::test_deduplicate_with_confidence_longest_wins ERROR                                                                          [ 20%]
+tests/test_services_pdf_processor.py::TestDeduplication::test_deduplicate_with_confidence_document_terms_filtered ERROR                                                               [ 21%]
+tests/test_services_pdf_processor.py::TestDeduplication::test_should_preserve_detection_file_path_context ERROR                                                                       [ 23%]
+tests/test_services_pdf_processor.py::TestDeduplication::test_should_preserve_detection_common_words ERROR                                                                            [ 24%]
+tests/test_services_pdf_processor.py::TestLithuanianCityDetection::test_detect_lithuanian_cities_enhanced_valid_context ERROR                                                         [ 25%]
+tests/test_services_pdf_processor.py::TestLithuanianCityDetection::test_detect_lithuanian_cities_enhanced_invalid_context ERROR                                                       [ 26%]
+tests/test_services_pdf_processor.py::TestLithuanianCityDetection::test_detect_lithuanian_cities_enhanced_non_lithuanian ERROR                                                        [ 28%]
+tests/test_services_pdf_processor.py::TestLithuanianCityDetection::test_detect_lithuanian_cities_basic ERROR                                                                          [ 29%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_file_not_found ERROR                                                                                        [ 30%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_anonymization_failure ERROR                                                                                 [ 32%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_with_monitor_logging ERROR                                                                                  [ 33%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_anonymize_pdf_with_monitor_failure_logging ERROR                                                                        [ 34%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_generate_redaction_report ERROR                                                                                         [ 35%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_cleanup_temp_files ERROR                                                                                                [ 37%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_cleanup_temp_files_with_errors ERROR                                                                                    [ 38%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_extract_text_from_pdf ERROR                                                                                             [ 39%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_for_anonymization_success ERROR                                                                             [ 41%]
+tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_for_anonymization_failure ERROR                                                                             [ 42%]
+tests/test_services_pdf_processor.py::TestMappingFunctions::test_map_spacy_label_to_category ERROR                                                                                    [ 43%]
+tests/test_services_pdf_processor.py::TestMappingFunctions::test_add_detection ERROR                                                                                                  [ 44%]
+tests/test_ml_engine.py::TestMLModelManager::test_init_creates_model_directory PASSED                                                                                                 [ 46%]
+tests/test_ml_engine.py::TestMLModelManager::test_save_model_creates_files PASSED                                                                                                     [ 47%]
+tests/test_ml_engine.py::TestMLModelManager::test_save_model_auto_version PASSED                                                                                                      [ 48%]
+tests/test_ml_engine.py::TestMLModelManager::test_load_model_success PASSED                                                                                                           [ 50%]
+tests/test_ml_engine.py::TestMLModelManager::test_load_model_latest_version PASSED                                                                                                    [ 51%]
+tests/test_ml_engine.py::TestMLModelManager::test_load_model_not_found PASSED                                                                                                         [ 52%]
+tests/test_ml_engine.py::TestMLModelManager::test_load_model_exception_handling PASSED                                                                                                [ 53%]
+tests/test_ml_engine.py::TestMLModelManager::test_list_models_empty PASSED                                                                                                            [ 55%]
+tests/test_ml_engine.py::TestMLModelManager::test_list_models_with_files PASSED                                                                                                       [ 56%]
+tests/test_ml_engine.py::TestMLModelManager::test_list_models_metadata_load_error PASSED                                                                                              [ 57%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_init_with_config PASSED                                                                                                         [ 58%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_init_default_random_forest FAILED                                                                                               [ 60%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_load_existing_model_success PASSED                                                                                              [ 61%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_load_existing_model_failure FAILED                                                                                              [ 62%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_is_model_trained_untrained FAILED                                                                                               [ 64%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_is_model_trained_xgboost PASSED                                                                                                 [ 65%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_is_model_trained_sklearn PASSED                                                                                                 [ 66%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_is_model_trained_exception FAILED                                                                                               [ 67%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_calculate_ml_confidence_untrained_fallback PASSED                                                                               [ 69%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_calculate_ml_confidence_with_calibrator PASSED                                                                                  [ 70%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_calculate_ml_confidence_without_calibrator PASSED                                                                               [ 71%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_calculate_ml_confidence_with_document_type PASSED                                                                               [ 73%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_calculate_ml_confidence_exception_handling PASSED                                                                               [ 74%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_apply_adaptive_patterns_with_coordinator PASSED                                                                                 [ 75%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_prepare_feature_vector_with_existing_names PASSED                                                                               [ 76%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_prepare_feature_vector_auto_generate_names PASSED                                                                               [ 78%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_adjust_confidence_for_document_type PASSED                                                                                      [ 79%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_train_model_insufficient_data FAILED                                                                                            [ 80%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_train_model_success FAILED                                                                                                      [ 82%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_prepare_training_data FAILED                                                                                                    [ 83%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_get_model_performance_no_predictions PASSED                                                                                     [ 84%]
+tests/test_ml_engine.py::TestMLConfidenceScorer::test_get_model_performance_with_predictions PASSED                                                                                   [ 85%]
+tests/test_ml_engine.py::TestMLEngineIntegration::test_create_ml_confidence_scorer_factory FAILED                                                                                     [ 87%]
+tests/test_ml_engine.py::TestMLEngineIntegration::test_model_training_and_prediction_workflow FAILED                                                                                  [ 88%]
+tests/test_ml_engine.py::TestMLEngineIntegration::test_model_persistence_workflow PASSED                                                                                              [ 89%]
+tests/test_ml_engine.py::TestMLEngineIntegration::test_error_handling_edge_cases PASSED                                                                                               [ 91%]
+tests/test_real_time_monitor.py::TestRealTimeMonitor::test_initialization_creates_database PASSED                                                                                     [ 92%]
+tests/test_real_time_monitor.py::TestRealTimeMonitor::test_log_single_event PASSED                                                                                                    [ 93%]
+tests/test_real_time_monitor.py::TestRealTimeMonitor::test_get_summary_with_data PASSED                                                                                               [ 94%]
+tests/test_real_time_monitor.py::TestRealTimeMonitor::test_get_summary_no_data PASSED                                                                                                 [ 96%]
+tests/test_real_time_monitor.py::TestRealTimeMonitor::test_get_latest_metrics_ordering_and_limit PASSED                                                                               [ 97%]
+tests/test_real_time_monitor.py::TestRealTimeMonitorIntegration::test_singleton_instance PASSED                                                                                       [ 98%]
+tests/test_real_time_monitor.py::TestRealTimeMonitorIntegration::test_concurrent_logging_is_thread_safe PASSED                                                                        [100%]
+
+========================================================================================== ERRORS ==========================================================================================
+___________________________________________________________ ERROR at setup of TestLanguageDetection.test_detect_language_success ___________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 193
+      @patch('app.services.pdf_processor.detect')
+      def test_detect_language_success(self, mock_detect, processor):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 178
+      @pytest.fixture
+      def processor(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:178
+_____________________________________________________ ERROR at setup of TestLanguageDetection.test_detect_language_long_text_sampling ______________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 203
+      @patch('app.services.pdf_processor.detect')
+      def test_detect_language_long_text_sampling(self, mock_detect, processor):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 178
+      @pytest.fixture
+      def processor(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:178
+_____________________________________________________ ERROR at setup of TestLanguageDetection.test_detect_language_exception_handling ______________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 217
+      @patch('app.services.pdf_processor.detect')
+      def test_detect_language_exception_handling(self, mock_detect, processor):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 178
+      @pytest.fixture
+      def processor(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:178
+______________________________________________________ ERROR at setup of TestPIIDetection.test_find_personal_info_english_model_used _______________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 250
+      def test_find_personal_info_english_model_used(self, processor_with_models):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 231
+      @pytest.fixture
+      def processor_with_models(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_models, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:231
+_____________________________________________________ ERROR at setup of TestPIIDetection.test_find_personal_info_lithuanian_model_used _____________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 268
+      def test_find_personal_info_lithuanian_model_used(self, processor_with_models):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 231
+      @pytest.fixture
+      def processor_with_models(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_models, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:231
+________________________________________________ ERROR at setup of TestPIIDetection.test_find_personal_info_lithuanian_fallback_to_english _________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 286
+      def test_find_personal_info_lithuanian_fallback_to_english(self, processor_with_models):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 231
+      @pytest.fixture
+      def processor_with_models(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_models, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:231
+_____________________________________________________ ERROR at setup of TestPIIDetection.test_find_personal_info_with_monitor_logging ______________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 304
+      def test_find_personal_info_with_monitor_logging(self, processor_with_models):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 231
+      @pytest.fixture
+      def processor_with_models(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_models, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:231
+___________________________________________________ ERROR at setup of TestPIIDetection.test_find_personal_info_monitor_logging_exception ___________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 337
+      def test_find_personal_info_monitor_logging_exception(self, processor_with_models):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 231
+      @pytest.fixture
+      def processor_with_models(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_models, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:231
+________________________________________________________ ERROR at setup of TestPIIDetection.test_extract_core_city_name_lithuanian _________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 359
+      def test_extract_core_city_name_lithuanian(self, processor_with_models):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 231
+      @pytest.fixture
+      def processor_with_models(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_models, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:231
+____________________________________________________ ERROR at setup of TestDeduplication.test_deduplicate_with_confidence_longest_wins _____________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 393
+      def test_deduplicate_with_confidence_longest_wins(self, processor_simple):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 379
+      @pytest.fixture
+      def processor_simple(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_simple, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:379
+_______________________________________________ ERROR at setup of TestDeduplication.test_deduplicate_with_confidence_document_terms_filtered _______________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 421
+      def test_deduplicate_with_confidence_document_terms_filtered(self, processor_simple):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 379
+      @pytest.fixture
+      def processor_simple(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_simple, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:379
+___________________________________________________ ERROR at setup of TestDeduplication.test_should_preserve_detection_file_path_context ___________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 438
+      def test_should_preserve_detection_file_path_context(self, processor_simple):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 379
+      @pytest.fixture
+      def processor_simple(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_simple, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:379
+_____________________________________________________ ERROR at setup of TestDeduplication.test_should_preserve_detection_common_words ______________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 454
+      def test_should_preserve_detection_common_words(self, processor_simple):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 379
+      @pytest.fixture
+      def processor_simple(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_simple, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:379
+____________________________________________ ERROR at setup of TestLithuanianCityDetection.test_detect_lithuanian_cities_enhanced_valid_context ____________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 489
+      def test_detect_lithuanian_cities_enhanced_valid_context(self, processor_with_lithuanian):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 474
+      @pytest.fixture
+      def processor_with_lithuanian(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_lithuanian, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:474
+___________________________________________ ERROR at setup of TestLithuanianCityDetection.test_detect_lithuanian_cities_enhanced_invalid_context ___________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 506
+      def test_detect_lithuanian_cities_enhanced_invalid_context(self, processor_with_lithuanian):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 474
+      @pytest.fixture
+      def processor_with_lithuanian(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_lithuanian, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:474
+___________________________________________ ERROR at setup of TestLithuanianCityDetection.test_detect_lithuanian_cities_enhanced_non_lithuanian ____________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 519
+      def test_detect_lithuanian_cities_enhanced_non_lithuanian(self, processor_with_lithuanian):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 474
+      @pytest.fixture
+      def processor_with_lithuanian(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_lithuanian, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:474
+____________________________________________________ ERROR at setup of TestLithuanianCityDetection.test_detect_lithuanian_cities_basic _____________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 529
+      def test_detect_lithuanian_cities_basic(self, processor_with_lithuanian):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 474
+      @pytest.fixture
+      def processor_with_lithuanian(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_with_lithuanian, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:474
+___________________________________________________________ ERROR at setup of TestPDFProcessing.test_process_pdf_file_not_found ____________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 560
+      @pytest.mark.asyncio
+      async def test_process_pdf_file_not_found(self, processor_for_pdf):
+          """Test process_pdf with non-existent file."""
+          processor = processor_for_pdf
+          non_existent_path = Path("non_existent_file.pdf")
+
+          with pytest.raises(HTTPException) as exc_info:
+              await processor.process_pdf(non_existent_path)
+
+          assert exc_info.value.status_code == 404
+          assert "File not found" in str(exc_info.value.detail)
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+________________________________________________________ ERROR at setup of TestPDFProcessing.test_process_pdf_anonymization_failure ________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 572
+      @pytest.mark.asyncio
+      async def test_process_pdf_anonymization_failure(self, processor_for_pdf, tmp_path):
+          """Test process_pdf when anonymization fails."""
+          processor = processor_for_pdf
+
+          # Create a test PDF file
+          pdf_path = tmp_path / "test.pdf"
+          pdf_path.write_bytes(b"fake pdf content")
+
+          # Mock anonymization failure
+          with patch.object(processor, 'anonymize_pdf', return_value=(False, {"error": "Anonymization failed"})), \
+               patch('app.core.performance.file_processing_metrics') as mock_metrics:
+
+              # Mock metrics tracker
+              mock_tracker = {'end_tracking': Mock(return_value={'duration_seconds': 1.5})}
+              mock_metrics.track_file_processing.return_value = mock_tracker
+
+              result = await processor.process_pdf(pdf_path)
+
+          assert result["status"] == "error"
+          assert "Anonymization failed" in result["error"]
+          assert result["filename"] == "test.pdf"
+          assert result["processing_time"] == 1.5
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+________________________________________________________ ERROR at setup of TestPDFProcessing.test_process_pdf_with_monitor_logging _________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 596
+      @pytest.mark.asyncio
+      async def test_process_pdf_with_monitor_logging(self, processor_for_pdf, tmp_path):
+          """Test process_pdf with monitor event logging."""
+          processor = processor_for_pdf
+
+          # Setup mock monitor
+          mock_monitor = Mock()
+          processor.monitor = mock_monitor
+
+          # Create a test PDF file
+          pdf_path = tmp_path / "test.pdf"
+          pdf_path.write_bytes(b"fake pdf content")
+
+          # Mock successful anonymization
+          with patch.object(processor, 'anonymize_pdf', return_value=(True, {"report": {"total_redactions": 5}})), \
+               patch('app.core.performance.file_processing_metrics') as mock_metrics:
+
+              # Mock metrics tracker
+              mock_tracker = {'end_tracking': Mock(return_value={'duration_seconds': 2.0})}
+              mock_metrics.track_file_processing.return_value = mock_tracker
+
+              result = await processor.process_pdf(pdf_path)
+
+          # Verify monitor logging
+          mock_monitor.log_event.assert_called_once_with(
+              "file_processing_completed",
+              document_id="test.pdf",
+              details={
+                  "status": "processed",
+                  "filename": "test.pdf",
+                  "duration_ms": 2000.0,
+                  "file_size_bytes": 17  # Length of fake content
+              }
+          )
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+___________________________________________________ ERROR at setup of TestPDFProcessing.test_anonymize_pdf_with_monitor_failure_logging ____________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 631
+      def test_anonymize_pdf_with_monitor_failure_logging(self, processor_for_pdf, tmp_path):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+____________________________________________________________ ERROR at setup of TestPDFProcessing.test_generate_redaction_report ____________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 660
+      def test_generate_redaction_report(self, processor_for_pdf):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+_______________________________________________________________ ERROR at setup of TestPDFProcessing.test_cleanup_temp_files ________________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 677
+      def test_cleanup_temp_files(self, processor_for_pdf, tmp_path):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+_________________________________________________________ ERROR at setup of TestPDFProcessing.test_cleanup_temp_files_with_errors __________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 695
+      def test_cleanup_temp_files_with_errors(self, processor_for_pdf, tmp_path):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+______________________________________________________________ ERROR at setup of TestPDFProcessing.test_extract_text_from_pdf ______________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 710
+      @patch('app.core.text_extraction.extract_text_enhanced')
+      def test_extract_text_from_pdf(self, mock_extract, processor_for_pdf):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+______________________________________________________ ERROR at setup of TestPDFProcessing.test_process_pdf_for_anonymization_success ______________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 722
+      def test_process_pdf_for_anonymization_success(self, processor_for_pdf, tmp_path):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+______________________________________________________ ERROR at setup of TestPDFProcessing.test_process_pdf_for_anonymization_failure ______________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 738
+      def test_process_pdf_for_anonymization_failure(self, processor_for_pdf, tmp_path):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 546
+      @pytest.fixture
+      def processor_for_pdf(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_for_pdf, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:546
+_________________________________________________________ ERROR at setup of TestMappingFunctions.test_map_spacy_label_to_category __________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 771
+      def test_map_spacy_label_to_category(self, processor_basic):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 757
+      @pytest.fixture
+      def processor_basic(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_basic, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:757
+________________________________________________________________ ERROR at setup of TestMappingFunctions.test_add_detection _________________________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 793
+      def test_add_detection(self, processor_basic):
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py, line 757
+      @pytest.fixture
+      def processor_basic(self, mock_dependencies):
+E       fixture 'mock_dependencies' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, processor_basic, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_services_pdf_processor.py:757
+========================================================================================= FAILURES =========================================================================================
+_____________________________________________________________ TestPDFProcessorInitialization.test_initialization_english_only ______________________________________________________________
+tests\test_services_pdf_processor.py:79: in test_initialization_english_only
+    assert processor.nlp_lt is None
+E   assert <spacy.lang.lt.Lithuanian object at 0x000002538BDFBD10> is None
+E    +  where <spacy.lang.lt.Lithuanian object at 0x000002538BDFBD10> = <app.services.pdf_processor.PDFProcessor object at 0x0000025387E23F90>.nlp_lt
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:39,007 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-30 14:40:39,008 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 1, "cities_count": 2}
+2025-06-30 14:40:39,008 - anonympdf.context - INFO - AdvancedPatternRefinement initialized with 52 patterns.
+2025-06-30 14:40:39,009 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-30 14:40:39,009 - anonympdf.pdf - INFO - English spaCy model loaded successfully - {"model": "en_core_web_sm", "components": 2, "method": "standard"}
+2025-06-30 14:40:39,009 - anonympdf.pdf - WARNING - Standard loading failed for lt_core_news_sm, trying PyInstaller compatibility...
+2025-06-30 14:40:39,813 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded via import - {"model": "lt_core_news_sm", "components": 7, "method": "import"}
+________________________________________________________ TestPDFProcessorInitialization.test_initialization_no_models_raises_error _________________________________________________________
+tests\test_services_pdf_processor.py:89: in test_initialization_no_models_raises_error
+    with pytest.raises(RuntimeError, match="No spaCy models available"):
+E   Failed: DID NOT RAISE <class 'RuntimeError'>
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:40,369 - anonympdf.pdf - INFO - Initializing PDF processor with Priority 2 enhancements
+2025-06-30 14:40:40,369 - anonympdf.pdf - INFO - Configuration manager loaded - {"patterns_count": 1, "cities_count": 2}
+2025-06-30 14:40:40,369 - anonympdf.context - INFO - AdvancedPatternRefinement initialized with 52 patterns.
+2025-06-30 14:40:40,370 - anonympdf.pdf - INFO - Priority 2 context-aware components initialized
+2025-06-30 14:40:40,370 - anonympdf.pdf - WARNING - Standard loading failed for en_core_web_sm, trying PyInstaller compatibility...
+2025-06-30 14:40:41,357 - anonympdf.pdf - INFO - English spaCy model loaded via import - {"model": "en_core_web_sm", "components": 6, "method": "import"}
+2025-06-30 14:40:41,357 - anonympdf.pdf - WARNING - Standard loading failed for lt_core_news_sm, trying PyInstaller compatibility...
+2025-06-30 14:40:42,545 - anonympdf.pdf - INFO - Lithuanian spaCy model loaded via import - {"model": "lt_core_news_sm", "components": 7, "method": "import"}
+___________________________________________________________ TestPDFProcessorInitialization.test_pyinstaller_bundle_model_loading ___________________________________________________________
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1375: in patched
+    with self.decoration_helper(patched,
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1357: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:517: in enter_context
+    result = _enter(cm)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1430: in __enter__
+    self.target = self.getter()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\pkgutil.py:715: in resolve_name
+    result = getattr(result, p)
+E   AttributeError: module 'app.services.pdf_processor' has no attribute 'os'
+__________________________________________________________ TestPDFProcessorInitialization.test_environment_variable_model_loading __________________________________________________________
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1375: in patched
+    with self.decoration_helper(patched,
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1357: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:517: in enter_context
+    result = _enter(cm)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1430: in __enter__
+    self.target = self.getter()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\pkgutil.py:715: in resolve_name
+    result = getattr(result, p)
+E   AttributeError: module 'app.services.pdf_processor' has no attribute 'os'
+_____________________________________________________________ TestPDFProcessorInitialization.test_import_module_model_loading ______________________________________________________________
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1375: in patched
+    with self.decoration_helper(patched,
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1357: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:517: in enter_context
+    result = _enter(cm)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1430: in __enter__
+    self.target = self.getter()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\pkgutil.py:715: in resolve_name
+    result = getattr(result, p)
+E   AttributeError: module 'app.services.pdf_processor' has no attribute 'importlib'
+__________________________________________________________________ TestMLConfidenceScorer.test_init_default_random_forest __________________________________________________________________
+tests\test_ml_engine.py:237: in test_init_default_random_forest
+    assert isinstance(scorer.model, RandomForestClassifier)
+E   AssertionError: assert False
+E    +  where False = isinstance(XGBClassifier(base_score=None, booster=None, callbacks=None,\n              colsample_bylevel=None, colsample_bynode=None,\n              colsample_bytree=None, device=None, early_stopping_rounds=None,\n              enable_categorical=False, eval_metric='logloss',\n              feature_types=None, gamma=None, grow_policy=None,\n              importance_type=None, interaction_constraints=None,\n              learning_rate=0.1, max_bin=None, max_cat_threshold=None,\n              max_cat_to_onehot=None, max_delta_step=None, max_depth=6,\n              max_leaves=None, min_child_weight=None, missing=nan,\n              monotone_constraints=None, multi_strategy=None, n_estimators=100,\n              n_jobs=None, num_parallel_tree=None, random_state=42, ...), RandomForestClassifier)
+E    +    where XGBClassifier(base_score=None, booster=None, callbacks=None,\n              colsample_bylevel=None, colsample_bynode=None,\n              colsample_bytree=None, device=None, early_stopping_rounds=None,\n              enable_categorical=False, eval_metric='logloss',\n              feature_types=None, gamma=None, grow_policy=None,\n              importance_type=None, interaction_constraints=None,\n              learning_rate=0.1, max_bin=None, max_cat_threshold=None,\n              max_cat_to_onehot=None, max_delta_step=None, max_depth=6,\n              max_leaves=None, min_child_weight=None, missing=nan,\n              monotone_constraints=None, multi_strategy=None, n_estimators=100,\n              n_jobs=None, num_parallel_tree=None, random_state=42, ...) = <app.core.ml_engine.MLConfidenceScorer object at 0x000002538BFF0A10>.model
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:43,933 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scorer_v20250603_153643.joblib
+2025-06-30 14:40:43,937 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scaler_v20250603_153643.joblib
+2025-06-30 14:40:43,962 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_calibrator_v20250603_154304.joblib
+2025-06-30 14:40:43,962 - anonympdf.app.core.ml_engine - INFO - Loaded existing ML confidence model
+_________________________________________________________________ TestMLConfidenceScorer.test_load_existing_model_failure __________________________________________________________________
+tests\test_ml_engine.py:262: in test_load_existing_model_failure
+    assert scorer.model_version == "none"
+E   AssertionError: assert 'new' == 'none'
+E     - none
+E     + new
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:44,145 - anonympdf.app.core.ml_engine - WARNING - Failed to load existing model: Load failed
+2025-06-30 14:40:44,145 - anonympdf.app.core.ml_engine - INFO - Initialized new xgboost model
+__________________________________________________________________ TestMLConfidenceScorer.test_is_model_trained_untrained __________________________________________________________________
+tests\test_ml_engine.py:269: in test_is_model_trained_untrained
+    assert scorer._is_model_trained() is False
+E   assert True is False
+E    +  where True = <bound method MLConfidenceScorer._is_model_trained of <app.core.ml_engine.MLConfidenceScorer object at 0x0000025385A03B90>>()
+E    +    where <bound method MLConfidenceScorer._is_model_trained of <app.core.ml_engine.MLConfidenceScorer object at 0x0000025385A03B90>> = <app.core.ml_engine.MLConfidenceScorer object at 0x0000025385A03B90>._is_model_trained
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:44,197 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scorer_v20250603_153643.joblib
+2025-06-30 14:40:44,199 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scaler_v20250603_153643.joblib
+2025-06-30 14:40:44,222 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_calibrator_v20250603_154304.joblib
+2025-06-30 14:40:44,223 - anonympdf.app.core.ml_engine - INFO - Loaded existing ML confidence model
+__________________________________________________________________ TestMLConfidenceScorer.test_is_model_trained_exception __________________________________________________________________
+tests\test_ml_engine.py:297: in test_is_model_trained_exception
+    scorer.model.feature_importances_ = PropertyMock(side_effect=Exception("Error"))
+E   NameError: name 'PropertyMock' is not defined
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:44,373 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scorer_v20250603_153643.joblib
+2025-06-30 14:40:44,375 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scaler_v20250603_153643.joblib
+2025-06-30 14:40:44,398 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_calibrator_v20250603_154304.joblib
+2025-06-30 14:40:44,398 - anonympdf.app.core.ml_engine - INFO - Loaded existing ML confidence model
+________________________________________________________________ TestMLConfidenceScorer.test_train_model_insufficient_data _________________________________________________________________
+tests\test_ml_engine.py:476: in test_train_model_insufficient_data
+    TrainingExample(
+E   TypeError: TrainingExample.__init__() got an unexpected keyword argument 'detection'
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:44,897 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scorer_v20250603_153643.joblib
+2025-06-30 14:40:44,900 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scaler_v20250603_153643.joblib
+2025-06-30 14:40:44,924 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_calibrator_v20250603_154304.joblib
+2025-06-30 14:40:44,924 - anonympdf.app.core.ml_engine - INFO - Loaded existing ML confidence model
+_____________________________________________________________________ TestMLConfidenceScorer.test_train_model_success ______________________________________________________________________
+tests\test_ml_engine.py:497: in test_train_model_success
+    training_data.append(TrainingExample(
+E   TypeError: TrainingExample.__init__() got an unexpected keyword argument 'detection'
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:44,974 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scorer_v20250603_153643.joblib
+2025-06-30 14:40:44,977 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scaler_v20250603_153643.joblib
+2025-06-30 14:40:45,002 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_calibrator_v20250603_154304.joblib
+2025-06-30 14:40:45,002 - anonympdf.app.core.ml_engine - INFO - Loaded existing ML confidence model
+____________________________________________________________________ TestMLConfidenceScorer.test_prepare_training_data _____________________________________________________________________
+tests\test_ml_engine.py:523: in test_prepare_training_data
+    TrainingExample(
+E   TypeError: TrainingExample.__init__() got an unexpected keyword argument 'detection'
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:45,052 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scorer_v20250603_153643.joblib
+2025-06-30 14:40:45,055 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scaler_v20250603_153643.joblib
+2025-06-30 14:40:45,078 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_calibrator_v20250603_154304.joblib
+2025-06-30 14:40:45,079 - anonympdf.app.core.ml_engine - INFO - Loaded existing ML confidence model
+_____________________________________________________________ TestMLEngineIntegration.test_create_ml_confidence_scorer_factory _____________________________________________________________
+tests\test_ml_engine.py:584: in test_create_ml_confidence_scorer_factory
+    with patch('app.core.ml_engine.get_config_manager') as mock_config_manager, \
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1446: in __enter__
+    original, local = self.get_original()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1419: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'app.core.adaptive.ab_testing' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\adaptive\\ab_testing.py'> does not have the attribute 'create_ab_test_manager'
+___________________________________________________________ TestMLEngineIntegration.test_model_training_and_prediction_workflow ____________________________________________________________
+tests\test_ml_engine.py:623: in test_model_training_and_prediction_workflow
+    training_data.append(TrainingExample(
+E   TypeError: TrainingExample.__init__() got an unexpected keyword argument 'detection'
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 14:40:45,412 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scorer_v20250603_153643.joblib
+2025-06-30 14:40:45,415 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_scaler_v20250603_153643.joblib
+2025-06-30 14:40:45,437 - anonympdf.app.core.ml_engine - INFO - Model loaded: models\confidence_calibrator_v20250603_154304.joblib
+2025-06-30 14:40:45,437 - anonympdf.app.core.ml_engine - INFO - Loaded existing ML confidence model
+
+---------- coverage: platform win32, python 3.11.9-final-0 -----------
+Name                                    Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------
+app\__init__.py                             0      0   100%
+app\api\__init__.py                         0      0   100%
+app\api\endpoints\__init__.py               0      0   100%
+app\api\endpoints\analytics.py            258    216    16%   32-35, 40-43, 48-51, 56-59, 69-138, 149-194, 202-232, 242-252, 258-288, 294-306, 312-359, 365-391, 398-425, 439-462, 466-505, 514-537, 547-568, 582-605
+app\api\endpoints\feedback.py              48     26    46%   41-92
+app\api\endpoints\monitoring.py            10      2    80%   14, 21
+app\api\endpoints\pdf.py                  101     66    35%   27, 36-100, 106-107, 113-124, 130-163, 171, 176-182, 188-201
+app\core\__init__.py                        0      0   100%
+app\core\adaptive\__init__.py               0      0   100%
+app\core\adaptive\ab_testing.py           152     77    49%   41, 91, 149-154, 169-178, 182-190, 203-215, 219-242, 256-313, 323-326, 336-343
+app\core\adaptive\coordinator.py          132     67    49%   26-33, 56-66, 128, 157-193, 213, 217, 221-222, 226-227, 238-257, 261-263, 274-290
+app\core\adaptive\doc_classifier.py        44     23    48%   42-72, 78-79, 84
+app\core\adaptive\online_learner.py        31     31     0%   5-68
+app\core\adaptive\pattern_db.py           136     81    40%   49-53, 58-66, 85-92, 121-123, 127-129, 137-206, 215-224, 236-249, 253, 260-266, 276-283
+app\core\adaptive\pattern_learner.py       63     35    44%   20, 58-108, 111-133
+app\core\adaptive\processing_rules.py      54     13    76%   46-47, 64-65, 71, 75, 82-89, 94
+app\core\analytics_engine.py              214    137    36%   86-94, 98-104, 108-122, 126, 130-131, 135-196, 200-227, 231-256, 260-275, 282-336, 340-353, 359, 363-372, 376-392, 398-401, 405, 409-411, 416
+app\core\config_manager.py                262    170    35%   60-85, 102-113, 125-138, 151-152, 155-156, 162-163, 174-243, 259-269, 273, 363, 381, 436-445, 449-469, 473-480, 484-495, 499-514, 518-542, 546-586, 590-665, 669
+app\core\context_analyzer.py              240    164    32%   28-50, 64-81, 104-118, 122, 136-144, 150, 214-273, 288, 368-369, 382-386, 394-398, 407-411, 420-430, 439-440, 459-467, 487-537, 545-557, 617-671, 682-695
+app\core\data_models.py                    45     10    78%   22, 47-51, 56-59
+app\core\dependencies.py                  150     76    49%   29-31, 58-60, 88-90, 113-114, 116, 123, 129-151, 155-187, 201-207, 216-231, 238-243, 254-263, 269-280
+app\core\factory.py                        47      0   100%
+app\core\feature_engineering.py           332    256    23%   21, 44-50, 69-155, 159, 197-271, 275-283, 287, 314-315, 330-401, 405-415, 419, 479-507, 511-521, 525-528, 532-541, 545-558, 562-576, 615-660, 671-691, 695-715, 720-729
+app\core\feedback_system.py               272    176    35%   27-28, 101-115, 119-166, 178-221, 254-258, 262, 270-277, 281-282, 286-292, 296-330, 339-400, 405-429, 433-436, 450-475, 479-487, 508-513, 517-518, 538-556, 560-567, 571
+app\core\intelligent_cache.py             373    272    27%   47-49, 53-54, 61-64, 73-97, 101-141, 145-150, 158-163, 167-170, 174-178, 186-203, 210-212, 217-219, 223-238, 242-243, 251-260, 267-269, 273, 277-288, 293-296, 305-315, 324-340, 359-360, 384-387, 396, 409-422, 437-466, 470-476, 487-498, 510-529, 543-554, 567-586, 596-600, 604-619, 623-626, 630-646, 656-683, 708, 714, 719, 724, 729, 738-752
+app\core\lithuanian_enhancements.py       131     92    30%   249, 261-262, 266-267, 271-272, 285-335, 339-367, 371, 388-443, 497-513, 529-555
+app\core\logging.py                       110     35    68%   44-55, 59-71, 87, 98, 104, 106, 154-156, 163-165, 172-174, 196-216
+app\core\memory_optimizer.py              297    233    22%   39, 46-51, 55-97, 101-115, 123-128, 132-133, 142-158, 165-179, 183-186, 193-234, 238-242, 246-247, 251-267, 279-291, 295-306, 310-316, 320-356, 360-375, 383-386, 393-423, 441-449, 460-476, 484-485, 493-494, 504-514, 525-563, 571-573, 585-586, 593-616, 623-628, 634-636, 642-643, 653-657
+app\core\memory_utils.py                   23      9    61%   15, 20, 25, 30, 42-44, 49-50
+app\core\ml_engine.py                     244     75    69%   33, 83, 105, 195, 219-238, 361, 368-374, 386-451, 456-472, 499-523
+app\core\ml_integration.py                202    140    31%   20, 59-60, 75, 82-110, 114-117, 137-183, 190-233, 239-261, 265-269, 273-285, 291-296, 308-352, 359-394, 404-426, 430-446, 458-460, 464-466, 470-471, 477
+app\core\ml_monitoring.py                 280    203    28%   39-56, 73, 100-101, 109-110, 114-124, 128-179, 195-202, 206-215, 229-251, 255-289, 293-313, 317-334, 338-386, 393-417, 421-428, 432-447, 453-466, 470-475, 479-502, 506-507, 525-548, 552-567, 571-580, 586, 590, 594-618, 622, 626, 630-631, 635-637, 641-645, 651
+app\core\ml_training_pipeline.py          147    147     0%   8-280
+app\core\nlp_loader.py                     19     19     0%   1-36
+app\core\performance.py                   191    131    31%   28-30, 34-35, 42, 46-50, 61-88, 92-97, 104-105, 109-110, 114-115, 122-123, 127-137, 141-147, 151-159, 187-253, 257-259, 263-267, 271-279, 294-298, 302-304, 309-314, 320-331, 336-340, 348-350, 357, 362-365, 369
+app\core\performance_optimizer.py         393    393     0%   7-877
+app\core\real_time_monitor.py             319    176    45%   72, 108-110, 145-147, 173-175, 179-181, 237-238, 252-264, 306-339, 343-349, 353-358, 362-394, 406-466, 470-538, 542-543, 547-551, 555-562, 566-569, 573-576, 584-595, 599-613, 617-654, 658-663, 667-668, 672-673
+app\core\salutation_detector.py           144    113    22%   39-41, 45, 90, 101, 118-141, 145-186, 196-232, 237-253, 257-268, 273-305, 309-334, 342-355, 362-391
+app\core\text_extraction.py               121     92    24%   51-107, 111-128, 132-167, 171-176, 181-223, 228-259, 264-283, 291-319, 323-324, 340
+app\core\training_data.py                 306    221    28%   43, 68-70, 74-77, 82, 103-104, 108-131, 137-177, 181-226, 255-272, 276-281, 293-334, 346-384, 433-453, 457-509, 514-531, 535-569, 573-621, 647-669, 683-734, 746-779, 785
+app\core\validation_utils.py              189    161    15%   124-128, 135-174, 186-228, 242-251, 259-324, 336-381, 395-418, 432-517, 532-568
+app\database.py                            12      0   100%
+app\db\migrations.py                      100     46    54%   26, 48-112, 130-131, 136-138, 160-165, 169-185, 196-197
+app\dependencies.py                        25      8    68%   20, 26, 35-36, 41-45
+app\main.py                                82     42    49%   26-27, 31-33, 39-50, 81-84, 90-91, 97, 102, 107, 112, 120-153
+app\models\pdf_document.py                 21      0   100%
+app\pdf_processor.py                       19     13    32%   19-33
+app\schemas\pdf.py                         18      0   100%
+app\services\__init__.py                    0      0   100%
+app\services\pdf_processor.py             324    240    26%   79, 113-126, 132-143, 157-168, 180-193, 206-224, 228-232, 239-247, 257-350, 357-375, 385-422, 430-439, 448-477, 483-487, 495-629, 635-643, 650-713, 717-721, 728, 735-743
+app\version.py                              1      0   100%
+app\worker.py                              57     39    32%   43-54, 62-114
+---------------------------------------------------------------------
+TOTAL                                    6739   4526    33%
+
+FAIL Required test coverage of 80% not reached. Total coverage: 32.84%
+=================================================================================== slowest 10 durations ===================================================================================
+2.18s call     tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_initialization_no_models_raises_error
+0.81s call     tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_initialization_english_only
+0.77s call     tests/test_real_time_monitor.py::TestRealTimeMonitorIntegration::test_concurrent_logging_is_thread_safe
+0.11s call     tests/test_ml_engine.py::TestMLEngineIntegration::test_model_persistence_workflow
+0.09s call     tests/test_real_time_monitor.py::TestRealTimeMonitor::test_get_latest_metrics_ordering_and_limit
+0.06s call     tests/test_ml_engine.py::TestMLConfidenceScorer::test_init_with_config
+0.05s call     tests/test_ml_engine.py::TestMLConfidenceScorer::test_is_model_trained_untrained
+0.04s call     tests/test_ml_engine.py::TestMLConfidenceScorer::test_init_default_random_forest
+0.04s call     tests/test_ml_engine.py::TestMLConfidenceScorer::test_calculate_ml_confidence_with_calibrator
+0.04s call     tests/test_ml_engine.py::TestMLConfidenceScorer::test_apply_adaptive_patterns_with_coordinator
+================================================================================= short test summary info ==================================================================================
+ERROR tests/test_services_pdf_processor.py::TestLanguageDetection::test_detect_language_success
+ERROR tests/test_services_pdf_processor.py::TestLanguageDetection::test_detect_language_long_text_sampling
+ERROR tests/test_services_pdf_processor.py::TestLanguageDetection::test_detect_language_exception_handling
+ERROR tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_english_model_used
+ERROR tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_lithuanian_model_used
+ERROR tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_lithuanian_fallback_to_english
+ERROR tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_with_monitor_logging
+ERROR tests/test_services_pdf_processor.py::TestPIIDetection::test_find_personal_info_monitor_logging_exception
+ERROR tests/test_services_pdf_processor.py::TestPIIDetection::test_extract_core_city_name_lithuanian
+ERROR tests/test_services_pdf_processor.py::TestDeduplication::test_deduplicate_with_confidence_longest_wins
+ERROR tests/test_services_pdf_processor.py::TestDeduplication::test_deduplicate_with_confidence_document_terms_filtered
+ERROR tests/test_services_pdf_processor.py::TestDeduplication::test_should_preserve_detection_file_path_context
+ERROR tests/test_services_pdf_processor.py::TestDeduplication::test_should_preserve_detection_common_words
+ERROR tests/test_services_pdf_processor.py::TestLithuanianCityDetection::test_detect_lithuanian_cities_enhanced_valid_context
+ERROR tests/test_services_pdf_processor.py::TestLithuanianCityDetection::test_detect_lithuanian_cities_enhanced_invalid_context
+ERROR tests/test_services_pdf_processor.py::TestLithuanianCityDetection::test_detect_lithuanian_cities_enhanced_non_lithuanian
+ERROR tests/test_services_pdf_processor.py::TestLithuanianCityDetection::test_detect_lithuanian_cities_basic
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_file_not_found
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_anonymization_failure
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_with_monitor_logging
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_anonymize_pdf_with_monitor_failure_logging
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_generate_redaction_report
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_cleanup_temp_files
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_cleanup_temp_files_with_errors
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_extract_text_from_pdf
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_for_anonymization_success
+ERROR tests/test_services_pdf_processor.py::TestPDFProcessing::test_process_pdf_for_anonymization_failure
+ERROR tests/test_services_pdf_processor.py::TestMappingFunctions::test_map_spacy_label_to_category
+ERROR tests/test_services_pdf_processor.py::TestMappingFunctions::test_add_detection
+FAILED tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_initialization_english_only - assert <spacy.lang.lt.Lithuanian object at 0x000002538BDFBD10> is None
+FAILED tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_initialization_no_models_raises_error - Failed: DID NOT RAISE <class 'RuntimeError'>
+FAILED tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_pyinstaller_bundle_model_loading - AttributeError: module 'app.services.pdf_processor' has no attribute 'os'
+FAILED tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_environment_variable_model_loading - AttributeError: module 'app.services.pdf_processor' has no attribute 'os'
+FAILED tests/test_services_pdf_processor.py::TestPDFProcessorInitialization::test_import_module_model_loading - AttributeError: module 'app.services.pdf_processor' has no attribute 'importlib'
+FAILED tests/test_ml_engine.py::TestMLConfidenceScorer::test_init_default_random_forest - AssertionError: assert False
+FAILED tests/test_ml_engine.py::TestMLConfidenceScorer::test_load_existing_model_failure - AssertionError: assert 'new' == 'none'
+FAILED tests/test_ml_engine.py::TestMLConfidenceScorer::test_is_model_trained_untrained - assert True is False
+FAILED tests/test_ml_engine.py::TestMLConfidenceScorer::test_is_model_trained_exception - NameError: name 'PropertyMock' is not defined
+FAILED tests/test_ml_engine.py::TestMLConfidenceScorer::test_train_model_insufficient_data - TypeError: TrainingExample.__init__() got an unexpected keyword argument 'detection'
+FAILED tests/test_ml_engine.py::TestMLConfidenceScorer::test_train_model_success - TypeError: TrainingExample.__init__() got an unexpected keyword argument 'detection'
+FAILED tests/test_ml_engine.py::TestMLConfidenceScorer::test_prepare_training_data - TypeError: TrainingExample.__init__() got an unexpected keyword argument 'detection'
+FAILED tests/test_ml_engine.py::TestMLEngineIntegration::test_create_ml_confidence_scorer_factory - AttributeError: <module 'app.core.adaptive.ab_testing' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\core\\adaptive\\ab_testing.py'> does not have the at...
+FAILED tests/test_ml_engine.py::TestMLEngineIntegration::test_model_training_and_prediction_workflow - TypeError: TrainingExample.__init__() got an unexpected keyword argument 'detection'
+======================================================================== 14 failed, 35 passed, 29 errors in 10.62s =========================================================================
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF>

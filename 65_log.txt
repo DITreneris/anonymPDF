@@ -1,0 +1,329 @@
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF> pytest
+=================================================================================== test session starts ====================================================================================
+platform win32 -- Python 3.11.9, pytest-7.4.3, pluggy-1.6.0
+rootdir: C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-3.7.1, asyncio-0.21.1, cov-4.1.0
+asyncio: mode=Mode.STRICT
+collected 349 items
+
+tests\test_analytics_api.py .......................                                                                                                                                   [  6%]
+tests\test_analytics_engine.py ......                                                                                                                                                 [  8%]
+tests\test_config_manager.py ...                                                                                                                                                      [  9%]
+tests\test_feedback_system.py ....                                                                                                                                                    [ 10%]
+tests\test_intelligent_cache.py .............................                                                                                                                         [ 18%]
+tests\test_lithuanian_pii.py ..............                                                                                                                                           [ 22%]
+tests\test_memory_optimizer.py ......................                                                                                                                                 [ 28%]
+tests\test_memory_utils.py ....FF.F.F..                                                                                                                                               [ 32%]
+tests\test_ml_integration_layer.py .........                                                                                                                                          [ 34%]
+tests\test_pdf_processor.py sss...                                                                                                                                                    [ 36%]
+tests\test_pdf_processor_main.py EEFEE..E..EEE..FEF                                                                                                                                   [ 41%]
+tests\test_performance.py ........                                                                                                                                                    [ 44%]
+tests\test_performance_enhanced.py .......                                                                                                                                            [ 46%]
+tests\test_performance_optimizer.py ........................                                                                                                                          [ 53%]
+tests\test_pii_patterns.py ......                                                                                                                                                     [ 54%]
+tests\test_priority2_enhancements.py ...........................                                                                                                                      [ 62%]
+tests\test_real_time_monitor.py .......                                                                                                                                               [ 64%]
+tests\test_salutation_detector.py .........FF.F..F.......FFF.F..                                                                                                                      [ 73%]
+tests\test_training_data_collector.py .........                                                                                                                                       [ 75%]
+tests\test_validation_utils.py ........................                                                                                                                               [ 82%]
+tests\test_worker.py ....F.......F..F.                                                                                                                                                [ 87%]
+tests\adaptive\test_ab_testing.py ........                                                                                                                                            [ 89%]
+tests\adaptive\test_doc_classifier.py ........                                                                                                                                        [ 91%]
+tests\adaptive\test_online_learner.py ....                                                                                                                                            [ 93%]
+tests\adaptive\test_pattern_db.py .....                                                                                                                                               [ 94%]
+tests\adaptive\test_pattern_learner.py .......                                                                                                                                        [ 96%]
+tests\adaptive\test_processing_rules.py ....                                                                                                                                          [ 97%]
+tests\api\test_pdf_endpoint.py ..                                                                                                                                                     [ 98%]
+tests\system\test_adaptive_workflow.py .....                                                                                                                                          [ 99%]
+tests\system\test_real_time_monitor_integration.py .                                                                                                                                  [100%]
+
+========================================================================================== ERRORS ==========================================================================================
+_________________________________________________________________ ERROR at setup of TestRedactPdf.test_redact_pdf_success __________________________________________________________________
+tests\test_pdf_processor_main.py:21: in mock_pdf_setup
+    mock_doc.__iter__.return_value = [mock_page]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+____________________________________________________________ ERROR at setup of TestRedactPdf.test_redact_pdf_multiple_instances ____________________________________________________________
+tests\test_pdf_processor_main.py:21: in mock_pdf_setup
+    mock_doc.__iter__.return_value = [mock_page]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+______________________________________________________________ ERROR at setup of TestRedactPdf.test_redact_pdf_no_words_found ______________________________________________________________
+tests\test_pdf_processor_main.py:21: in mock_pdf_setup
+    mock_doc.__iter__.return_value = [mock_page]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+_____________________________________________________________ ERROR at setup of TestRedactPdf.test_redact_pdf_empty_word_list ______________________________________________________________
+tests\test_pdf_processor_main.py:21: in mock_pdf_setup
+    mock_doc.__iter__.return_value = [mock_page]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+________________________________________________________________ ERROR at setup of TestRedactPdf.test_redact_pdf_save_error ________________________________________________________________
+tests\test_pdf_processor_main.py:21: in mock_pdf_setup
+    mock_doc.__iter__.return_value = [mock_page]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+______________________________________________________________ ERROR at setup of TestRedactPdf.test_redact_pdf_pathlib_paths _______________________________________________________________
+tests\test_pdf_processor_main.py:21: in mock_pdf_setup
+    mock_doc.__iter__.return_value = [mock_page]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+_____________________________________________________________ ERROR at setup of TestRedactPdf.test_redact_pdf_save_parameters ______________________________________________________________
+tests\test_pdf_processor_main.py:21: in mock_pdf_setup
+    mock_doc.__iter__.return_value = [mock_page]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+__________________________________________________________ ERROR at setup of TestRedactPdf.test_redact_pdf_annotation_parameters ___________________________________________________________
+tests\test_pdf_processor_main.py:21: in mock_pdf_setup
+    mock_doc.__iter__.return_value = [mock_page]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+_______________________________________________ ERROR at setup of TestRedactPdfIntegration.test_redact_pdf_performance_with_large_word_list ________________________________________________
+file C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_pdf_processor_main.py, line 283
+      def test_redact_pdf_performance_with_large_word_list(self, mock_fitz_doc, tmp_path):
+E       fixture 'mock_fitz_doc' not found
+>       available fixtures: ab_test_manager, adaptive_coordinator, adaptive_pattern_db, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, cleanup_logs, client, config_manager, cov, db_session, doctest_namespace, event_loop, mock_spacy_models, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_english_text, sample_lithuanian_text, temp_pdf_dir, test_cities, test_config_dir, test_config_manager, test_patterns, test_pdf_processor, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\tests\test_pdf_processor_main.py:283
+========================================================================================= FAILURES =========================================================================================
+_________________________________________________________________ TestMemoryOptimizedDecorator.test_decorator_default_mode _________________________________________________________________
+tests\test_memory_utils.py:82: in test_decorator_default_mode
+    result = test_func(5)
+app\core\memory_utils.py:43: in wrapper
+    with optimizer.optimized_processing(processing_mode):
+E   TypeError: 'Mock' object does not support the context manager protocol
+_________________________________________________________________ TestMemoryOptimizedDecorator.test_decorator_custom_mode __________________________________________________________________
+tests\test_memory_utils.py:99: in test_decorator_custom_mode
+    result = test_func()
+app\core\memory_utils.py:43: in wrapper
+    with optimizer.optimized_processing(processing_mode):
+E   TypeError: 'Mock' object does not support the context manager protocol
+__________________________________________________________ TestMemoryOptimizedDecorator.test_decorator_handles_missing_attributes __________________________________________________________
+tests\test_memory_utils.py:136: in test_decorator_handles_missing_attributes
+    result = decorated_func()
+app\core\memory_utils.py:43: in wrapper
+    with optimizer.optimized_processing(processing_mode):
+E   TypeError: 'Mock' object does not support the context manager protocol
+____________________________________________________________ TestIntegrationScenarios.test_decorator_and_functions_integration _____________________________________________________________
+tests\test_memory_utils.py:178: in test_decorator_and_functions_integration
+    result = process_data()
+app\core\memory_utils.py:43: in wrapper
+    with optimizer.optimized_processing(processing_mode):
+E   TypeError: 'Mock' object does not support the context manager protocol
+_______________________________________________________________________ TestRedactPdf.test_redact_pdf_multiple_pages _______________________________________________________________________
+tests\test_pdf_processor_main.py:73: in test_redact_pdf_multiple_pages
+    mock_doc.__iter__.return_value = [mock_page1, mock_page2]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+_____________________________________________________________ TestRedactPdfIntegration.test_redact_pdf_with_real_pdf_structure _____________________________________________________________
+tests\test_pdf_processor_main.py:260: in test_redact_pdf_with_real_pdf_structure
+    mock_doc.__iter__.return_value = [mock_page]
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:655: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __iter__
+_________________________________________________________________________________ test_function_signature __________________________________________________________________________________
+tests\test_pdf_processor_main.py:313: in test_function_signature
+    assert params == expected_params
+E   AssertionError: assert ['args', 'kwargs'] == ['input_path'...sitive_words']
+E     At index 0 diff: 'args' != 'input_path'
+E     Right contains one more item: 'sensitive_words'
+E     Use -v to get more diff
+____________________________________________________________ TestLithuanianSalutationDetector.test_is_likely_masculine_vocative ____________________________________________________________
+tests\test_salutation_detector.py:140: in test_is_likely_masculine_vocative
+    assert not detector._is_likely_masculine_vocative(name)
+E   AssertionError: assert not True
+E    +  where True = <bound method LithuanianSalutationDetector._is_likely_masculine_vocative of <app.core.salutation_detector.LithuanianSalutationDetector object at 0x0000027C2A40FE90>>('Marija')
+E    +    where <bound method LithuanianSalutationDetector._is_likely_masculine_vocative of <app.core.salutation_detector.LithuanianSalutationDetector object at 0x0000027C2A40FE90>> = <app.core.salutation_detector.LithuanianSalutationDetector object at 0x0000027C2A40FE90>._is_likely_masculine_vocative
+______________________________________________________________ TestLithuanianSalutationDetector.test_is_likely_feminine_name _______________________________________________________________
+tests\test_salutation_detector.py:148: in test_is_likely_feminine_name
+    assert detector._is_likely_feminine_name(name)
+E   AssertionError: assert False
+E    +  where False = <bound method LithuanianSalutationDetector._is_likely_feminine_name of <app.core.salutation_detector.LithuanianSalutationDetector object at 0x0000027C2D0A5450>>('Onai')
+E    +    where <bound method LithuanianSalutationDetector._is_likely_feminine_name of <app.core.salutation_detector.LithuanianSalutationDetector object at 0x0000027C2D0A5450>> = <app.core.salutation_detector.LithuanianSalutationDetector object at 0x0000027C2D0A5450>._is_likely_feminine_name
+____________________________________________________________ TestLithuanianSalutationDetector.test_calculate_confidence_medium _____________________________________________________________
+tests\test_salutation_detector.py:169: in test_calculate_confidence_medium
+    assert 0.6 <= confidence < 0.8
+E   assert 0.85 < 0.8
+____________________________________________________________ TestLithuanianSalutationDetector.test_extract_names_for_redaction _____________________________________________________________
+tests\test_salutation_detector.py:221: in test_extract_names_for_redaction
+    assert len(redaction_names) == 2
+E   AssertionError: assert 6 == 2
+E    +  where 6 = len([('Tomui', 'SALUTATION_DETECTED_CONF_0.90'), ('Tomas', 'SALUTATION_BASE_CONF_0.90'), ('Gerbiamam Tomui', 'SALUTATION_F... 'SALUTATION_DETECTED_CONF_0.80'), ('Ona', 'SALUTATION_BASE_CONF_0.80'), ('Sveiki, Onai', 'SALUTATION_FULL_CONF_0.80')])
+__________________________________________________ TestDetectLithuanianSalutationsFunction.test_detect_function_with_multiple_detections ___________________________________________________
+tests\test_salutation_detector.py:335: in test_detect_function_with_multiple_detections
+    assert len(result) == 2
+E   assert 1 == 2
+E    +  where 1 = len([DetectionContext()])
+_______________________________________________________ TestDetectLithuanianSalutationsFunction.test_detect_function_error_handling ________________________________________________________
+tests\test_salutation_detector.py:349: in test_detect_function_error_handling
+    assert result == []
+E   assert [DetectionContext()] == []
+E     Left contains one more item: DetectionContext()
+E     Use -v to get more diff
+_____________________________________________________ TestDetectLithuanianSalutationsFunction.test_detect_function_with_real_detector ______________________________________________________
+tests\test_salutation_detector.py:359: in test_detect_function_with_real_detector
+    assert all(ctx.category == "lithuanian_names" for ctx in result)
+E   assert False
+E    +  where False = all(<generator object TestDetectLithuanianSalutationsFunction.test_detect_function_with_real_detector.<locals>.<genexpr> at 0x0000027C04637AC0>)
+____________________________________________________________ test_parametrized_salutation_detection[Sveiki, Jonai ir Petrai-2] _____________________________________________________________
+tests\test_salutation_detector.py:377: in test_parametrized_salutation_detection
+    assert len(detections) >= expected_detections or len(detections) == 0  # Might be filtered by confidence
+E   AssertionError: assert (1 >= 2 or 1 == 0)
+E    +  where 1 = len([SalutationDetection(full_text='Sveiki, Jonai', extracted_name='Jonai', base_name='Jonas', start_pos=0, end_pos=13, confidence=0.85, salutation_type='greeting_patterns')])
+E    +  and   1 = len([SalutationDetection(full_text='Sveiki, Jonai', extracted_name='Jonai', base_name='Jonas', start_pos=0, end_pos=13, confidence=0.85, salutation_type='greeting_patterns')])
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2025-06-30 11:53:43,290 - anonympdf.salutation - INFO - Starting Lithuanian salutation detection - {"text_length": 23, "pattern_categories": 4}
+2025-06-30 11:53:43,302 - anonympdf.salutation - INFO - Salutation detected - {"category": "greeting_patterns", "full_text": "Sveiki, Jonai", "extracted_name": "Jonai", "base_name": "Jonas", "confidence": 0.85}
+2025-06-30 11:53:43,303 - anonympdf.salutation - INFO - Salutation detection completed - {"total_detections": 1, "unique_names": 1}
+___________________________________________________________________ TestGetPdfProcessor.test_get_pdf_processor_creation ____________________________________________________________________
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1375: in patched
+    with self.decoration_helper(patched,
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1357: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\contextlib.py:517: in enter_context
+    result = _enter(cm)
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1446: in __enter__
+    original, local = self.get_original()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:1419: in get_original
+    raise AttributeError(
+E   AttributeError: <module 'app.worker' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\worker.py'> does not have the attribute 'PDFProcessor'
+_____________________________________________________________________ TestErrorHandling.test_database_connection_error _____________________________________________________________________
+tests\test_worker.py:259: in test_database_connection_error
+    mock_logger.error.assert_called()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:908: in assert_called
+    raise AssertionError(msg)
+E   AssertionError: Expected 'error' to have been called.
+__________________________________________________________________ TestIntegration.test_processor_instance_initialization __________________________________________________________________
+tests\test_worker.py:308: in test_processor_instance_initialization
+    mock_get_processor.assert_called()
+..\..\..\AppData\Local\Programs\Python\Python311\Lib\unittest\mock.py:908: in assert_called
+    raise AssertionError(msg)
+E   AssertionError: Expected 'get_pdf_processor' to have been called.
+===================================================================================== warnings summary =====================================================================================
+tests/adaptive/test_ab_testing.py::TestABTestManager::test_record_and_evaluate_metrics_variant_wins
+  C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF\venv\Lib\site-packages\scipy\stats\_axis_nan_policy.py:586: RuntimeWarning: Precision loss occurred in moment calculation due to catastrophic cancellation. This occurs when the data are nearly identical. Results may be unreliable.
+    res = hypotest_fun_out(*samples, **kwds)
+
+tests/adaptive/test_pattern_learner.py::TestValidateRegex::test_perfect_match
+  C:\Users\tomas\AppData\Local\Programs\Python\Python311\Lib\typing.py:409: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform win32, python 3.11.9-final-0 -----------
+Name                                    Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------
+app\__init__.py                             0      0   100%
+app\api\__init__.py                         0      0   100%
+app\api\endpoints\__init__.py               0      0   100%
+app\api\endpoints\analytics.py            258     59    77%   32-35, 40-43, 48-51, 56-59, 192-194, 230-232, 250-252, 286-288, 304-306, 357-359, 389-391, 420-423, 446-448, 458-460, 467, 500-503, 561-566, 597, 600-603
+app\api\endpoints\feedback.py              48     26    46%   41-92
+app\api\endpoints\monitoring.py            10      2    80%   14, 21
+app\api\endpoints\pdf.py                  101     44    56%   27, 62-64, 106-107, 113-124, 130-163, 171, 176-182, 188-201
+app\core\__init__.py                        0      0   100%
+app\core\adaptive\__init__.py               0      0   100%
+app\core\adaptive\ab_testing.py           152     11    93%   183, 220-221, 257, 336-343
+app\core\adaptive\coordinator.py          132     48    64%   26-33, 57-65, 128, 177-178, 193, 217, 221-222, 226-227, 238-257, 261-263, 274-290
+app\core\adaptive\doc_classifier.py        44      1    98%   84
+app\core\adaptive\online_learner.py        31      5    84%   45-46, 66-68
+app\core\adaptive\pattern_db.py           136     46    66%   49-53, 85-92, 121-123, 127-129, 146-147, 203-206, 222-223, 244-249, 253, 260-266, 276-283
+app\core\adaptive\pattern_learner.py       63      6    90%   20, 61, 101-106, 128
+app\core\adaptive\processing_rules.py      54      7    87%   82-89, 94
+app\core\analytics_engine.py              214     46    79%   102-104, 195-196, 222-227, 231-256, 260-275, 288-289, 318-320, 340-353, 398-401, 405, 409-411, 416
+app\core\config_manager.py                262    125    52%   60-61, 78-79, 132-138, 155-156, 162-163, 265-269, 381, 443-445, 467-469, 478-480, 484-495, 499-514, 518-542, 546-586, 590-665, 669
+app\core\context_analyzer.py              240     26    89%   28-50, 122, 142-144, 150, 264-270, 397-398, 511, 518, 521, 552, 554, 646-647
+app\core\data_models.py                    45      9    80%   47-51, 56-59
+app\core\dependencies.py                  150     76    49%   29-31, 58-60, 88-90, 113-114, 116, 123, 129-151, 155-187, 201-207, 216-231, 238-243, 254-263, 269-280
+app\core\factory.py                        47      0   100%
+app\core\feature_engineering.py           332     80    76%   21, 70, 75, 100, 131, 138-143, 159, 200, 238-239, 243-256, 278-279, 287, 314-315, 333, 340-341, 359, 393-399, 419, 482, 496, 511-521, 527, 534-536, 540, 546, 562-576, 652-653, 657-660, 695-715, 720-729
+app\core\feedback_system.py               272    103    62%   27-28, 101-115, 131-166, 178-221, 254-258, 271-272, 281-282, 287, 290, 305, 349-358, 361, 398-400, 407-409, 414, 422-427, 433-436, 469-473, 481, 511-513, 538-556, 560-567
+app\core\intelligent_cache.py             373     31    92%   114-115, 135-141, 333-340, 359-360, 396, 413, 443, 445, 460-461, 490, 525-526, 546, 582-583, 596-600, 625-626, 670, 708
+app\core\lithuanian_enhancements.py       131     17    87%   249, 317, 371, 389-390, 408-409, 412-413, 416-417, 442-443, 513, 551-553
+app\core\logging.py                       110     23    79%   44-55, 59-71, 87, 196-216
+app\core\memory_optimizer.py              297     49    84%   91-97, 102, 144, 241-242, 297, 329, 337, 351-356, 373-375, 421, 445, 460-476, 525-563, 571-573, 585-586, 606-607
+app\core\memory_utils.py                   23      0   100%
+app\core\ml_engine.py                     244    153    37%   33, 53-74, 83, 86, 89-90, 96-98, 102-130, 175-179, 183-209, 217, 221, 234-238, 265-322, 331-339, 345-356, 360-374, 386-451, 456-472, 476-481, 499-523
+app\core\ml_integration.py                202     85    58%   20, 60, 75, 114-117, 166-168, 176-177, 181-183, 190-233, 239-261, 265-269, 277, 296, 308-352, 404-426, 430-446, 458-460, 464-466, 470-471, 477
+app\core\ml_monitoring.py                 280    166    41%   39-56, 73, 114-124, 128-179, 248-251, 255-289, 293-313, 317-334, 338-386, 453-466, 470-475, 479-502, 506-507, 525-548, 552-567, 571-580, 586, 590, 594-618, 622, 626, 630-631, 635-637, 641-645, 651
+app\core\ml_training_pipeline.py          147     82    44%   65-67, 82, 89-93, 107-132, 136, 140-145, 152, 166-198, 208-213, 227-244, 251-254, 258-275, 280
+app\core\nlp_loader.py                     19     19     0%   1-36
+app\core\performance.py                   191     19    90%   93, 153, 188, 220, 271-279, 314, 329-330, 336-340, 365, 369
+app\core\performance_optimizer.py         393     99    75%   98-106, 118, 122-123, 172, 176-177, 213, 235, 256-319, 336, 389-395, 416-417, 450-451, 486-489, 570-571, 588-589, 610-616, 632-633, 686, 708-719, 728-766, 807-837, 841-843, 847-863, 877
+app\core\real_time_monitor.py             319    176    45%   72, 108-110, 145-147, 173-175, 179-181, 237-238, 252-264, 306-339, 343-349, 353-358, 362-394, 406-466, 470-538, 542-543, 547-551, 555-562, 566-569, 573-576, 584-595, 599-613, 617-654, 658-663, 667-668, 672-673
+app\core\salutation_detector.py           144      9    94%   197, 205, 209, 215, 217, 221, 227, 299, 303
+app\core\text_extraction.py               121     16    87%   85-90, 126-128, 165-167, 174-176, 292, 302, 309, 317
+app\core\training_data.py                 306    139    55%   43, 68-70, 82, 103-104, 109, 130-131, 138, 174-175, 182, 224-226, 255-272, 276-281, 293-334, 346-384, 433-453, 457-509, 514-531, 535-569, 573-621, 659-666, 705, 746-779, 785
+app\core\validation_utils.py              189     38    80%   124-128, 138, 171-172, 187, 203, 209-214, 220-226, 242-251, 271, 276-281, 304-308, 312-316, 361-362, 367-368, 378-379, 491-500
+app\database.py                            12      0   100%
+app\db\migrations.py                      100     46    54%   26, 48-112, 130-131, 136-138, 160-165, 169-185, 196-197
+app\dependencies.py                        25      8    68%   20, 26, 35-36, 41-45
+app\main.py                                82     41    50%   26-27, 31-33, 39-50, 81-84, 90-91, 97, 102, 107, 120-153
+app\models\pdf_document.py                 21      0   100%
+app\pdf_processor.py                       19      8    58%   21-30
+app\schemas\pdf.py                         18      0   100%
+app\services\__init__.py                    0      0   100%
+app\services\pdf_processor.py             324    127    61%   79, 107-168, 228-232, 245-247, 297, 345-346, 357-375, 430-439, 448-477, 483-487, 501, 511-516, 547-561, 568, 577-579, 594, 616-629, 651, 682-688, 717-721, 735-743
+app\version.py                              1      0   100%
+app\worker.py                              56      7    88%   43-53
+---------------------------------------------------------------------
+TOTAL                                    6738   2078    69%
+
+FAIL Required test coverage of 80% not reached. Total coverage: 69.16%
+=================================================================================== slowest 10 durations ===================================================================================
+8.62s setup    tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_anti_overredaction_of_common_words
+8.16s call     tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt]
+7.97s setup    tests/system/test_adaptive_workflow.py::test_adaptive_workflow_learns_new_pattern
+7.92s setup    tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_redaction_report_generation
+7.50s setup    tests/system/test_adaptive_workflow.py::test_feedback_learns_and_discovers_new_pattern[MIN-KORT-98765-LT_MINISTRY_CARD-lt]
+7.15s setup    tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_anti_overredaction_in_technical_context
+7.12s setup    tests/test_pdf_processor.py::TestPDFProcessorIntegration::test_process_pdf_failure_on_anonymization_error
+6.74s setup    tests/system/test_adaptive_workflow.py::test_fixture_creation
+6.62s setup    tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_simple_lithuanian_names_detection
+6.49s setup    tests/test_lithuanian_pii.py::TestLithuanianIntegration::test_contextual_validation_of_technical_terms
+================================================================================= short test summary info ==================================================================================
+SKIPPED [3] tests\test_pdf_processor.py: Bypassing persistent mock/environment error to focus on logic failures.
+ERROR tests/test_pdf_processor_main.py::TestRedactPdf::test_redact_pdf_success - AttributeError: __iter__
+ERROR tests/test_pdf_processor_main.py::TestRedactPdf::test_redact_pdf_multiple_instances - AttributeError: __iter__
+ERROR tests/test_pdf_processor_main.py::TestRedactPdf::test_redact_pdf_no_words_found - AttributeError: __iter__
+ERROR tests/test_pdf_processor_main.py::TestRedactPdf::test_redact_pdf_empty_word_list - AttributeError: __iter__
+ERROR tests/test_pdf_processor_main.py::TestRedactPdf::test_redact_pdf_save_error - AttributeError: __iter__
+ERROR tests/test_pdf_processor_main.py::TestRedactPdf::test_redact_pdf_pathlib_paths - AttributeError: __iter__
+ERROR tests/test_pdf_processor_main.py::TestRedactPdf::test_redact_pdf_save_parameters - AttributeError: __iter__
+ERROR tests/test_pdf_processor_main.py::TestRedactPdf::test_redact_pdf_annotation_parameters - AttributeError: __iter__
+ERROR tests/test_pdf_processor_main.py::TestRedactPdfIntegration::test_redact_pdf_performance_with_large_word_list
+FAILED tests/test_memory_utils.py::TestMemoryOptimizedDecorator::test_decorator_default_mode - TypeError: 'Mock' object does not support the context manager protocol
+FAILED tests/test_memory_utils.py::TestMemoryOptimizedDecorator::test_decorator_custom_mode - TypeError: 'Mock' object does not support the context manager protocol
+FAILED tests/test_memory_utils.py::TestMemoryOptimizedDecorator::test_decorator_handles_missing_attributes - TypeError: 'Mock' object does not support the context manager protocol
+FAILED tests/test_memory_utils.py::TestIntegrationScenarios::test_decorator_and_functions_integration - TypeError: 'Mock' object does not support the context manager protocol
+FAILED tests/test_pdf_processor_main.py::TestRedactPdf::test_redact_pdf_multiple_pages - AttributeError: __iter__
+FAILED tests/test_pdf_processor_main.py::TestRedactPdfIntegration::test_redact_pdf_with_real_pdf_structure - AttributeError: __iter__
+FAILED tests/test_pdf_processor_main.py::test_function_signature - AssertionError: assert ['args', 'kwargs'] == ['input_path'...sitive_words']
+FAILED tests/test_salutation_detector.py::TestLithuanianSalutationDetector::test_is_likely_masculine_vocative - AssertionError: assert not True
+FAILED tests/test_salutation_detector.py::TestLithuanianSalutationDetector::test_is_likely_feminine_name - AssertionError: assert False
+FAILED tests/test_salutation_detector.py::TestLithuanianSalutationDetector::test_calculate_confidence_medium - assert 0.85 < 0.8
+FAILED tests/test_salutation_detector.py::TestLithuanianSalutationDetector::test_extract_names_for_redaction - AssertionError: assert 6 == 2
+FAILED tests/test_salutation_detector.py::TestDetectLithuanianSalutationsFunction::test_detect_function_with_multiple_detections - assert 1 == 2
+FAILED tests/test_salutation_detector.py::TestDetectLithuanianSalutationsFunction::test_detect_function_error_handling - assert [DetectionContext()] == []
+FAILED tests/test_salutation_detector.py::TestDetectLithuanianSalutationsFunction::test_detect_function_with_real_detector - assert False
+FAILED tests/test_salutation_detector.py::test_parametrized_salutation_detection[Sveiki, Jonai ir Petrai-2] - AssertionError: assert (1 >= 2 or 1 == 0)
+FAILED tests/test_worker.py::TestGetPdfProcessor::test_get_pdf_processor_creation - AttributeError: <module 'app.worker' from 'C:\\Users\\tomas\\Desktop\\0001 DUOMENU ANALITIKA\\038_AnonymPDF\\app\\worker.py'> does not have the attribute 'PDFProcessor'
+FAILED tests/test_worker.py::TestErrorHandling::test_database_connection_error - AssertionError: Expected 'error' to have been called.
+FAILED tests/test_worker.py::TestIntegration::test_processor_instance_initialization - AssertionError: Expected 'get_pdf_processor' to have been called.
+======================================================= 18 failed, 319 passed, 3 skipped, 2 warnings, 9 errors in 220.48s (0:03:40) ========================================================
+(venv) PS C:\Users\tomas\Desktop\0001 DUOMENU ANALITIKA\038_AnonymPDF>
