@@ -55,5 +55,78 @@ tests/integration/
 # Windows specific paths
 C:/Users/tomas/Desktop/0001 DUOMENU ANALITIKA/038_AnonymPDF/docs/development/
 
+# Working Files & Temporary Documents
+# =================================
+
+# Log files (numbered and coverage reports)
+*_log.txt
+[0-9][0-9]_log.txt
+[0-9][0-9][0-9]_log.txt
+cov_report.txt
+coverage_report.txt
+
+# Working markdown files
+DAY_PLAN*.md
+morning_ses*.md
+session_*.md
+work_*.md
+temp_*.md
+draft_*.md
+
+# Working text files and notes
+Enhanced_analytics.txt
+working_*.txt
+notes_*.txt
+scratch_*.txt
+todo_*.txt
+
+# Report files (except final reports)
+doc*_report.json
+test_report_*.json
+coverage_*.json
+benchmark_*.json
+
+# Test working files
+[0-9][0-9]_test.py
+test_*.py.bak
+temp_test_*.py
+
+# Development artifacts
+*.bak
+*.tmp
+*.temp
+*_backup.*
+*_old.*
+
+# Coverage files
+.coverage
+htmlcov/
+.pytest_cache/
+.coverage.*
+
+# Performance and benchmark data
+processed_benchmarks/
+benchmark_*.txt
+performance_*.json
+
+# Model files (except production models)
+models/temp_*
+models/test_*
+models/backup_*
+
+# Environment and configuration backups
+.env.backup
+.env.local
+config_backup/
+settings_*.yaml.bak
+
+# Keep important documentation
+# ===========================
+# The following files should NOT be ignored:
+# README.md (main documentation)
+# LICENSE.txt (license file)
+# TESTS_REPORT.md (final test report)
+# Any documentation in docs/ that's not in ignored subdirectories
+
 # Other
 .env 

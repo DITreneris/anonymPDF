@@ -247,39 +247,46 @@ class DependencyValidator:
 
 def validate_dependencies_on_startup():
     """Function to be called on application startup to validate dependencies."""
-    validator = DependencyValidator()
+    try:
+        validator = DependencyValidator()
 
-    # First check critical dependencies
-    if not validator.validate_startup_dependencies():
-        error_msg = (
-            "Critical dependencies are missing. The application cannot start.\n"
-            "Please install the required dependencies:\n"
-            "1. pip install fastapi sqlalchemy spacy\n"
-            "2. python -m spacy download en_core_web_sm\n"
-            "3. Restart the application"
-        )
+        # First check critical dependencies
+        if not validator.validate_startup_dependencies():
+            error_msg = (
+                "Critical dependencies are missing. The application cannot start.\n"
+                "Please install the required dependencies:\n"
+                "1. pip install fastapi sqlalchemy spacy\n"
+                "2. python -m spacy download en_core_web_sm\n"
+                "3. Restart the application"
+            )
+            dependency_logger.error(error_msg)
+            print(f"ERROR: {error_msg}")
+            sys.exit(1)
+
+        # Then check all dependencies and warn about non-critical missing ones
+        all_passed, results = validator.validate_all()
+
+        if not all_passed:
+            missing = validator.get_missing_dependencies()
+            warning_msg = (
+                "Some optional dependencies are missing. "
+                "The application will start but some features may be limited.\n"
+                f"Missing dependencies: {len(missing)}\n"
+            )
+
+            for item in missing:
+                warning_msg += f"  - {item}\n"
+
+            dependency_logger.warning(warning_msg)
+            print(f"WARNING: {warning_msg}")
+
+        return validator
+
+    except Exception as e:
+        error_msg = f"Unexpected error during dependency validation: {str(e)}"
         dependency_logger.error(error_msg)
         print(f"ERROR: {error_msg}")
         sys.exit(1)
-
-    # Then check all dependencies and warn about non-critical missing ones
-    all_passed, results = validator.validate_all()
-
-    if not all_passed:
-        missing = validator.get_missing_dependencies()
-        warning_msg = (
-            "Some optional dependencies are missing. "
-            "The application will start but some features may be limited.\n"
-            f"Missing dependencies: {len(missing)}\n"
-        )
-
-        for item in missing:
-            warning_msg += f"  - {item}\n"
-
-        dependency_logger.warning(warning_msg)
-        print(f"WARNING: {warning_msg}")
-
-    return validator
 
 
 # Global validator instance

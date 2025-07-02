@@ -11,7 +11,7 @@ from app.database import get_db
 from app.models.pdf_document import PDFDocument
 from app.services.pdf_processor import PDFProcessor
 from app.core.adaptive.coordinator import AdaptiveLearningCoordinator
-from app.core.feedback_system import UserFeedback, FeedbackType
+from app.core.feedback_system import UserFeedback, FeedbackType, FeedbackSeverity
 from app.dependencies import get_adaptive_learning_coordinator, get_pdf_processor
 from app.core.logging import api_logger
 
@@ -71,13 +71,17 @@ def submit_feedback(
             feedback_type = FeedbackType.CONFIRMED_PII if item.is_correct else FeedbackType.FALSE_POSITIVE
             
             feedback = UserFeedback(
+                feedback_id=f"feedback_{payload.document_id}_{hash(item.text_segment)}",
+                document_id=str(payload.document_id),
                 text_segment=item.text_segment,
-                feedback_type=feedback_type,
-                original_category=item.original_category,
+                detected_category=item.original_category,
                 user_corrected_category=None, # Placeholder for future enhancement
-                confidence_rating=None,
+                detected_confidence=0.5,  # Default confidence since not provided
+                user_confidence_rating=None,
+                feedback_type=feedback_type,
+                severity=FeedbackSeverity.MEDIUM,  # Default severity
                 user_comment=None,
-                document_id=str(payload.document_id)
+                context={}  # Empty context for now
             )
             feedback_list.append(feedback)
         
@@ -87,6 +91,9 @@ def submit_feedback(
         api_logger.info("Feedback processed and sent to learning coordinator.", extra={"document_id": payload.document_id})
 
         return {"message": "Feedback submitted successfully and is being processed."}
+    except HTTPException:
+        # Re-raise HTTP exceptions (404, 422, etc.) as-is
+        raise
     except Exception as e:
         api_logger.error("Failed to process feedback payload", exc_info=True)
         raise HTTPException(status_code=500, detail={"message": str(e), "code": "FEEDBACK_PROCESSING_ERROR"}) 
