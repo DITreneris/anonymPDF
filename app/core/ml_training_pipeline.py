@@ -176,7 +176,7 @@ class ModelEvaluator:
                     detection=example.detection_text,
                     context=example.context,
                     features=example.features,
-                    pii_category=example.pii_category
+                    pii_category=example.category
                 )
                 
                 confidence_scores.append(prediction.confidence)
